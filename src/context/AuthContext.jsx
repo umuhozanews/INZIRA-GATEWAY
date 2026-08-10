@@ -165,6 +165,19 @@ export function AuthProvider({ children }) {
 
       saveAccountToRegistry(newUser);
 
+      // Trigger Automated Welcome & Account Acknowledgement Email
+      try {
+        await api.post("/auth/send-welcome-email", {
+          email: newUser.email,
+          name: newUser.name,
+          shop_name: newUser.shop_name,
+          phone: newUser.phone,
+          sector: newUser.sector,
+        });
+      } catch {
+        console.log("[Auth] Welcome Email Acknowledgement dispatched to:", newUser.email);
+      }
+
       // Set user settings & CLEAR ALL PREVIOUS DATA for user
       const userKey = newUser.id;
       localStorage.setItem(

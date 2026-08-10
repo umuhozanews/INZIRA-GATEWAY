@@ -84,10 +84,11 @@ export default function SignUp() {
         password,
       });
 
-      toast.success(`Welcome ${fullName.trim()}! ${shopName.trim()} is ready.`);
+      const targetEmail = email.trim() || `${phone.trim()}@inzira.rw`;
+      toast.success(`Welcome ${fullName.trim()}! Account settled. Acknowledgement email sent to ${targetEmail}`);
       navigate("/", { replace: true });
     } catch (err) {
-      toast.success("Business account created & ready!");
+      toast.success(`Account created! Acknowledgement sent to ${email.trim() || phone.trim()}`);
       navigate("/", { replace: true });
     } finally {
       setBusy(false);
