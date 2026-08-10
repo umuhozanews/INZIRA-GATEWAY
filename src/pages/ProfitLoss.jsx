@@ -1,22 +1,19 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
-  PieChart,
   Calendar,
-  Layers,
   ArrowUpRight,
-  ArrowDownRight,
-  CheckCircle2,
-  FileText
+  AlertTriangle,
+  Sparkles,
+  PieChart,
+  Layers,
+  CheckCircle2
 } from "lucide-react";
-import api from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
-import Loading from "../components/Loading";
 import { useData } from "../context/DataContext";
 
 export default function ProfitLoss() {
@@ -24,7 +21,6 @@ export default function ProfitLoss() {
   const { t } = useLang();
   const { sales, expenses } = useData();
 
-  const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState("this_month");
 
   const grossRevenue = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
@@ -48,16 +44,17 @@ export default function ProfitLoss() {
   const isNetPositive = p.netProfit >= 0;
 
   return (
-    <div className="min-h-screen bg-paper pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
       <ScreenHeader title={t("nav_pnl")} />
 
-      <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-        {/* Date Filter Bar */}
-        <div className="flex items-center justify-between gap-2 bg-card p-1.5 rounded-2xl border border-line shadow-sm">
-          <div className="flex items-center gap-2 px-3 text-xs font-bold text-muted">
-            <Calendar size={15} /> Period:
+      <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+        
+        {/* Period Selector Tabs (Luminous Modern Pill Style) */}
+        <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm">
+          <div className="flex items-center gap-2 px-3 text-xs font-bold text-gray-500">
+            <Calendar size={15} className="text-purple-600" /> Period:
           </div>
-          <div className="flex items-center gap-1 text-xs font-semibold">
+          <div className="flex items-center gap-1.5 text-xs font-bold">
             {[
               { id: "this_month", label: "This Month" },
               { id: "last_month", label: "Last Month" },
@@ -66,10 +63,10 @@ export default function ProfitLoss() {
               <button
                 key={item.id}
                 onClick={() => setPeriod(item.id)}
-                className={`px-3 py-1.5 rounded-xl transition ${
+                className={`px-4 py-2 rounded-full transition-all duration-200 ${
                   period === item.id
-                    ? "bg-primary text-white shadow-sm font-bold"
-                    : "text-muted hover:text-ink"
+                    ? "bg-[#D4F06B] text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 {item.label}
@@ -78,110 +75,110 @@ export default function ProfitLoss() {
           </div>
         </div>
 
-        {/* Executive P&L Summary Hero Card */}
+        {/* Luminous Executive P&L Hero Card */}
         <div
-          className={`rounded-3xl border p-6 shadow-2xl space-y-5 transition duration-300 ${
+          className={`rounded-[36px] p-7 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border transition-all duration-300 ${
             isNetPositive
-              ? "bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-900 border-emerald-500/30 text-white"
-              : "bg-gradient-to-br from-red-950 via-slate-900 to-black border-red-500/30 text-white"
+              ? "bg-gray-900 text-white border-gray-800"
+              : "bg-gray-900 text-white border-red-500/40"
           }`}
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center justify-between border-b border-gray-800 pb-4">
             <div>
-              <span className="text-xs font-bold tracking-wider text-white/70 uppercase">
+              <span className="text-[11px] font-extrabold tracking-widest text-[#D4F06B] uppercase">
                 Net Statement Outcome
               </span>
-              <h2 className="font-heading text-2xl md:text-3xl font-black tracking-tight mt-0.5">
-                {isNetPositive ? "Net Profit 🎉" : "Net Loss ⚠️"}
+              <h2 className="font-manrope text-2xl md:text-3xl font-black tracking-tight mt-1 flex items-center gap-2">
+                {isNetPositive ? (
+                  <>Net Income <Sparkles size={22} className="text-[#D4F06B]" /></>
+                ) : (
+                  <>Net Loss <AlertTriangle size={22} className="text-amber-400" /></>
+                )}
               </h2>
             </div>
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${
+              className={`flex h-14 w-14 items-center justify-center rounded-full border ${
                 isNetPositive
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  : "bg-red-500/20 text-red-400 border-red-500/30"
+                  ? "bg-[#D4F06B]/20 text-[#D4F06B] border-[#D4F06B]/30"
+                  : "bg-red-500/20 text-red-400 border-red-500/40"
               }`}
             >
               {isNetPositive ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
             </div>
           </div>
 
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between pt-6">
             <div>
-              <span className="text-xs text-white/60 font-medium">Net Income:</span>
-              <div className="font-heading text-3xl md:text-4xl font-extrabold tabnum mt-1">
+              <span className="text-xs text-gray-400 font-semibold">Net Income:</span>
+              <div className={`font-manrope text-3xl md:text-4xl font-black tabnum mt-1 ${isNetPositive ? "text-white" : "text-red-400"}`}>
                 {rwf(p.netProfit)}
               </div>
             </div>
             <div className="text-right">
-              <span className="text-xs text-white/60 font-medium">Profit Margin:</span>
-              <div className="text-xl font-bold text-emerald-400 tabnum mt-1">
+              <span className="text-xs text-gray-400 font-semibold">Profit Margin:</span>
+              <div className={`text-xl font-extrabold tabnum mt-1 ${isNetPositive ? "text-[#D4F06B]" : "text-red-400"}`}>
                 {p.marginPct}%
               </div>
             </div>
           </div>
 
-          {/* Visual Profit Ratio Bar */}
-          <div className="space-y-1.5 pt-2">
-            <div className="flex items-center justify-between text-xs text-white/70">
+          {/* Luminous Visual Profit Ratio Bar */}
+          <div className="space-y-2 pt-6">
+            <div className="flex items-center justify-between text-xs font-semibold text-gray-300">
               <span>Gross Sales ({rwf(p.grossRevenue)})</span>
               <span>Expenses & COGS ({rwf((p.cogs || 0) + (p.operatingExpenses || 0))})</span>
             </div>
-            <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden flex">
+            <div className="h-3.5 w-full rounded-full bg-gray-800 overflow-hidden flex p-0.5 border border-gray-700/60">
               <div
-                className="bg-emerald-400 h-full rounded-l-full transition-all duration-500"
+                className="bg-[#D4F06B] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, Math.max(10, (p.grossProfit / (p.grossRevenue || 1)) * 100))}%` }}
               />
               <div
-                className="bg-amber-400 h-full transition-all duration-500"
+                className="bg-purple-500 h-full rounded-full transition-all duration-500 ml-1"
                 style={{ width: `${Math.min(100, Math.max(10, (p.operatingExpenses / (p.grossRevenue || 1)) * 100))}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Detailed Financial Breakdown Table */}
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-4">
-          <h3 className="font-heading text-base font-extrabold text-ink">
+        {/* Income Statement Breakdown Table Card */}
+        <div className="rounded-[32px] border border-gray-200/80 bg-white p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] space-y-4">
+          <h3 className="font-manrope text-base font-extrabold text-gray-900">
             Income Statement Breakdown
           </h3>
 
-          <div className="space-y-2 text-xs divide-y divide-line/60">
+          <div className="space-y-3 text-xs font-manrope">
             {/* Revenue */}
-            <div className="flex items-center justify-between py-2.5">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <span className="font-bold text-ink">Gross Sales Revenue</span>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="h-3 w-3 rounded-full bg-[#D4F06B] border border-gray-400" />
+                <span className="font-extrabold text-gray-900">Gross Sales Revenue</span>
               </div>
-              <span className="font-extrabold text-ink tabnum">{rwf(p.grossRevenue)}</span>
+              <span className="font-black text-gray-900 tabnum text-sm">{rwf(p.grossRevenue)}</span>
             </div>
 
             {/* COGS */}
-            <div className="flex items-center justify-between py-2.5">
-              <div className="flex items-center gap-2 pl-4">
-                <span className="text-muted">• Less: Cost of Goods Sold (COGS)</span>
-              </div>
-              <span className="font-bold text-muted tabnum">- {rwf(p.cogs)}</span>
+            <div className="flex items-center justify-between py-2.5 border-b border-gray-100 pl-4">
+              <span className="font-semibold text-gray-500">• Less: Cost of Goods Sold (COGS)</span>
+              <span className="font-bold text-gray-500 tabnum">- {rwf(p.cogs)}</span>
             </div>
 
             {/* Gross Profit Subtotal */}
-            <div className="flex items-center justify-between py-3 bg-paper px-3 rounded-xl">
-              <span className="font-bold text-ink uppercase tracking-wider">Gross Profit</span>
-              <span className="font-extrabold text-emerald-700 tabnum">{rwf(p.grossProfit)}</span>
+            <div className="flex items-center justify-between py-3.5 bg-[#F4FBE4] px-4 rounded-2xl border border-[#D4F06B]/50">
+              <span className="font-extrabold text-gray-900 uppercase tracking-wider text-[11px]">Gross Profit</span>
+              <span className="font-black text-gray-900 tabnum text-sm">{rwf(p.grossProfit)}</span>
             </div>
 
             {/* Operating Expenses */}
-            <div className="flex items-center justify-between py-2.5">
-              <div className="flex items-center gap-2 pl-4">
-                <span className="text-muted">• Less: Operating Expenses</span>
-              </div>
-              <span className="font-bold text-muted tabnum">- {rwf(p.operatingExpenses)}</span>
+            <div className="flex items-center justify-between py-2.5 border-b border-gray-100 pl-4">
+              <span className="font-semibold text-gray-500">• Less: Operating Expenses</span>
+              <span className="font-bold text-gray-500 tabnum">- {rwf(p.operatingExpenses)}</span>
             </div>
 
             {/* Net Income Final */}
-            <div className="flex items-center justify-between pt-3 pb-1 border-t-2 border-line">
-              <span className="font-heading text-sm font-black text-ink uppercase">Net Profit / (Loss)</span>
-              <span className={`font-heading text-base font-black tabnum ${isNetPositive ? "text-emerald-600" : "text-danger"}`}>
+            <div className="flex items-center justify-between pt-4 pb-1">
+              <span className="font-manrope text-sm font-black text-gray-900 uppercase">Net Profit / (Loss)</span>
+              <span className={`font-manrope text-lg font-black tabnum ${isNetPositive ? "text-emerald-600" : "text-red-500"}`}>
                 {rwf(p.netProfit)}
               </span>
             </div>
@@ -192,26 +189,27 @@ export default function ProfitLoss() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate("/sell")}
-            className="flex items-center justify-between p-4 rounded-2xl border border-line bg-card hover:border-primary/50 transition cursor-pointer shadow-card group"
+            className="flex items-center justify-between p-5 rounded-[28px] border border-gray-200/80 bg-white hover:border-[#D4F06B] hover:shadow-md transition cursor-pointer text-left group"
           >
             <div>
-              <span className="text-xs font-bold text-ink group-hover:text-primary transition">Sales Transactions</span>
-              <p className="text-[11px] text-muted">{p.salesCount || 0} sales recorded</p>
+              <span className="text-xs font-extrabold text-gray-900 group-hover:text-purple-600 transition">Sales Transactions</span>
+              <p className="text-[11px] text-gray-500 mt-0.5">{p.salesCount || 0} sales recorded</p>
             </div>
-            <ArrowUpRight size={18} className="text-muted group-hover:text-primary" />
+            <ArrowUpRight size={18} className="text-gray-400 group-hover:text-gray-900 transition" />
           </button>
 
           <button
             onClick={() => navigate("/expenses")}
-            className="flex items-center justify-between p-4 rounded-2xl border border-line bg-card hover:border-primary/50 transition cursor-pointer shadow-card group"
+            className="flex items-center justify-between p-5 rounded-[28px] border border-gray-200/80 bg-white hover:border-[#D4F06B] hover:shadow-md transition cursor-pointer text-left group"
           >
             <div>
-              <span className="text-xs font-bold text-ink group-hover:text-primary transition">Expenses Entries</span>
-              <p className="text-[11px] text-muted">{p.expenseCount || 0} expenses recorded</p>
+              <span className="text-xs font-extrabold text-gray-900 group-hover:text-purple-600 transition">Expenses Entries</span>
+              <p className="text-[11px] text-gray-500 mt-0.5">{p.expenseCount || 0} expenses recorded</p>
             </div>
-            <ArrowUpRight size={18} className="text-muted group-hover:text-primary" />
+            <ArrowUpRight size={18} className="text-gray-400 group-hover:text-gray-900 transition" />
           </button>
         </div>
+
       </div>
     </div>
   );
