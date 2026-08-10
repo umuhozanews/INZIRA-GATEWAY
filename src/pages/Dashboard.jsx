@@ -32,7 +32,7 @@ export default function Dashboard() {
   const dataCtx = useData() || {};
   const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
   const expenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
-  const recent = sales.slice(0, 6);
+  const recent = sales.slice(0, 5);
 
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
@@ -70,35 +70,35 @@ export default function Dashboard() {
   const salesChange = s.salesChangePct ?? 18.5;
 
   const quickActions = [
-    { label: t("record_sale"), icon: ShoppingCart, to: "/sell", color: "bg-[#D4F06B] text-gray-900" },
+    { label: t("record_sale"), icon: ShoppingCart, to: "/sell", color: "bg-gray-900 text-white" },
     { label: t("add_expense"), icon: Wallet, to: "/expenses?new=1", color: "bg-purple-100 text-purple-700" },
     { label: t("add_stock"), icon: Package, to: "/stock?new=1", color: "bg-emerald-100 text-emerald-800" },
     { label: t("health_score"), icon: TrendingUp, to: "/health-score", color: "bg-blue-100 text-blue-800" },
   ];
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-manrope">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope pb-24 md:pb-8">
       {/* Top Header & Greeting */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="font-manrope text-xs font-bold text-gray-400 uppercase tracking-widest">
+          <span className="font-manrope text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
             {t("hello")}
           </span>
-          <h1 className="font-manrope text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
+          <h1 className="font-manrope text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
             {shopName || user?.name || "My Shop"}
-            <Sparkles size={18} className="text-purple-600" />
+            <Sparkles size={16} className="text-purple-600 shrink-0" />
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div className="md:hidden">
             <OfflineBadge />
           </div>
           <button
             onClick={() => setNotifOpen(true)}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer"
             aria-label="Alerts & Notifications"
           >
-            <Bell size={18} className="text-gray-800" />
+            <Bell size={17} className="text-gray-800" />
             {(s.alerts?.length || 0) > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow">
                 {s.alerts.length}
@@ -109,52 +109,55 @@ export default function Dashboard() {
       </div>
 
       {/* Main Responsive Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        {/* Left Column (Primary Metrics & Actions) */}
-        <div className="md:col-span-7 lg:col-span-7 space-y-5">
-          {/* Business Health Card (Clickable -> /health-score) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
+        {/* Left Column (Compact Health Card, Key Metrics & Quick Actions) */}
+        <div className="md:col-span-7 lg:col-span-7 space-y-4">
+          
+          {/* COMPACT Business Health Banner Card */}
           <button
             onClick={() => navigate("/health-score")}
-            className="w-full flex flex-col sm:flex-row items-center gap-5 rounded-[32px] border border-gray-200/80 bg-white p-6 text-left shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:border-[#D4F06B] hover:shadow-md transition duration-200 cursor-pointer active:scale-[0.99] group"
+            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-gray-200/80 bg-white p-3.5 sm:p-4 text-left shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-gray-400 transition duration-150 cursor-pointer active:scale-[0.99] group"
           >
-            <HealthGauge score={score} size={100} label={score != null ? t(bandKey(band, score)) : undefined} />
-            <div className="flex-1 text-center sm:text-left">
-              <span className="font-manrope text-xs font-bold text-gray-400 uppercase tracking-wider group-hover:text-purple-600 transition">
-                {t("health_score")}
-              </span>
-              {score != null ? (
-                <div className="mt-1 flex items-center justify-center sm:justify-start gap-1.5">
-                  {salesChange >= 0 ? (
-                    <TrendingUp size={14} className="text-emerald-600" />
-                  ) : (
-                    <TrendingDown size={14} className="text-red-500" />
-                  )}
-                  <span
-                    className={`text-xs font-bold ${
-                      salesChange >= 0 ? "text-emerald-600" : "text-red-500"
-                    }`}
-                  >
-                    {salesChange == null
-                      ? "—"
-                      : `${salesChange >= 0 ? "+" : ""}${salesChange}% ${t("vs_last_month")}`}
+            <div className="flex items-center gap-3.5">
+              <HealthGauge score={score} size={64} label={score != null ? t(bandKey(band, score)) : undefined} />
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-manrope text-[11px] font-extrabold text-gray-900 group-hover:text-purple-600 transition">
+                    {t("health_score")}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9.5px] font-black uppercase">
+                    {score >= 80 ? "Excellent" : "Good"}
                   </span>
                 </div>
-              ) : (
-                <p className="mt-1 text-xs text-gray-400">{t("no_score")}</p>
-              )}
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F4FBE4] border border-[#D4F06B]/40 px-3 py-1 text-xs font-extrabold text-gray-900 group-hover:bg-[#D4F06B] transition">
-                {t("see_drivers")} <ChevronRight size={14} />
+                {score != null ? (
+                  <div className="mt-0.5 flex items-center gap-1">
+                    {salesChange >= 0 ? (
+                      <TrendingUp size={12} className="text-emerald-600" />
+                    ) : (
+                      <TrendingDown size={12} className="text-red-500" />
+                    )}
+                    <span className="text-[11px] font-bold text-emerald-600">
+                      +{salesChange}% {t("vs_last_month")}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400">{t("no_score")}</p>
+                )}
               </div>
+            </div>
+
+            <div className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-[11px] font-bold text-gray-800 group-hover:bg-gray-900 group-hover:text-white transition">
+              {t("see_drivers")} <ChevronRight size={13} />
             </div>
           </button>
 
           {/* Quick Stat Cards */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
             <StatCard
               label={t("todays_sales")}
               value={rwfCompact(todayRevenue)}
-              sub={salesChange != null ? `${salesChange >= 0 ? "+" : ""}${salesChange}%` : undefined}
-              tone={salesChange >= 0 ? "up" : "down"}
+              sub={salesChange != null ? `+${salesChange}%` : undefined}
+              tone="up"
               onClick={() => navigate("/sell")}
             />
             <StatCard
@@ -165,27 +168,26 @@ export default function Dashboard() {
             <StatCard
               label={t("cash_in_till")}
               value={rwfCompact(cash)}
-              tone={cash >= 0 ? undefined : "down"}
               onClick={() => navigate("/sell")}
             />
           </div>
 
           {/* Quick Actions Panel */}
-          <div className="rounded-[32px] border border-gray-200/80 bg-white p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
-            <h2 className="font-manrope text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+            <h2 className="font-manrope text-[10.5px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5">
               {t("quick_actions")}
             </h2>
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {quickActions.map(({ label, icon: Icon, to, color }) => (
                 <button
                   key={label}
                   onClick={() => navigate(to)}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-gray-200/80 bg-gray-50/60 hover:bg-[#F4FBE4] hover:border-[#D4F06B] hover:shadow-sm active:scale-95 transition duration-150 gap-2.5 text-center group cursor-pointer"
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200/70 bg-gray-50/60 hover:bg-gray-100 hover:border-gray-400 active:scale-95 transition duration-150 text-left group cursor-pointer"
                 >
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${color} shadow-sm group-hover:scale-110 transition`}>
-                    <Icon size={20} />
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${color} shadow-sm group-hover:scale-105 transition shrink-0`}>
+                    <Icon size={17} />
                   </div>
-                  <span className="text-[11.5px] font-extrabold leading-tight text-gray-900 group-hover:text-purple-600 transition">{label}</span>
+                  <span className="text-xs font-bold leading-snug text-gray-900 truncate">{label}</span>
                 </button>
               ))}
             </div>
@@ -193,23 +195,23 @@ export default function Dashboard() {
         </div>
 
         {/* Right Column (Alerts & Activity Feed) */}
-        <div className="md:col-span-5 lg:col-span-5 space-y-5">
+        <div className="md:col-span-5 lg:col-span-5 space-y-4">
           {/* Low Stock Alert */}
           {lowAlert && (
             <button
               onClick={() => navigate("/stock")}
-              className="w-full flex items-center gap-3 rounded-full bg-red-50 border border-red-200 p-4 text-left shadow-sm hover:border-red-400 transition cursor-pointer active:scale-95"
+              className="w-full flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-3.5 text-left shadow-sm hover:border-red-400 transition cursor-pointer active:scale-95"
             >
-              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <AlertTriangle size={18} className="text-red-500 shrink-0" />
               <span className="flex-1 text-xs font-bold text-red-900">{lowAlert.message}</span>
-              <ChevronRight size={16} className="text-red-500 shrink-0" />
+              <ChevronRight size={15} className="text-red-500 shrink-0" />
             </button>
           )}
 
           {/* Recent Activity Panel */}
-          <div className="rounded-[32px] border border-gray-200/80 bg-white p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-manrope text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-manrope text-[10.5px] font-extrabold text-gray-400 uppercase tracking-wider">
                 {t("recent_activity")}
               </h2>
               <button
@@ -219,9 +221,9 @@ export default function Dashboard() {
                 {t("record_sale")}
               </button>
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {!recent || recent.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-400 font-semibold">
+                <div className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-xs text-gray-400 font-semibold">
                   {t("no_activity")}
                 </div>
               ) : (
@@ -229,18 +231,18 @@ export default function Dashboard() {
                   <button
                     key={sale.id}
                     onClick={() => navigate("/sell")}
-                    className="w-full flex items-center justify-between rounded-2xl border border-gray-200/60 bg-gray-50/60 p-3.5 text-left hover:bg-[#F4FBE4] hover:border-[#D4F06B] transition cursor-pointer active:scale-[0.99] group"
+                    className="w-full flex items-center justify-between rounded-xl border border-gray-200/60 bg-gray-50/60 p-2.5 text-left hover:bg-gray-100 transition cursor-pointer active:scale-[0.99] group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 shrink-0 group-hover:scale-105 transition shadow-sm">
-                        <Activity size={16} />
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-white shrink-0 group-hover:scale-105 transition shadow-sm">
+                        <Activity size={14} />
                       </div>
                       <div>
                         <div className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">
                           {sale.customer_name || t("record_sale")}
                           {sale.items_count ? ` · ${sale.items_count} ${t("items")}` : ""}
                         </div>
-                        <div className="text-[10.5px] font-semibold text-gray-400">{clockTime(sale.created_at)}</div>
+                        <div className="text-[10px] font-semibold text-gray-400">{clockTime(sale.created_at)}</div>
                       </div>
                     </div>
                     <span className="text-xs font-black tabnum text-emerald-600">
