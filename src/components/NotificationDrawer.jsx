@@ -5,107 +5,110 @@ import {
   X,
   TrendingUp,
   AlertTriangle,
-  CheckCircle2,
   Package,
-  ShoppingCart,
   ArrowUpRight,
   Sparkles,
   BarChart2,
-  Calendar,
-  Layers,
-  ChevronRight
+  ChevronRight,
+  CheckCircle,
 } from "lucide-react";
 import { rwf, rwfCompact } from "../lib/format";
 import HealthGauge from "./HealthGauge";
+import { useData } from "../context/DataContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function NotificationDrawer({ open, onClose, stats }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'alerts' | 'analytics'
+  const { user } = useAuth();
+  const dataCtx = useData() || {};
+
+  const userStock = Array.isArray(dataCtx.stock) ? dataCtx.stock : [];
+  const userSales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
+  const userExpenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
+
+  const [activeTab, setActiveTab] = useState("all");
   const [readIds, setReadIds] = useState(new Set());
 
-  // Generate dynamic notification items based on live stats or fallback smart data
-  const rawAlerts = stats?.alerts || [];
-  const todayRevenue = stats?.todayRevenue ?? 35000;
-  const healthScore = stats?.healthScore?.score ?? 78;
-  const salesChange = stats?.salesChangePct ?? 14.5;
+  // User-specific metrics calculation
+  const todayRevenue = userSales.reduce((sum, sa) => sum + (Number(sa.total_amount) || 0), 0);
+  const todayExpensesSum = userExpenses.reduce((sum, ex) => sum + (Number(ex.amount_rwf) || 0), 0);
+  const lowStockItems = userStock.filter(
+    (i) => (Number(i.quantity) || 0) <= (Number(i.low_stock_threshold) || 5)
+  );
 
-  const mockWeeklySales = [
-    { day: "Mon", rev: 18000, height: "45%" },
-    { day: "Tue", rev: 24000, height: "60%" },
-    { day: "Wed", rev: 15000, height: "38%" },
-    { day: "Thu", rev: 32000, height: "80%" },
-    { day: "Fri", rev: 28000, height: "70%" },
-    { day: "Sat", rev: 42000, height: "100%" },
-    { day: "Sun", rev: todayRevenue, height: `${Math.min(100, Math.max(25, (todayRevenue / 42000) * 100))}%` },
-  ];
+  const hasData = userSales.length > 0;
+  const healthScore = hasData ? (stats?.healthScore?.score ?? 82) : null;
 
+  // Build dynamic notifications generated strictly from current user's actual data
   const notifications = useMemo(() => {
-    const list = [
-      {
-        id: "alert-low-stock-1",
+    const list = [];
+
+    // 1. Dynamic Low Stock Alerts for Logged-In User
+    lowStockItems.slice(0, 5).forEach((item, idx) => {
+      const isOut = (Number(item.quantity) || 0) === 0;
+      list.push({
+        id: `user-low-stock-${item.id || idx}`,
         type: "alert",
         icon: AlertTriangle,
-        iconBg: "bg-amber-100 text-amber-700 border-amber-200",
-        title: "Low Stock Alert: Sugar 1kg",
-        desc: "Only 8 units left in store (below threshold of 10).",
-        time: "10m ago",
+        iconBg: isOut
+          ? "bg-red-100 text-red-700 border-red-200"
+          : "bg-amber-100 text-amber-700 border-amber-200",
+        title: isOut
+          ? `Out of Stock: ${item.name}`
+          : `Low Stock Alert: ${item.name}`,
+        desc: isOut
+          ? `0 ${item.unit || "pcs"} left in store. Add stock to continue selling.`
+          : `Only ${item.quantity} ${item.unit || "pcs"} left in store (below threshold of ${item.low_stock_threshold || 5}).`,
+        time: "Active alert",
         actionLabel: "Restock Now",
         actionTo: "/stock",
-      },
-      {
-        id: "milestone-sales-1",
+      });
+    });
+
+    // 2. Dynamic Sales Performance Notification for Logged-In User
+    if (userSales.length > 0) {
+      list.push({
+        id: "user-sales-today",
         type: "analytics",
         icon: TrendingUp,
         iconBg: "bg-emerald-100 text-emerald-700 border-emerald-200",
-        title: `Sales Surge (+${salesChange}% Growth)`,
-        desc: `Today's revenue reached ${rwf(todayRevenue)}. Great performance!`,
-        time: "1h ago",
+        title: `Today's Revenue: ${rwf(todayRevenue)} RWF`,
+        desc: `Recorded ${userSales.length} sales today. Net cash balance: ${rwf(todayRevenue - todayExpensesSum)} RWF.`,
+        time: "Today",
         actionLabel: "View Sales",
         actionTo: "/sell",
-      },
-      {
-        id: "health-insight-1",
+      });
+    } else {
+      list.push({
+        id: "user-welcome-start",
+        type: "analytics",
+        icon: Sparkles,
+        iconBg: "bg-purple-100 text-purple-700 border-purple-200",
+        title: `Welcome, ${user?.name || "Merchant"}!`,
+        desc: `Your account for "${user?.shop_name || "My Shop"}" is settled. Record your first sale to see live revenue insights.`,
+        time: "Just now",
+        actionLabel: "Record Sale",
+        actionTo: "/sell",
+      });
+    }
+
+    // 3. Dynamic Health Score Status for Logged-In User
+    if (hasData && healthScore !== null) {
+      list.push({
+        id: "user-health-score",
         type: "analytics",
         icon: Sparkles,
         iconBg: "bg-blue-100 text-blue-700 border-blue-200",
         title: `Business Health Score: ${healthScore}/100`,
-        desc: "Your stock efficiency is strong. Check recommendations to boost SACCO credit.",
-        time: "3h ago",
+        desc: "Your transaction credit health status is active. Check factors to boost SACCO credit.",
+        time: "Today",
         actionLabel: "View Health Score",
         actionTo: "/health-score",
-      },
-      {
-        id: "supplier-notice-1",
-        type: "alert",
-        icon: Package,
-        iconBg: "bg-purple-100 text-purple-700 border-purple-200",
-        title: "Supplier Restock Reminder",
-        desc: "Inyange Industries catalog updated. Check low stock items.",
-        time: "Yesterday",
-        actionLabel: "Suppliers",
-        actionTo: "/suppliers",
-      },
-    ];
-
-    // Append any extra live alerts from props
-    rawAlerts.forEach((a, i) => {
-      if (!list.some((item) => item.id === `live-${i}`)) {
-        list.unshift({
-          id: `live-${i}`,
-          type: "alert",
-          icon: AlertTriangle,
-          iconBg: "bg-red-100 text-red-700 border-red-200",
-          title: "Critical Alert",
-          desc: a.message,
-          time: "Just now",
-          actionLabel: "View",
-          actionTo: "/stock",
-        });
-      }
-    });
+      });
+    }
 
     return list;
-  }, [rawAlerts, todayRevenue, healthScore, salesChange]);
+  }, [lowStockItems, userSales, todayRevenue, todayExpensesSum, user, hasData, healthScore]);
 
   const markAllRead = () => {
     setReadIds(new Set(notifications.map((n) => n.id)));
@@ -122,38 +125,38 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-manrope">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-ink/50 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Sheet Content Container */}
-      <div className="relative w-full max-w-lg rounded-t-[28px] sm:rounded-3xl bg-card border border-line shadow-2xl overflow-hidden db-rise max-h-[90vh] flex flex-col">
-        {/* Top Sticky Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-card/95 px-5 py-4 backdrop-blur">
+      <div className="relative w-full max-w-lg rounded-t-[28px] sm:rounded-[32px] bg-white border border-gray-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Top Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-4 backdrop-blur">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-xlt text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm">
               <Bell size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-heading text-lg font-extrabold text-ink">
+                <h3 className="text-base font-extrabold text-gray-900">
                   Notification Center
                 </h3>
                 {unreadCount > 0 && (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
+                  <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-black text-white">
                     {unreadCount} new
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted">Insights, alerts & performance graphs</p>
+              <p className="text-xs text-gray-500 font-semibold">{user?.shop_name || "My Shop"} Alerts & Insights</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-paper text-muted hover:text-ink hover:bg-line/50 transition cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
@@ -161,107 +164,60 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto p-5 space-y-5 flex-1">
-          {/* Visual Analytics & Sales Performance Graphs Card */}
-          <div className="rounded-2xl border border-line bg-paper p-4 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BarChart2 size={18} className="text-primary" />
-                <span className="font-heading text-sm font-bold text-ink">
-                  7-Day Sales Trend
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <TrendingUp size={12} /> +{salesChange}%
-              </span>
-            </div>
-
-            {/* Interactive Bar Graph */}
-            <div className="flex items-end justify-between gap-2 pt-4 pb-1 px-1 h-32 border-b border-line/60">
-              {mockWeeklySales.map((item, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  {/* Tooltip */}
-                  <div className="absolute -top-8 hidden group-hover:flex items-center justify-center bg-ink text-white text-[10px] font-bold py-1 px-1.5 rounded shadow z-20 whitespace-nowrap">
-                    {rwfCompact(item.rev)}
-                  </div>
-                  <div className="w-full bg-line/40 rounded-t-lg overflow-hidden h-24 flex items-end">
-                    <div
-                      className={`w-full rounded-t-lg transition-all duration-500 group-hover:brightness-110 ${
-                        idx === mockWeeklySales.length - 1
-                          ? "bg-gradient-to-t from-primary to-emerald-400 shadow-md"
-                          : "bg-gradient-to-t from-primary/70 to-primary/90"
-                      }`}
-                      style={{ height: item.height }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-semibold text-muted group-hover:text-primary transition">
-                    {item.day}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-muted font-medium">Total 7-Day Revenue:</span>
-              <span className="font-heading font-extrabold text-primary tabnum">
-                {rwf(159000 + todayRevenue)}
-              </span>
-            </div>
-          </div>
-
+        <div className="overflow-y-auto p-5 space-y-4 flex-1">
           {/* Quick Business Health Metric Bar */}
           <div
             onClick={() => {
               onClose();
               navigate("/health-score");
             }}
-            className="flex items-center justify-between p-3.5 rounded-2xl border border-line bg-card hover:border-primary/50 transition cursor-pointer group shadow-sm"
+            className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 bg-white hover:border-gray-400 transition cursor-pointer group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <HealthGauge score={healthScore} size={48} showLabel={false} />
               <div>
-                <span className="text-xs font-bold text-ink group-hover:text-primary transition flex items-center gap-1">
+                <span className="text-xs font-black text-gray-900 group-hover:text-purple-600 transition flex items-center gap-1">
                   Business Health Gauge <ChevronRight size={14} />
                 </span>
-                <span className="text-[11px] text-muted block">
-                  Score: {healthScore}/100 · Strong Credit Status
+                <span className="text-[11px] text-gray-500 font-semibold block">
+                  {hasData ? `Score: ${healthScore}/100` : "New Account Setup"}
                 </span>
               </div>
             </div>
-            <span className="text-xs font-bold text-primary underline group-hover:no-underline">
+            <span className="text-xs font-extrabold text-purple-600 underline group-hover:no-underline">
               Analyze
             </span>
           </div>
 
           {/* Tabs Filter & Mark All Read */}
-          <div className="flex items-center justify-between gap-2 pt-2">
-            <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-line text-xs font-semibold">
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full border border-gray-200 text-xs font-bold">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-3 py-1.5 rounded-lg transition ${
+                className={`px-3 py-1.5 rounded-full transition ${
                   activeTab === "all"
-                    ? "bg-card text-ink shadow-sm font-bold"
-                    : "text-muted hover:text-ink"
+                    ? "bg-white text-gray-900 shadow-sm font-black"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 All ({notifications.length})
               </button>
               <button
                 onClick={() => setActiveTab("alerts")}
-                className={`px-3 py-1.5 rounded-lg transition ${
+                className={`px-3 py-1.5 rounded-full transition ${
                   activeTab === "alerts"
-                    ? "bg-card text-ink shadow-sm font-bold"
-                    : "text-muted hover:text-ink"
+                    ? "bg-white text-gray-900 shadow-sm font-black"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
-                Alerts
+                Alerts ({lowStockItems.length})
               </button>
               <button
                 onClick={() => setActiveTab("analytics")}
-                className={`px-3 py-1.5 rounded-lg transition ${
+                className={`px-3 py-1.5 rounded-full transition ${
                   activeTab === "analytics"
-                    ? "bg-card text-ink shadow-sm font-bold"
-                    : "text-muted hover:text-ink"
+                    ? "bg-white text-gray-900 shadow-sm font-black"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 Analytics
@@ -271,7 +227,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="text-[11px] font-bold text-primary hover:underline"
+                className="text-[11px] font-extrabold text-purple-600 hover:underline"
               >
                 Mark all read
               </button>
@@ -281,8 +237,10 @@ export default function NotificationDrawer({ open, onClose, stats }) {
           {/* Notifications List */}
           <div className="space-y-3">
             {filteredNotifications.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-dashed border-line text-xs text-muted">
-                No notifications in this category.
+              <div className="p-8 text-center rounded-2xl border border-dashed border-gray-200 text-xs font-semibold text-gray-400 space-y-2">
+                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-1" />
+                <p className="font-bold text-gray-900">All clear!</p>
+                <p>No active notifications or low stock alerts for this account.</p>
               </div>
             ) : (
               filteredNotifications.map((item) => {
@@ -294,8 +252,8 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                     key={item.id}
                     className={`relative p-4 rounded-2xl border transition duration-200 ${
                       isRead
-                        ? "bg-card/60 border-line/60 opacity-80"
-                        : "bg-card border-line shadow-card hover:border-primary/40"
+                        ? "bg-gray-50/60 border-gray-100 opacity-80"
+                        : "bg-white border-gray-200 shadow-sm hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -306,12 +264,12 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-ink">{item.title}</h4>
-                          <span className="text-[10px] font-medium text-muted">
+                          <h4 className="text-xs font-black text-gray-900">{item.title}</h4>
+                          <span className="text-[10px] font-semibold text-gray-400">
                             {item.time}
                           </span>
                         </div>
-                        <p className="text-xs text-muted leading-relaxed">{item.desc}</p>
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed">{item.desc}</p>
 
                         {/* Action Link Button */}
                         {item.actionLabel && (
@@ -322,7 +280,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                                 onClose();
                                 navigate(item.actionTo);
                               }}
-                              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-primary hover:underline cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] font-black text-purple-600 hover:underline cursor-pointer"
                             >
                               {item.actionLabel} <ArrowUpRight size={14} />
                             </button>
@@ -338,10 +296,10 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-line bg-card p-4 text-center">
+        <div className="border-t border-gray-100 bg-white p-4 text-center">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-paper hover:bg-line/40 text-xs font-bold text-ink transition"
+            className="w-full py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-900 transition cursor-pointer"
           >
             Close Notification Center
           </button>
