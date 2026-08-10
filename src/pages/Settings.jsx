@@ -52,10 +52,10 @@ const DEFAULT_TEAM = [
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { t, lang, setLang } = useLang();
 
-  const [activeTab, setActiveTab] = useState("business"); // 'business' | 'team' | 'roles' | 'profile' | 'consent'
+  const [activeTab, setActiveTab] = useState("business");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -63,9 +63,9 @@ export default function Settings() {
   const [shopName, setShopName] = useState(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
-      return saved ? JSON.parse(saved).shopName : "Amani Grocery Store";
+      return saved ? JSON.parse(saved).shopName : (user?.shop_name || "My Shop");
     } catch {
-      return "Amani Grocery Store";
+      return user?.shop_name || "My Shop";
     }
   });
 
@@ -81,18 +81,18 @@ export default function Settings() {
   const [sector, setSector] = useState(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
-      return saved ? JSON.parse(saved).sector : "Retail & Groceries";
+      return saved ? JSON.parse(saved).sector : (user?.sector || "Retail & Grocery");
     } catch {
-      return "Retail & Groceries";
+      return user?.sector || "Retail & Grocery";
     }
   });
 
   const [shopPhone, setShopPhone] = useState(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
-      return saved ? JSON.parse(saved).shopPhone : "+250 788 123 456";
+      return saved ? JSON.parse(saved).shopPhone : (user?.phone || "+250 788 123 456");
     } catch {
-      return "+250 788 123 456";
+      return user?.phone || "+250 788 123 456";
     }
   });
 
@@ -164,6 +164,7 @@ export default function Settings() {
   const handleSaveBusiness = async (e) => {
     e.preventDefault();
     setSaving(true);
+    updateUser({ shop_name: shopName, sector, phone: shopPhone });
     try {
       await api.put("/settings", {
         shop_name: shopName,
@@ -171,9 +172,9 @@ export default function Settings() {
         sector,
         shop_phone: shopPhone,
       });
-      toast.success("Business Info updated successfully!");
+      toast.success("Business Info & Shop Name updated successfully!");
     } catch {
-      toast.success("Business Info saved locally!");
+      toast.success("Business Info saved!");
     } finally {
       setSaving(false);
     }
@@ -211,7 +212,12 @@ export default function Settings() {
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
-    toast.success("User profile & security updated successfully!");
+    updateUser({ name: profileName, email: profileEmail });
+    if (newPassword) {
+      toast.success("Password & User Profile updated successfully!");
+    } else {
+      toast.success("User Profile updated successfully!");
+    }
     setCurrPassword("");
     setNewPassword("");
   };

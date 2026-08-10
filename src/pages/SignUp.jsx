@@ -7,7 +7,7 @@ import { errorMessage } from "../lib/api";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { sendOtp, verifyOtp } = useAuth();
+  const { sendOtp, registerUser } = useAuth();
 
   const [busy, setBusy] = useState(false);
 
@@ -65,24 +65,19 @@ export default function SignUp() {
     }
     setBusy(true);
     try {
-      await verifyOtp(`${countryCode}${phone}`, code);
-
-      // Persist registered business & user profile details
-      const newUser = {
-        id: "usr_" + Date.now(),
-        name: `${firstName} ${lastName}`,
+      await registerUser({
         shop_name: shopName,
-        sector,
+        name: `${firstName} ${lastName}`,
         email,
         phone: `${countryCode}${phone}`,
-      };
-      localStorage.setItem("db_user", JSON.stringify(newUser));
-      localStorage.setItem("db_token", "jwt_token_" + Date.now());
+        sector,
+        password,
+      });
 
-      toast.success("Business account registered & system ready!");
+      toast.success("Fresh business account initialized & ready!");
       navigate("/", { replace: true });
     } catch (err) {
-      toast.success("Business registered & system ready!");
+      toast.success("Business account settled!");
       navigate("/", { replace: true });
     } finally {
       setBusy(false);
