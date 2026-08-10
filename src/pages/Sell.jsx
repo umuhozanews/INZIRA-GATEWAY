@@ -196,6 +196,26 @@ export default function Sell() {
     });
   };
 
+  const updateCartQty = (item, newQtyVal) => {
+    const parsed = parseInt(newQtyVal, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      setCart((c) => {
+        const next = { ...c };
+        delete next[item.id];
+        return next;
+      });
+      return;
+    }
+
+    const max = item.is_custom ? 9999 : (Number(item.quantity) || 9999);
+    const finalQty = Math.min(parsed, max);
+
+    setCart((c) => ({
+      ...c,
+      [item.id]: { item, qty: finalQty },
+    }));
+  };
+
   const clearCart = () => setCart({});
 
   // Handle adding custom manual text item
@@ -464,17 +484,29 @@ export default function Sell() {
                           </div>
                         </button>
                         {inCart > 0 ? (
-                          <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-2.5 py-1.5">
+                          <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-2 py-1.5 gap-1">
                             <button
+                              type="button"
                               onClick={() => decFromCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 shrink-0"
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="text-xs font-black tabnum text-gray-900">{inCart}</span>
+
+                            <input
+                              type="number"
+                              min="1"
+                              max={p.quantity || 9999}
+                              value={inCart}
+                              onChange={(e) => updateCartQty(p, e.target.value)}
+                              className="w-12 text-center text-xs font-black tabnum text-gray-900 bg-white border border-gray-300 rounded-lg py-1 px-0 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                              title="Type quantity manually"
+                            />
+
                             <button
+                              type="button"
                               onClick={() => addToCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800 shrink-0"
                             >
                               <Plus size={14} />
                             </button>
@@ -802,19 +834,30 @@ export default function Sell() {
                       {rwf(item.sell_price_rwf)} RWF x {qty}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      type="button"
                       onClick={() => decFromCart(item)}
-                      className="h-6 w-6 flex items-center justify-center rounded-md bg-card border border-line text-ink"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100"
                     >
-                      <Minus size={12} />
+                      <Minus size={13} />
                     </button>
-                    <span className="text-xs font-bold tabnum text-ink">{qty}</span>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={qty}
+                      onChange={(e) => updateCartQty(item, e.target.value)}
+                      className="w-12 text-center text-xs font-black tabnum text-gray-900 bg-white border border-gray-300 rounded-lg py-1 px-0 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                      title="Type quantity manually"
+                    />
+
                     <button
+                      type="button"
                       onClick={() => addToCart(item)}
-                      className="h-6 w-6 flex items-center justify-center rounded-md bg-primary text-white"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800"
                     >
-                      <Plus size={12} />
+                      <Plus size={13} />
                     </button>
                   </div>
                 </div>
