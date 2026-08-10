@@ -10,14 +10,14 @@ import {
   Wallet,
   Package,
   Activity,
-  Sparkles
+  Sparkles,
+  Globe
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
 import { rwfCompact, rwf, clockTime } from "../lib/format";
 import { bandKey } from "../lib/score";
-import OfflineBadge from "../components/OfflineBadge";
 import HealthGauge from "../components/HealthGauge";
 import StatCard from "../components/StatCard";
 import Loading from "../components/Loading";
@@ -27,7 +27,7 @@ import { useData } from "../context/DataContext";
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useLang();
+  const { t, lang, toggle } = useLang();
 
   const dataCtx = useData() || {};
   const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
@@ -92,10 +92,17 @@ export default function Dashboard() {
             <Sparkles size={16} className="text-purple-600 shrink-0" />
           </h1>
         </div>
-        <div className="flex items-center gap-2.5">
-          <div className="md:hidden">
-            <OfflineBadge />
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Language Translation Toggle Button */}
+          <button
+            onClick={toggle}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer text-xs font-black text-gray-900"
+            title="Switch Language / Hindura Ururimi"
+          >
+            <Globe size={15} className="text-purple-600 shrink-0" />
+            <span>{lang === "en" ? "EN 🇺🇸" : "RW 🇷🇼"}</span>
+          </button>
+
           <button
             onClick={() => setNotifOpen(true)}
             className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer"
