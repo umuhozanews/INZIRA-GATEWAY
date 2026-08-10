@@ -49,29 +49,32 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  // Initialize brand new fresh business account (clearing demo data for new user)
+  // Initialize brand new fresh business account with custom stock, currency, workers
   const registerUser = useCallback(
-    async ({ shop_name, name, email, phone, sector, password }) => {
+    async ({ shop_name, name, email, phone, sector, currency, password, initialStock = [], initialWorkers = [] }) => {
       const newUser = {
         id: "usr_" + Date.now(),
         name,
         shop_name,
         sector: sector || "Retail & Grocery",
+        currency: currency || "RWF",
         email,
         phone,
       };
 
-      // Reset data to brand new fresh state for the new user account
+      // Store initial user settings, team, and custom stock
       localStorage.setItem(
         SETTINGS_KEY,
         JSON.stringify({
           shopName: shop_name,
+          currency: currency || "RWF",
           shopAddress: "Kigali, Rwanda",
           sector: sector || "Retail & Grocery",
           shopPhone: phone,
         })
       );
-      localStorage.setItem(TEAM_KEY, JSON.stringify([]));
+      localStorage.setItem(TEAM_KEY, JSON.stringify(initialWorkers));
+      localStorage.setItem(DB_STOCK_KEY, JSON.stringify(initialStock));
       localStorage.setItem(DB_SALES_KEY, JSON.stringify([]));
       localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify([]));
 
@@ -82,11 +85,13 @@ export function AuthProvider({ children }) {
           email,
           phone,
           sector,
+          currency,
           password,
+          initialStock,
+          initialWorkers,
         });
         return persist(data);
       } catch (err) {
-        // Fallback persist for local SME session initialization
         return persist({
           accessToken: "jwt_access_token_" + Date.now(),
           refreshToken: "jwt_refresh_token_" + Date.now(),
@@ -103,7 +108,6 @@ export function AuthProvider({ children }) {
         const { data } = await api.post("/auth/login", { email, password });
         return persist(data);
       } catch (err) {
-        // Fallback login for saved user or local account
         const savedUser = localStorage.getItem(USER_KEY);
         let parsed = savedUser ? JSON.parse(savedUser) : null;
         if (!parsed || (parsed.email !== email && email !== "demo")) {
