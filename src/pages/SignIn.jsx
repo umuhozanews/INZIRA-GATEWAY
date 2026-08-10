@@ -4,6 +4,14 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff, Store, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../lib/api";
+import {
+  sanitizeEmail,
+  sanitizePhone,
+  sanitizeInput,
+  checkRateLimit,
+  recordFailedAttempt,
+  clearRateLimit,
+} from "../lib/security";
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -27,18 +35,31 @@ export default function SignIn() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // Security Rate Limiter: Protect against brute-force password guessing
+    const rateCheck = checkRateLimit("login", 5, 60);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many failed login attempts. Account temporarily locked for ${rateCheck.remainingSec} seconds for security.`);
+      return;
+    }
+
     setBusy(true);
     try {
-      const identifier = tab === "email" ? email.trim() : phone.trim();
+      const rawIdentifier = tab === "email" ? email : phone;
+      const identifier = tab === "email" ? sanitizeEmail(rawIdentifier) : sanitizePhone(rawIdentifier);
+
       if (!identifier) {
-        toast.error(`Please enter your ${tab === "email" ? "email address" : "phone number"}.`);
+        toast.error(`Please enter a valid ${tab === "email" ? "email address" : "phone number"}.`);
         setBusy(false);
         return;
       }
+
       await login(identifier, password);
+      clearRateLimit("login");
       toast.success("Welcome back!");
       navigate("/", { replace: true });
     } catch (err) {
+      recordFailedAttempt("login", 5, 60);
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));
     } finally {
       setBusy(false);
