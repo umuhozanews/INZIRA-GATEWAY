@@ -1,0 +1,8 @@
+{
+  "appId": "com.inzira.databridge",
+  "appName": "DataBridge",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

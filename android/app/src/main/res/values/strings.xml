@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DataBridge</string>
+    <string name="title_activity_main">DataBridge</string>
+    <string name="package_name">com.inzira.databridge</string>
+    <string name="custom_url_scheme">com.inzira.databridge</string>
+</resources>
