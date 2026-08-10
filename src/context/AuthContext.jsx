@@ -3,6 +3,13 @@ import api, { TOKEN_KEY, REFRESH_KEY, USER_KEY } from "../lib/api";
 
 const AuthContext = createContext(null);
 
+const DEFAULT_STOCK = [
+  { id: 1, name: "Sugar 1kg", category: "Groceries", unit: "kg", quantity: 48, sell_price_rwf: 1500, cost_price_rwf: 1200, low_stock_threshold: 10, is_active: true },
+  { id: 2, name: "Cooking Oil 1L", category: "Groceries", unit: "litre", quantity: 28, sell_price_rwf: 2800, cost_price_rwf: 2200, low_stock_threshold: 5, is_active: true },
+  { id: 3, name: "Soap Bar", category: "Hygiene", unit: "pcs", quantity: 96, sell_price_rwf: 600, cost_price_rwf: 400, low_stock_threshold: 20, is_active: true },
+  { id: 4, name: "Rice 1kg", category: "Groceries", unit: "kg", quantity: 75, sell_price_rwf: 1200, cost_price_rwf: 900, low_stock_threshold: 15, is_active: true },
+];
+
 const DB_STOCK_KEY = "db_local_stock_v1";
 const DB_SALES_KEY = "db_local_sales_v1";
 const DB_EXPENSES_KEY = "db_local_expenses_v1";
@@ -49,32 +56,51 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  // Initialize brand new fresh business account with custom stock, currency, workers
+  // Initialize brand new fresh business account directly from onboarding questions (No verification code required)
   const registerUser = useCallback(
-    async ({ shop_name, name, email, phone, sector, currency, password, initialStock = [], initialWorkers = [] }) => {
+    async ({
+      shop_name,
+      name,
+      email,
+      phone,
+      businessType,
+      dailySales,
+      needEbm,
+      teamSize,
+      startDate,
+      referralSource,
+      password,
+    }) => {
       const newUser = {
         id: "usr_" + Date.now(),
         name,
         shop_name,
-        sector: sector || "Retail & Grocery",
-        currency: currency || "RWF",
-        email,
+        sector: businessType || "Retail & Grocery",
+        currency: "RWF",
+        email: email || `${phone.replace(/\D/g, "")}@inzira.rw`,
         phone,
+        dailySales,
+        needEbm,
+        teamSize,
+        startDate,
+        referralSource,
       };
 
-      // Store initial user settings, team, and custom stock
+      // Store initial user settings and initialize fresh business account data
       localStorage.setItem(
         SETTINGS_KEY,
         JSON.stringify({
           shopName: shop_name,
-          currency: currency || "RWF",
+          currency: "RWF",
           shopAddress: "Kigali, Rwanda",
-          sector: sector || "Retail & Grocery",
+          sector: businessType || "Retail & Grocery",
           shopPhone: phone,
+          needEbm,
+          teamSize,
         })
       );
-      localStorage.setItem(TEAM_KEY, JSON.stringify(initialWorkers));
-      localStorage.setItem(DB_STOCK_KEY, JSON.stringify(initialStock));
+      localStorage.setItem(TEAM_KEY, JSON.stringify([]));
+      localStorage.setItem(DB_STOCK_KEY, JSON.stringify(DEFAULT_STOCK));
       localStorage.setItem(DB_SALES_KEY, JSON.stringify([]));
       localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify([]));
 
@@ -84,11 +110,13 @@ export function AuthProvider({ children }) {
           shop_name,
           email,
           phone,
-          sector,
-          currency,
+          businessType,
+          dailySales,
+          needEbm,
+          teamSize,
+          startDate,
+          referralSource,
           password,
-          initialStock,
-          initialWorkers,
         });
         return persist(data);
       } catch (err) {
