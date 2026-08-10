@@ -45,6 +45,7 @@ const ProfitLoss = lazyWithRetry(() => import("./pages/ProfitLoss"));
 const FinancialBooks = lazyWithRetry(() => import("./pages/FinancialBooks"));
 const Reports = lazyWithRetry(() => import("./pages/Reports"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/health-score" element={<HealthScore />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
