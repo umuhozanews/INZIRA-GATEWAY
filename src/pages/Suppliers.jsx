@@ -24,101 +24,74 @@ import Sheet from "../components/Sheet";
 import Loading from "../components/Loading";
 import { Button, Field, TextInput } from "../components/ui";
 import { useData } from "../context/DataContext";
-
-const DB_CUSTOMERS_KEY = "db_local_customers_v1";
-const DB_SUPPLIERS_KEY = "db_local_suppliers_v1";
-
-const DEFAULT_CUSTOMERS = [
-  {
-    id: 1,
-    name: "Jean Paul Bizimana",
-    phone: "0788123456",
-    email: "jp.bizimana@gmail.com",
-    credit_limit_rwf: 200000,
-    owed_to_us_rwf: 4800,
-    total_spent_rwf: 12800,
-  },
-  {
-    id: 2,
-    name: "Amani Boutique",
-    phone: "0788111222",
-    email: "amani@boutique.rw",
-    credit_limit_rwf: 300000,
-    owed_to_us_rwf: 45000,
-    total_spent_rwf: 145000,
-  },
-  {
-    id: 3,
-    name: "Grace Fashion Huye",
-    phone: "0789333444",
-    email: "grace.huye@gmail.com",
-    credit_limit_rwf: 150000,
-    owed_to_us_rwf: 85000,
-    total_spent_rwf: 85000,
-  },
-  {
-    id: 4,
-    name: "Kigali Retailer Ltd",
-    phone: "0782555666",
-    email: "info@kigaliretailer.rw",
-    credit_limit_rwf: 500000,
-    owed_to_us_rwf: 0,
-    total_spent_rwf: 220000,
-  }
-];
-
-const DEFAULT_SUPPLIERS = [
-  {
-    id: 1,
-    name: "Inyange Industries Ltd",
-    phone: "0788900100",
-    products_supplied: "Milk, Juices, Bottled Water",
-    amount_we_owe_rwf: 120000,
-  },
-  {
-    id: 2,
-    name: "Bakhresa Grain Milling",
-    phone: "0788400500",
-    products_supplied: "Azam Wheat Flour, Sugar 50kg",
-    amount_we_owe_rwf: 45000,
-  },
-  {
-    id: 3,
-    name: "Kigali Textile Wholesalers",
-    phone: "0789700800",
-    products_supplied: "T-Shirts, Jeans, Fabrics",
-    amount_we_owe_rwf: 0,
-  }
-];
+import { useAuth } from "../context/AuthContext";
 
 export default function Suppliers() {
   const { t } = useLang();
+  const { user } = useAuth();
   const { sales, recordDebtPayment } = useData();
   const [params, setParams] = useSearchParams();
+
+  // User-scoped keys so new signups start at clean NULL state
+  const userKey = useMemo(() => {
+    if (!user) return "guest";
+    return String(user.id || user.email || user.phone || "guest").replace(/[^a-zA-Z0-9_-]/g, "_");
+  }, [user]);
+
+  const CUST_KEY = `db_customers_${userKey}`;
+  const SUPP_KEY = `db_suppliers_${userKey}`;
 
   const [activeTab, setActiveTab] = useState("customers"); // 'customers' | 'owed' | 'payables'
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Local Customers State
+  // Local Customers State (Starts [] for new signups)
   const [customers, setCustomers] = useState(() => {
     try {
-      const saved = localStorage.getItem(DB_CUSTOMERS_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_CUSTOMERS;
+      const saved = localStorage.getItem(`db_customers_${userKey}`);
+      return saved !== null ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_CUSTOMERS;
+      return [];
     }
   });
 
-  // Local Suppliers State
+  // Local Suppliers State (Starts [] for new signups)
   const [suppliers, setSuppliers] = useState(() => {
     try {
-      const saved = localStorage.getItem(DB_SUPPLIERS_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_SUPPLIERS;
+      const saved = localStorage.getItem(`db_suppliers_${userKey}`);
+      return saved !== null ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_SUPPLIERS;
+      return [];
     }
   });
+
+  // Re-sync local state whenever active user account changes
+  useEffect(() => {
+    try {
+      const savedCust = localStorage.getItem(CUST_KEY);
+      const savedSupp = localStorage.getItem(SUPP_KEY);
+      setCustomers(savedCust !== null ? JSON.parse(savedCust) : []);
+      setSuppliers(savedSupp !== null ? JSON.parse(savedSupp) : []);
+    } catch (e) {
+      console.error("Failed to load user-scoped customers/suppliers:", e);
+    }
+  }, [userKey, CUST_KEY, SUPP_KEY]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CUST_KEY, JSON.stringify(customers));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [customers, CUST_KEY]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SUPP_KEY, JSON.stringify(suppliers));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [suppliers, SUPP_KEY]);
 
   // Modal States
   const [addCustOpen, setAddCustOpen] = useState(false);
@@ -137,23 +110,6 @@ export default function Suppliers() {
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
-
-  // Persist to LocalStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(DB_CUSTOMERS_KEY, JSON.stringify(customers));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [customers]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(DB_SUPPLIERS_KEY, JSON.stringify(suppliers));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [suppliers]);
 
   // Derived Owed to Us (Receivables) from live sales
   const receivables = useMemo(() => {
@@ -251,14 +207,14 @@ export default function Suppliers() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAddCustOpen(true)}
-              className="flex items-center gap-1 rounded-full bg-[#D4F06B] px-3.5 py-1.5 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
+              className="flex items-center gap-1 rounded-full bg-[#D4F06B] px-3.5 py-1.5 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition cursor-pointer"
             >
               <UserPlus size={14} />
               <span>Customer</span>
             </button>
             <button
               onClick={() => setAddSupOpen(true)}
-              className="flex items-center gap-1 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition"
+              className="flex items-center gap-1 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
             >
               <Plus size={14} />
               <span>Supplier</span>
@@ -283,7 +239,7 @@ export default function Suppliers() {
                 <Users size={20} />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-ink tabnum">{customers.length} Listed</div>
+            <div className="mt-2 text-2xl font-extrabold text-ink tabnum">{customers.length}</div>
             <span className="text-[11px] font-semibold text-muted block mt-0.5">Active Client Accounts</span>
           </div>
 
@@ -363,8 +319,23 @@ export default function Suppliers() {
         {activeTab === "customers" && (
           <div className="space-y-3">
             {customers.filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-              <div className="p-10 text-center text-xs text-muted bg-card rounded-2xl border border-dashed border-line">
-                No customer accounts found matching your search.
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-900 shadow-sm">
+                  <Users size={36} className="text-gray-800" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">No Customers Listed Yet</h3>
+                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                    Add your customer client accounts or record credit sales at the POS counter to track receivables.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setAddCustOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-6 py-3 text-xs font-black text-white hover:bg-gray-800 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                >
+                  <UserPlus size={16} />
+                  <span>+ Add Your First Customer Account</span>
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -403,7 +374,7 @@ export default function Suppliers() {
                           <span className="text-[11px] font-semibold text-muted">{c.phone}</span>
                           <a
                             href={`tel:${c.phone}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success-lt text-success text-xs font-bold hover:bg-success hover:text-white transition"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition"
                           >
                             <Phone size={13} /> Call Client
                           </a>
@@ -451,27 +422,30 @@ export default function Suppliers() {
                           </span>
                         </div>
                         <p className="text-xs text-muted mt-0.5">
-                          {s.customer_name || "Walk-in Customer"} {s.customer_phone ? `(${s.customer_phone})` : ""} &bull; Issued: {formatDate(s.created_at)}
+                          Customer: <strong className="text-ink">{s.customer_name}</strong>
+                          {s.customer_phone ? ` (${s.customer_phone})` : ""}
+                          <span> &bull; </span>
+                          Due: <strong className="text-amber-800">{s.due_date || "No due date"}</strong>
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200">
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold text-amber-800 uppercase block">Amount Owed</span>
-                        <div className="font-heading text-base font-extrabold text-amber-700 tabnum">
-                          {rwf(s.amount_owed || s.total_amount)} RWF
-                        </div>
+                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200/60">
+                      <div className="text-left sm:text-right">
+                        <span className="text-[10px] font-bold text-muted uppercase block">Amount Owed</span>
+                        <span className="text-base font-extrabold text-amber-800 tabnum">
+                          {rwf(s.amount_owed)} RWF
+                        </span>
                       </div>
 
                       <button
                         onClick={() => {
                           setPayModalSale(s);
-                          setPayAmount(String(s.amount_owed || s.total_amount));
+                          setPayAmount(String(s.amount_owed));
                         }}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark shadow-sm transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-primary text-xs font-extrabold text-white shadow-sm hover:bg-primary-lt transition cursor-pointer"
                       >
-                        <DollarSign size={14} /> Record Payment
+                        Record Repayment
                       </button>
                     </div>
                   </div>
@@ -481,93 +455,97 @@ export default function Suppliers() {
           </div>
         )}
 
-        {/* Tab 3: Payables (Owed to Suppliers) */}
+        {/* Tab 3: Payables (Suppliers We Owe Money) */}
         {activeTab === "payables" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading text-sm font-extrabold text-ink uppercase tracking-wider">
-                Accounts Payable (Owed to Stock Suppliers)
-              </h3>
-              <span className="text-xs text-muted">{suppliers.length} suppliers listed</span>
-            </div>
-
-            <div className="space-y-3">
-              {suppliers.length === 0 ? (
-                <div className="p-10 text-center text-xs text-muted bg-card rounded-2xl border border-dashed border-line">
-                  No suppliers listed yet. Click "+ Supplier" to add suppliers.
+          <div className="space-y-3">
+            {suppliers.filter((s) => !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-900 shadow-sm">
+                  <Truck size={36} className="text-gray-800" />
                 </div>
-              ) : (
-                suppliers.map((sup) => (
-                  <div
-                    key={sup.id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-line bg-card shadow-card hover:border-primary/40 transition"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-xlt text-primary font-heading font-extrabold text-sm shrink-0">
-                        {initials(sup.name)}
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">No Stock Suppliers Listed Yet</h3>
+                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                    Add your stock suppliers to manage invoice payables and restock orders.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setAddSupOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-6 py-3 text-xs font-black text-white hover:bg-gray-800 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                >
+                  <Plus size={16} />
+                  <span>+ Add Stock Supplier Account</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {suppliers
+                  .filter((s) => !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((s) => (
+                    <div
+                      key={s.id}
+                      className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-red-400 transition"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-800 font-heading font-extrabold text-base shrink-0">
+                          <Truck size={22} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-heading text-sm font-extrabold text-ink truncate">{s.name}</h3>
+                          <p className="text-xs text-muted mt-0.5">{s.phone || "No phone"}</p>
+                          <p className="text-xs text-muted mt-1 italic truncate">
+                            Products: {s.products_supplied || "General Supplies"}
+                          </p>
+
+                          <div className="mt-3 pt-3 border-t border-line/60 space-y-1.5 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-muted font-medium">We Owe Supplier:</span>
+                              <span
+                                className={`font-extrabold tabnum ${
+                                  s.amount_we_owe_rwf > 0 ? "text-red-700" : "text-emerald-700"
+                                }`}
+                              >
+                                {s.amount_we_owe_rwf > 0 ? `${rwf(s.amount_we_owe_rwf)} RWF` : "Paid in Full 🎉"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-heading text-sm font-extrabold text-ink">{sup.name}</h4>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                              sup.amount_we_owe_rwf > 0
-                                ? "bg-red-100 text-red-800"
-                                : "bg-emerald-100 text-emerald-800"
-                            }`}
+
+                      <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-2">
+                        {s.phone && s.phone !== "N/A" ? (
+                          <a
+                            href={`tel:${s.phone}`}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-paper text-xs font-bold text-ink hover:bg-card transition"
                           >
-                            {sup.amount_we_owe_rwf > 0 ? "Owed" : "Fully Paid"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted mt-0.5">
-                          {sup.phone || "No phone"} &bull; {sup.products_supplied}
-                        </p>
-                      </div>
-                    </div>
+                            <Phone size={13} /> Call
+                          </a>
+                        ) : (
+                          <div />
+                        )}
 
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/60">
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold text-muted uppercase block">Balance Owed</span>
-                        <div
-                          className={`font-heading text-base font-extrabold tabnum ${
-                            sup.amount_we_owe_rwf > 0 ? "text-red-700" : "text-emerald-700"
-                          }`}
-                        >
-                          {rwf(sup.amount_we_owe_rwf)} RWF
-                        </div>
-                      </div>
-
-                      {sup.amount_we_owe_rwf > 0 ? (
                         <button
-                          onClick={() => handlePaySupplier(sup.id, sup.amount_we_owe_rwf)}
-                          className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-sm transition cursor-pointer"
+                          onClick={() => handlePaySupplier(s.id, s.amount_we_owe_rwf)}
+                          className="px-3.5 py-1.5 rounded-xl bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
                         >
-                          <CheckCircle2 size={14} /> Pay Supplier
+                          Mark Paid
                         </button>
-                      ) : sup.phone && sup.phone !== "N/A" ? (
-                        <a
-                          href={`tel:${sup.phone}`}
-                          className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-success-lt text-success text-xs font-bold hover:bg-success hover:text-white transition"
-                        >
-                          <Phone size={14} /> Call
-                        </a>
-                      ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Add Customer Modal Sheet */}
-      <Sheet open={addCustOpen} onClose={() => setAddCustOpen(false)} title="Add New Customer">
-        <form onSubmit={handleAddCustomer} className="space-y-4 pt-2 pb-6">
-          <Field label="Customer / Business Name">
+      {/* ADD CUSTOMER MODAL SHEET */}
+      <Sheet open={addCustOpen} onClose={() => setAddCustOpen(false)} title="Add Customer Account">
+        <form onSubmit={handleAddCustomer} className="space-y-4 pt-2 font-manrope pb-6">
+          <Field label="Customer Full Name *">
             <TextInput
               required
-              placeholder="e.g. Jean Paul Bizimana or Amani Store"
+              placeholder="e.g. Jean Paul Bizimana"
               value={custName}
               onChange={(e) => setCustName(e.target.value)}
               autoFocus
@@ -577,56 +555,48 @@ export default function Suppliers() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Phone Number">
               <TextInput
-                placeholder="0788 123 456"
+                type="tel"
+                placeholder="0788123456"
                 value={custPhone}
                 onChange={(e) => setCustPhone(e.target.value)}
               />
             </Field>
 
-            <Field label="Credit Limit (RWF)">
+            <Field label="Email Address">
               <TextInput
-                type="number"
-                placeholder="200000"
-                value={custLimit}
-                onChange={(e) => setCustLimit(e.target.value)}
+                type="email"
+                placeholder="customer@gmail.com"
+                value={custEmail}
+                onChange={(e) => setCustEmail(e.target.value)}
               />
             </Field>
           </div>
 
-          <Field label="Email Address (optional)">
+          <Field label="Approved Credit Limit (RWF)">
             <TextInput
-              type="email"
-              placeholder="customer@gmail.com"
-              value={custEmail}
-              onChange={(e) => setCustEmail(e.target.value)}
+              type="number"
+              placeholder="200000"
+              value={custLimit}
+              onChange={(e) => setCustLimit(e.target.value)}
             />
           </Field>
 
           <div className="pt-2 flex gap-2">
-            <Button
-              type="button"
-              variant="paper"
-              onClick={() => setAddCustOpen(false)}
-              className="flex-1"
-            >
+            <Button type="button" variant="paper" onClick={() => setAddCustOpen(false)} className="flex-1">
               Cancel
             </Button>
 
-            <Button
-              type="submit"
-              variant="green"
-              className="flex-1 font-bold shadow-sm"
-            >
-              Add Customer
+            <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+              Save Customer
             </Button>
           </div>
         </form>
       </Sheet>
 
-      {/* Add Supplier Modal Sheet */}
-      <Sheet open={addSupOpen} onClose={() => setAddSupOpen(false)} title="Add New Supplier">
-        <form onSubmit={handleAddSupplier} className="space-y-4 pt-2 pb-6">
-          <Field label="Supplier / Company Name">
+      {/* ADD SUPPLIER MODAL SHEET */}
+      <Sheet open={addSupOpen} onClose={() => setAddSupOpen(false)} title="Add Stock Supplier Account">
+        <form onSubmit={handleAddSupplier} className="space-y-4 pt-2 font-manrope pb-6">
+          <Field label="Supplier / Company Name *">
             <TextInput
               required
               placeholder="e.g. Inyange Industries Ltd"
@@ -636,120 +606,97 @@ export default function Suppliers() {
             />
           </Field>
 
-          <Field label="Phone Number">
-            <TextInput
-              placeholder="0788 900 100"
-              value={supPhone}
-              onChange={(e) => setSupPhone(e.target.value)}
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Supplier Phone">
+              <TextInput
+                type="tel"
+                placeholder="0788900100"
+                value={supPhone}
+                onChange={(e) => setSupPhone(e.target.value)}
+              />
+            </Field>
 
-          <Field label="Products Supplied">
+            <Field label="Current Amount We Owe (RWF)">
+              <TextInput
+                type="number"
+                placeholder="0"
+                value={supOwed}
+                onChange={(e) => setSupOwed(e.target.value)}
+              />
+            </Field>
+          </div>
+
+          <Field label="Products / Items Supplied">
             <TextInput
-              placeholder="e.g. Milk, Rice, Sugar, Flour"
+              placeholder="e.g. Milk, Juices, Bottled Water"
               value={supProducts}
               onChange={(e) => setSupProducts(e.target.value)}
             />
           </Field>
 
-          <Field label="Initial Amount We Owe (RWF)">
-            <TextInput
-              type="number"
-              placeholder="0"
-              value={supOwed}
-              onChange={(e) => setSupOwed(e.target.value)}
-            />
-          </Field>
-
           <div className="pt-2 flex gap-2">
-            <Button
-              type="button"
-              variant="paper"
-              onClick={() => setAddSupOpen(false)}
-              className="flex-1"
-            >
+            <Button type="button" variant="paper" onClick={() => setAddSupOpen(false)} className="flex-1">
               Cancel
             </Button>
 
-            <Button
-              type="submit"
-              variant="green"
-              className="flex-1 font-bold shadow-sm"
-            >
-              Add Supplier
+            <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+              Save Supplier
             </Button>
           </div>
         </form>
       </Sheet>
 
-      {/* Record Customer Debt Payment Modal Sheet */}
-      <Sheet open={!!payModalSale} onClose={() => setPayModalSale(null)} title="Record Customer Debt Payment">
+      {/* RECORD DEBT REPAYMENT MODAL SHEET */}
+      <Sheet open={!!payModalSale} onClose={() => setPayModalSale(null)} title="Record Customer Debt Repayment">
         {payModalSale && (
-          <form onSubmit={handleRecordDebtPaymentSubmit} className="space-y-4 pt-2 pb-6">
-            <div className="rounded-2xl border border-line bg-paper p-4 space-y-1.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted font-medium">Invoice Number:</span>
-                <span className="font-bold text-ink">{payModalSale.invoice_number}</span>
+          <form onSubmit={handleRecordDebtPaymentSubmit} className="space-y-4 pt-2 font-manrope pb-6">
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+              <div className="flex justify-between font-bold">
+                <span>Invoice: {payModalSale.invoice_number || `INV-${payModalSale.id}`}</span>
+                <span>Owed: {rwf(payModalSale.amount_owed)} RWF</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted font-medium">Customer:</span>
-                <span className="font-bold text-ink">{payModalSale.customer_name}</span>
-              </div>
-              <div className="flex justify-between border-t border-line/60 pt-1.5">
-                <span className="text-muted font-bold uppercase">Total Outstanding:</span>
-                <span className="font-extrabold text-amber-700 tabnum">{rwf(payModalSale.amount_owed || payModalSale.total_amount)} RWF</span>
-              </div>
+              <div>Customer: <strong>{payModalSale.customer_name}</strong></div>
             </div>
 
-            <Field label="Payment Amount (RWF)">
+            <Field label="Repayment Amount (RWF) *">
               <TextInput
                 required
                 type="number"
                 min="1"
-                max={payModalSale.amount_owed || payModalSale.total_amount}
+                max={payModalSale.amount_owed}
+                placeholder="Enter amount paid"
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
                 autoFocus
               />
             </Field>
 
-            <Field label="Payment Channel">
+            <Field label="Payment Method">
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value)}
-                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-semibold text-ink focus:border-primary focus:outline-none shadow-sm"
+                className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold outline-none"
               >
-                <option value="cash">Cash Till</option>
-                <option value="mtn_momo">MTN Mobile Money</option>
+                <option value="cash">Cash</option>
+                <option value="momo">MTN Mobile Money</option>
                 <option value="airtel">Airtel Money</option>
-                <option value="bank">Bank Transfer</option>
               </select>
             </Field>
 
-            <Field label="Notes / Reference (optional)">
+            <Field label="Notes / Reference (Optional)">
               <TextInput
-                placeholder="e.g. Partial cash payment at shop"
+                placeholder="e.g. Partial repayment via Cash"
                 value={payNote}
                 onChange={(e) => setPayNote(e.target.value)}
               />
             </Field>
 
             <div className="pt-2 flex gap-2">
-              <Button
-                type="button"
-                variant="paper"
-                onClick={() => setPayModalSale(null)}
-                className="flex-1"
-              >
+              <Button type="button" variant="paper" onClick={() => setPayModalSale(null)} className="flex-1">
                 Cancel
               </Button>
-
-              <Button
-                type="submit"
-                variant="green"
-                className="flex-1 font-bold shadow-sm"
-              >
-                Confirm Payment
+              <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+                Save Repayment
               </Button>
             </div>
           </form>
