@@ -5,15 +5,14 @@ import {
   ShoppingCart,
   Package,
   Wallet,
-  Users,
   Grid,
   FileText,
   TrendingUp,
   BookOpen,
   BarChart3,
-  Settings,
+  Users,
   Activity,
-  X
+  Settings
 } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
 import Sheet from "./Sheet";
@@ -42,50 +41,50 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav
-        className="sticky bottom-0 z-20 flex items-stretch border-t border-line bg-card shadow-nav"
-        style={{ height: 66, paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        {PRIMARY_ITEMS.map(({ to, key, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className="flex flex-1 flex-col items-center justify-center gap-0.5"
-          >
-            {({ isActive }) => (
-              <>
-                <Icon
-                  size={20}
-                  strokeWidth={isActive ? 2.4 : 1.8}
-                  className={isActive ? "text-primary" : "text-muted"}
-                />
-                <span
-                  className={`text-[9.5px] font-semibold ${
-                    isActive ? "text-primary" : "text-muted"
+      <div className="fixed bottom-3 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none font-manrope">
+        <nav
+          className="pointer-events-auto flex items-center justify-around gap-1 rounded-full bg-gray-900/90 p-1.5 backdrop-blur-xl shadow-[0_15px_35px_rgba(0,0,0,0.25)] border border-gray-800/80 w-full max-w-[420px]"
+        >
+          {PRIMARY_ITEMS.map(({ to, key, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className="flex flex-1 flex-col items-center justify-center py-2 transition"
+            >
+              {({ isActive }) => (
+                <div
+                  className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20 scale-105"
+                      : "text-gray-400 hover:text-white"
                   }`}
                 >
-                  {t(key)}
-                </span>
-                {isActive && <span className="mt-0.5 h-1 w-1 rounded-full bg-primary" />}
-              </>
-            )}
-          </NavLink>
-        ))}
+                  <Icon size={18} strokeWidth={isActive ? 2.4 : 1.8} />
+                  <span className="text-[9.5px] font-extrabold tracking-tight">
+                    {t(key)}
+                  </span>
+                </div>
+              )}
+            </NavLink>
+          ))}
 
-        {/* More Apps Quick Button */}
-        <button
-          onClick={() => setMoreOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-muted hover:text-primary transition cursor-pointer"
-        >
-          <Grid size={20} strokeWidth={1.8} />
-          <span className="text-[9.5px] font-semibold">More</span>
-        </button>
-      </nav>
+          {/* More Apps Quick Button */}
+          <button
+            onClick={() => setMoreOpen(true)}
+            className="flex flex-1 flex-col items-center justify-center py-2 text-gray-400 hover:text-white transition cursor-pointer"
+          >
+            <div className="flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-gray-400 hover:text-white">
+              <Grid size={18} strokeWidth={1.8} />
+              <span className="text-[9.5px] font-bold">More</span>
+            </div>
+          </button>
+        </nav>
+      </div>
 
       {/* More Modules Sheet */}
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Platform Modules & Financials">
-        <div className="grid grid-cols-1 gap-2.5 pt-2 pb-4">
+        <div className="grid grid-cols-1 gap-2.5 pt-2 pb-6 font-manrope">
           {MORE_ITEMS.map(({ to, label, icon: Icon, desc }) => (
             <button
               key={to}
@@ -93,14 +92,14 @@ export default function BottomNav() {
                 setMoreOpen(false);
                 navigate(to);
               }}
-              className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-line bg-paper hover:bg-card hover:border-primary/50 hover:shadow-sm active:scale-95 transition cursor-pointer text-left group"
+              className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-gray-200/80 bg-white hover:bg-[#F4FBE4] hover:border-[#D4F06B] hover:shadow-sm active:scale-95 transition cursor-pointer text-left group"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-xlt text-primary group-hover:scale-105 transition">
-                <Icon size={20} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 group-hover:scale-105 transition shadow-sm">
+                <Icon size={18} />
               </div>
               <div className="flex-1 truncate">
-                <h4 className="text-xs font-bold text-ink group-hover:text-primary transition">{label}</h4>
-                <p className="text-[11px] text-muted truncate">{desc}</p>
+                <h4 className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">{label}</h4>
+                <p className="text-[11px] text-gray-500 truncate">{desc}</p>
               </div>
             </button>
           ))}

@@ -39,17 +39,17 @@ export default function Sidebar() {
   const { t, lang, toggle } = useLang();
 
   return (
-    <aside className="hidden md:flex w-64 flex-col justify-between border-r border-line bg-card p-5 shrink-0 select-none shadow-sm h-screen overflow-y-auto">
+    <aside className="hidden md:flex w-64 flex-col justify-between border-r border-gray-200/80 bg-white p-5 shrink-0 select-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] h-screen overflow-y-auto font-manrope">
       <div className="flex flex-col gap-5">
         {/* Brand Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-line/60">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <Logomark size={36} />
             <div>
-              <h1 className="font-heading text-lg font-extrabold text-ink leading-tight">
+              <h1 className="font-manrope text-lg font-black text-gray-900 leading-tight">
                 DataBridge
               </h1>
-              <p className="text-[10.5px] font-semibold text-muted tracking-wide">
+              <p className="text-[10px] font-extrabold text-purple-600 tracking-wider">
                 INZIRA INSIGHTS
               </p>
             </div>
@@ -57,9 +57,9 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex flex-col gap-1">
-          <span className="px-3 text-[10.5px] font-bold tracking-wider text-muted uppercase">
-            Menu
+        <nav className="flex flex-col gap-1.5">
+          <span className="px-3 text-[10px] font-extrabold tracking-wider text-gray-400 uppercase">
+            Menu Navigation
           </span>
           {NAV_ITEMS.map(({ to, key, icon: Icon, end }) => (
             <NavLink
@@ -67,10 +67,10 @@ export default function Sidebar() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `group flex items-center justify-between rounded-xl px-3.5 py-2 text-[13px] font-semibold transition-all duration-150 ${
+                `group flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
                   isActive
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-ink hover:bg-paper hover:text-primary"
+                    ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`
               }
             >
@@ -79,12 +79,12 @@ export default function Sidebar() {
                   <div className="flex items-center gap-3">
                     <Icon
                       size={17}
-                      className={isActive ? "text-white" : "text-muted group-hover:text-primary"}
+                      className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700"}
                       strokeWidth={isActive ? 2.4 : 1.8}
                     />
                     <span>{t(key)}</span>
                   </div>
-                  {isActive && <ChevronRight size={14} className="text-white/80" />}
+                  {isActive && <ChevronRight size={14} className="text-gray-900/80" />}
                 </>
               )}
             </NavLink>
@@ -93,34 +93,34 @@ export default function Sidebar() {
       </div>
 
       {/* Footer Section */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-line mt-4">
+      <div className="flex flex-col gap-3 pt-4 border-t border-gray-100 mt-4">
         {/* Language & Network Status */}
         <div className="flex items-center justify-between px-1">
           <button
             onClick={toggle}
-            className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[11px] font-bold text-ink hover:bg-line/40 transition"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-extrabold text-gray-800 hover:bg-gray-100 transition"
           >
-            <Globe size={13} className="text-primary" />
+            <Globe size={13} className="text-purple-600" />
             <span>{lang.toUpperCase()}</span>
           </button>
           <OfflineBadge />
         </div>
 
         {/* User Card & Logout */}
-        <div className="flex items-center justify-between rounded-xl bg-paper p-2.5">
+        <div className="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-200/60 p-2.5">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-xlt font-heading text-xs font-extrabold text-primary">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] font-manrope text-xs font-black text-gray-900">
               {(user?.name || "Shop")[0].toUpperCase()}
             </div>
             <div className="truncate">
-              <div className="truncate text-xs font-bold text-ink">{user?.name || "My Shop"}</div>
-              <div className="truncate text-[10.5px] text-muted">{user?.email || "Shopkeeper"}</div>
+              <div className="truncate text-xs font-bold text-gray-900">{user?.name || "My Shop"}</div>
+              <div className="truncate text-[10.5px] text-gray-500">{user?.email || "Shopkeeper"}</div>
             </div>
           </div>
           <button
             onClick={logout}
             title={t("logout")}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-danger-lt hover:text-danger transition"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition"
           >
             <LogOut size={15} />
           </button>
