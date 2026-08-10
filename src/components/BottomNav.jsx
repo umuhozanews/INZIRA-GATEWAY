@@ -41,46 +41,51 @@ export default function BottomNav() {
 
   return (
     <>
-      <div className="fixed bottom-3 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none font-manrope">
-        <nav
-          className="pointer-events-auto flex items-center justify-around gap-1 rounded-full bg-gray-900/90 p-1.5 backdrop-blur-xl shadow-[0_15px_35px_rgba(0,0,0,0.25)] border border-gray-800/80 w-full max-w-[420px]"
-        >
-          {PRIMARY_ITEMS.map(({ to, key, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className="flex flex-1 flex-col items-center justify-center py-2 transition"
-            >
-              {({ isActive }) => (
+      <nav
+        className="sticky bottom-0 z-30 flex items-center justify-around border-t border-gray-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.04)] font-manrope select-none w-full"
+        style={{ height: 64, paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {PRIMARY_ITEMS.map(({ to, key, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className="flex flex-1 flex-col items-center justify-center py-1 transition"
+          >
+            {({ isActive }) => (
+              <div className="flex flex-col items-center gap-0.5">
                 <div
-                  className={`flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 transition-all duration-200 ${
-                    isActive
-                      ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20 scale-105"
-                      : "text-gray-400 hover:text-white"
+                  className={`flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200 ${
+                    isActive ? "bg-[#D4F06B] text-gray-900 shadow-sm scale-105" : "text-gray-400 hover:text-gray-700"
                   }`}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2.4 : 1.8} />
-                  <span className="text-[9.5px] font-extrabold tracking-tight">
-                    {t(key)}
-                  </span>
+                  <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} />
                 </div>
-              )}
-            </NavLink>
-          ))}
+                <span
+                  className={`text-[10px] font-extrabold tracking-tight ${
+                    isActive ? "text-gray-900" : "text-gray-400"
+                  }`}
+                >
+                  {t(key)}
+                </span>
+              </div>
+            )}
+          </NavLink>
+        ))}
 
-          {/* More Apps Quick Button */}
-          <button
-            onClick={() => setMoreOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center py-2 text-gray-400 hover:text-white transition cursor-pointer"
-          >
-            <div className="flex flex-col items-center gap-0.5 rounded-full px-3 py-1.5 text-gray-400 hover:text-white">
-              <Grid size={18} strokeWidth={1.8} />
-              <span className="text-[9.5px] font-bold">More</span>
+        {/* More Apps Quick Button */}
+        <button
+          onClick={() => setMoreOpen(true)}
+          className="flex flex-1 flex-col items-center justify-center py-1 text-gray-400 hover:text-gray-700 transition cursor-pointer"
+        >
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex h-8 w-12 items-center justify-center rounded-full text-gray-400">
+              <Grid size={19} strokeWidth={1.8} />
             </div>
-          </button>
-        </nav>
-      </div>
+            <span className="text-[10px] font-bold text-gray-400">More</span>
+          </div>
+        </button>
+      </nav>
 
       {/* More Modules Sheet */}
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Platform Modules & Financials">
