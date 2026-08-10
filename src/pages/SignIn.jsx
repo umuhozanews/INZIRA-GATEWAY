@@ -1,76 +1,41 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Lock, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff, Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../lib/api";
 
 export default function SignIn() {
   const navigate = useNavigate();
-  const { login, sendOtp, verifyOtp, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   // Mode & Tabs ("phone" | "email")
   const [tab, setTab] = useState("phone");
   const [busy, setBusy] = useState(false);
 
   // Form State
-  const [phone, setPhone] = useState("+8801775472701");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("*******");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // OTP Verification view state
-  const [showOtpView, setShowOtpView] = useState(false);
-  const [otpCode, setOtpCode] = useState(["4", "7", "", ""]);
-  const [resendTimer, setResendTimer] = useState(30);
-
+  // Direct login without verification code
   const handleLogin = async (e) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (tab === "email") {
-        if (!email) {
-          toast.error("Please enter your email.");
-          setBusy(false);
-          return;
-        }
-        await login(email.trim(), password);
-        toast.success("Welcome back!");
-        navigate("/", { replace: true });
-      } else {
-        if (!phone) {
-          toast.error("Please enter your phone number.");
-          setBusy(false);
-          return;
-        }
-        // Send OTP and open Verification Screen (Screen 3)
-        await sendOtp(phone);
-        setShowOtpView(true);
+      const identifier = tab === "email" ? email.trim() : phone.trim();
+      if (!identifier) {
+        toast.error(`Please enter your ${tab === "email" ? "email address" : "phone number"}.`);
+        setBusy(false);
+        return;
       }
+      await login(identifier, password);
+      toast.success("Welcome back!");
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    const code = otpCode.join("");
-    if (code.length < 4) {
-      toast.error("Please enter the complete 4-digit code.");
-      return;
-    }
-    setBusy(true);
-    try {
-      await verifyOtp(phone, code);
-      toast.success("Verification successful!");
-      navigate("/", { replace: true });
-    } catch (err) {
-      // Fallback for mock demo
-      toast.success("Verified!");
-      navigate("/", { replace: true });
     } finally {
       setBusy(false);
     }
@@ -89,112 +54,20 @@ export default function SignIn() {
     }
   };
 
-  // If showing OTP Verification Screen (Screen 3 in PRD & ui.png)
-  if (showOtpView) {
-    return (
-      <div className="min-h-[100dvh] w-full bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#FFFFFF] font-manrope text-gray-900 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-[400px] rounded-[36px] bg-white p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-gray-100/80">
-          
-          {/* Back Header */}
-          <div className="flex items-center mb-6">
-            <button
-              onClick={() => setShowOtpView(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <h1 className="flex-1 text-center font-bold text-lg text-gray-900 pr-10">
-              Verification
-            </h1>
-          </div>
-
-          {/* Purple Icon Lock Badge */}
-          <div className="mx-auto my-6 flex h-20 w-20 items-center justify-center rounded-full bg-purple-100 text-purple-600 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-200 text-purple-600">
-              <Lock size={22} />
-            </div>
-          </div>
-
-          {/* Title & Sent Notice */}
-          <div className="text-center">
-            <h2 className="text-xl font-extrabold text-gray-900">Verification code</h2>
-            <p className="mt-2 text-xs font-medium text-gray-500 leading-relaxed max-w-[260px] mx-auto">
-              Enter the verification code we've sent to your{" "}
-              <span className="font-semibold text-gray-800">{tab === "phone" ? phone : email}</span>
-            </p>
-          </div>
-
-          {/* 4 Pin Code Inputs */}
-          <form onSubmit={handleVerifyOtp} className="mt-8 space-y-6">
-            <div className="flex justify-center gap-3">
-              {[0, 1, 2, 3].map((idx) => (
-                <input
-                  key={idx}
-                  id={`otp-${idx}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={otpCode[idx] || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const newOtp = [...otpCode];
-                    newOtp[idx] = val;
-                    setOtpCode(newOtp);
-                    if (val && idx < 3) {
-                      document.getElementById(`otp-${idx + 1}`)?.focus();
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Backspace" && !otpCode[idx] && idx > 0) {
-                      document.getElementById(`otp-${idx - 1}`)?.focus();
-                    }
-                  }}
-                  className={`h-14 w-14 rounded-full text-center text-xl font-extrabold border-2 outline-none transition ${
-                    otpCode[idx]
-                      ? "border-purple-500 bg-purple-500 text-white shadow-md shadow-purple-200"
-                      : "border-gray-200 bg-white text-gray-900 focus:border-purple-400"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-full bg-[#D4F06B] py-3.5 text-sm font-bold text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm"
-            >
-              {busy ? "Confirming..." : "Confirm"}
-            </button>
-          </form>
-
-          {/* Resend Link */}
-          <div className="mt-6 text-center text-xs font-semibold text-gray-500">
-            Didn't receive the code?{" "}
-            <button
-              type="button"
-              onClick={() => toast.success("New code sent!")}
-              className="text-purple-600 hover:underline font-bold"
-            >
-              Resend
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // SCREEN 1: Luminous Modern Login Screen
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#FFFFFF] font-manrope text-gray-900 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-[400px] rounded-[36px] bg-white p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-gray-100/80">
         
-        {/* Header */}
+        {/* Header Branding */}
         <div className="text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4F06B] text-gray-900 shadow-sm">
+            <Store size={24} />
+          </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Welcome Back</h1>
-          <p className="mt-1 text-xs font-medium text-gray-500">Login to access your account</p>
+          <p className="mt-1 text-xs font-medium text-gray-500">Login to access your business account</p>
         </div>
 
-        {/* Tab Pill Selector (Phone Number vs Email) */}
+        {/* Tab Selector (Phone Number vs Email) */}
         <div className="mt-6 flex rounded-full bg-gray-100 p-1.5 border border-gray-200/50">
           <button
             type="button"
@@ -220,7 +93,7 @@ export default function SignIn() {
           </button>
         </div>
 
-        {/* Main Login Form */}
+        {/* Main Direct Login Form */}
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
           {tab === "phone" ? (
             <div>
@@ -229,7 +102,7 @@ export default function SignIn() {
               </label>
               <input
                 type="tel"
-                placeholder="+8801775472701"
+                placeholder="+250 788 123 456"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
@@ -295,11 +168,11 @@ export default function SignIn() {
             </button>
           </div>
 
-          {/* Primary CTA Button (Luminous Lime) */}
+          {/* Direct CTA Button (No Verification Required) */}
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-full bg-[#D4F06B] py-3.5 text-xs font-bold text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm mt-2"
+            className="w-full rounded-full bg-[#D4F06B] py-3.5 text-xs font-black text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm mt-2"
           >
             {busy ? "Logging in..." : "Log In"}
           </button>
