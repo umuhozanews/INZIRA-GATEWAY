@@ -39,6 +39,20 @@ export function DataProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
+  // Method to completely reset all data state for a fresh new account
+  const resetData = useCallback(() => {
+    setStock([]);
+    setSales([]);
+    setExpenses([]);
+    try {
+      localStorage.setItem(DB_STOCK_KEY, JSON.stringify([]));
+      localStorage.setItem(DB_SALES_KEY, JSON.stringify([]));
+      localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify([]));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   // Sync state to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -67,14 +81,14 @@ export function DataProvider({ children }) {
   // Real-Time Cross-Tab / Cross-Window Sync via Web Storage Listener
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === DB_STOCK_KEY && e.newValue) {
-        try { setStock(JSON.parse(e.newValue)); } catch {}
+      if (e.key === DB_STOCK_KEY) {
+        try { setStock(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
-      if (e.key === DB_SALES_KEY && e.newValue) {
-        try { setSales(JSON.parse(e.newValue)); } catch {}
+      if (e.key === DB_SALES_KEY) {
+        try { setSales(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
-      if (e.key === DB_EXPENSES_KEY && e.newValue) {
-        try { setExpenses(JSON.parse(e.newValue)); } catch {}
+      if (e.key === DB_EXPENSES_KEY) {
+        try { setExpenses(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
     };
 
@@ -92,34 +106,40 @@ export function DataProvider({ children }) {
         api.get("/expenses", { params: { limit: 100 } }),
       ]);
 
-      if (stkRes.status === "fulfilled" && Array.isArray(stkRes.value.data?.data) && stkRes.value.data.data.length > 0) {
+      if (stkRes.status === "fulfilled" && Array.isArray(stkRes.value.data?.data)) {
         const serverItems = stkRes.value.data.data;
-        setStock(prev => {
-          const localOnly = prev.filter(p => typeof p.id === "number" && p.id > 1000000000000);
-          const serverIds = new Set(serverItems.map(s => s.id));
-          const filteredLocal = localOnly.filter(p => !serverIds.has(p.id));
-          return [...filteredLocal, ...serverItems];
-        });
+        if (serverItems.length > 0) {
+          setStock(prev => {
+            const localOnly = prev.filter(p => typeof p.id === "number" && p.id > 1000000000000);
+            const serverIds = new Set(serverItems.map(s => s.id));
+            const filteredLocal = localOnly.filter(p => !serverIds.has(p.id));
+            return [...filteredLocal, ...serverItems];
+          });
+        }
       }
 
-      if (saleRes.status === "fulfilled" && Array.isArray(saleRes.value.data?.data) && saleRes.value.data.data.length > 0) {
+      if (saleRes.status === "fulfilled" && Array.isArray(saleRes.value.data?.data)) {
         const serverSales = saleRes.value.data.data;
-        setSales(prev => {
-          const localOnly = prev.filter(s => typeof s.id === "number" && s.id > 1000000000000);
-          const serverIds = new Set(serverSales.map(s => s.id));
-          const filteredLocal = localOnly.filter(s => !serverIds.has(s.id));
-          return [...filteredLocal, ...serverSales];
-        });
+        if (serverSales.length > 0) {
+          setSales(prev => {
+            const localOnly = prev.filter(s => typeof s.id === "number" && s.id > 1000000000000);
+            const serverIds = new Set(serverSales.map(s => s.id));
+            const filteredLocal = localOnly.filter(s => !serverIds.has(s.id));
+            return [...filteredLocal, ...serverSales];
+          });
+        }
       }
 
-      if (expRes.status === "fulfilled" && Array.isArray(expRes.value.data?.data) && expRes.value.data.data.length > 0) {
+      if (expRes.status === "fulfilled" && Array.isArray(expRes.value.data?.data)) {
         const serverExpenses = expRes.value.data.data;
-        setExpenses(prev => {
-          const localOnly = prev.filter(e => typeof e.id === "number" && e.id > 1000000000000);
-          const serverIds = new Set(serverExpenses.map(e => e.id));
-          const filteredLocal = localOnly.filter(e => !serverIds.has(e.id));
-          return [...filteredLocal, ...serverExpenses];
-        });
+        if (serverExpenses.length > 0) {
+          setExpenses(prev => {
+            const localOnly = prev.filter(e => typeof e.id === "number" && e.id > 1000000000000);
+            const serverIds = new Set(serverExpenses.map(e => e.id));
+            const filteredLocal = localOnly.filter(e => !serverIds.has(e.id));
+            return [...filteredLocal, ...serverExpenses];
+          });
+        }
       }
     } catch (err) {
       console.warn("[DataContext] Network sync warning, using local persistent state:", err.message);
@@ -359,7 +379,8 @@ export function DataProvider({ children }) {
         recordDebtPayment,
         addStockItem,
         addExpense,
-        refreshAll
+        refreshAll,
+        resetData,
       }}
     >
       {children}

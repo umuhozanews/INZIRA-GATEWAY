@@ -13,10 +13,12 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
 
 export default function SignUp() {
   const navigate = useNavigate();
   const { registerUser } = useAuth();
+  const { resetData } = useData();
 
   const [busy, setBusy] = useState(false);
 
@@ -64,6 +66,9 @@ export default function SignUp() {
     }
 
     setBusy(true);
+    // Clear all leftover stock, sales, expenses, and team data for fresh account
+    resetData();
+
     try {
       await registerUser({
         shop_name: shopName.trim(),
