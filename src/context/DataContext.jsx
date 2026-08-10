@@ -140,9 +140,27 @@ export function DataProvider({ children }) {
     }
   }, [expenses]);
 
+  // Real-Time Cross-Tab / Cross-Window Sync via Web Storage Listener
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === DB_STOCK_KEY && e.newValue) {
+        try { setStock(JSON.parse(e.newValue)); } catch {}
+      }
+      if (e.key === DB_SALES_KEY && e.newValue) {
+        try { setSales(JSON.parse(e.newValue)); } catch {}
+      }
+      if (e.key === DB_EXPENSES_KEY && e.newValue) {
+        try { setExpenses(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   // Sync data with Backend API, keeping locally added offline items
-  const refreshAll = useCallback(async () => {
-    setLoading(true);
+  const refreshAll = useCallback(async (silent = true) => {
+    if (!silent) setLoading(true);
     try {
       const [stkRes, saleRes, expRes] = await Promise.allSettled([
         api.get("/stock", { params: { limit: 200 } }),
@@ -182,12 +200,33 @@ export function DataProvider({ children }) {
     } catch (err) {
       console.warn("[DataContext] Network sync warning, using local persistent state:", err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
+  // Initial load + Automatic 8-second polling + Window Focus Sync
   useEffect(() => {
-    refreshAll();
+    refreshAll(false);
+
+    // Auto Polling every 8 seconds for multi-user real-time changes
+    const pollInterval = setInterval(() => {
+      refreshAll(true);
+    }, 8000);
+
+    // Instant re-sync when user returns to app/tab
+    const handleFocus = () => refreshAll(true);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshAll(true);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [refreshAll]);
 
   // Interconnected Record Sale Action with Split Payment & Debt Support
@@ -205,7 +244,6 @@ export function DataProvider({ children }) {
     const timestamp = Date.now();
     const invNum = `INV-2026-${String(sales.length + 1).padStart(3, "0")}`;
 
-    // Calculate actual amount paid up-front
     let paidVal = 0;
     if (payment_method === "split" && split_payments) {
       paidVal = (Number(split_payments.cash) || 0) + (Number(split_payments.momo) || 0);
@@ -268,7 +306,7 @@ export function DataProvider({ children }) {
       });
     });
 
-    // 3. Post to backend API asynchronously
+    // 3. Post to backend API asynchronously & trigger sync
     try {
       await api.post("/sales", {
         items,
@@ -281,6 +319,7 @@ export function DataProvider({ children }) {
         split_payments,
         notes
       });
+      setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async sale post fallback:", err.message);
     }
@@ -324,13 +363,13 @@ export function DataProvider({ children }) {
       });
     });
 
-    // Try posting to API
     try {
       await api.post(`/sales/${saleId}/debt-payment`, {
         amount: paymentAmount,
         payment_method,
         note
       });
+      setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async debt payment post fallback:", err.message);
     }
@@ -356,6 +395,7 @@ export function DataProvider({ children }) {
 
     try {
       await api.post("/stock", newItem);
+      setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async stock add fallback:", err.message);
     }
@@ -381,6 +421,7 @@ export function DataProvider({ children }) {
 
     try {
       await api.post("/expenses", newExpense);
+      setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async expense add fallback:", err.message);
     }
@@ -412,4 +453,3 @@ export function useData() {
   if (!ctx) throw new Error("useData must be used within DataProvider");
   return ctx;
 }
-
