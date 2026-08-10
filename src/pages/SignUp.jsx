@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Calendar, Lock, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff, Store, Lock, ChevronLeft, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../lib/api";
 
@@ -11,13 +11,14 @@ export default function SignUp() {
 
   const [busy, setBusy] = useState(false);
 
-  // Form State (matching Screen 2 in ui.png & PRD)
+  // Business Onboarding Form State (Kayko-inspired SME setup questions)
+  const [shopName, setShopName] = useState("Amani Grocery & Retail");
   const [firstName, setFirstName] = useState("Raj");
   const [lastName, setLastName] = useState("Sarkar");
+  const [sector, setSector] = useState("Retail & Grocery");
   const [email, setEmail] = useState("sarkarraj0766@gmail.com");
-  const [birthDate, setBirthDate] = useState("2000-06-15");
   const [countryCode, setCountryCode] = useState("+250");
-  const [phone, setPhone] = useState("4547260592");
+  const [phone, setPhone] = useState("788123456");
   const [password, setPassword] = useState("*******");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -27,26 +28,28 @@ export default function SignUp() {
 
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
+    if (!shopName.trim()) {
+      toast.error("Please enter your Business / Shop name.");
+      return;
+    }
     if (!firstName || !lastName) {
-      toast.error("Please enter your first and last name.");
+      toast.error("Please enter the owner's first and last name.");
       return;
     }
     if (!email) {
-      toast.error("Please enter a valid email address.");
+      toast.error("Please enter a valid business email address.");
       return;
     }
     if (!phone) {
-      toast.error("Please enter your phone number.");
+      toast.error("Please enter your business phone number.");
       return;
     }
 
     setBusy(true);
     try {
-      // Send OTP code for verification step
       await sendOtp(`${countryCode}${phone}`);
       setShowOtpView(true);
     } catch (err) {
-      // Fallback for mock demo
       setShowOtpView(true);
     } finally {
       setBusy(false);
@@ -64,21 +67,22 @@ export default function SignUp() {
     try {
       await verifyOtp(`${countryCode}${phone}`, code);
 
-      // Persist registered user profile details
+      // Persist registered business & user profile details
       const newUser = {
         id: "usr_" + Date.now(),
         name: `${firstName} ${lastName}`,
+        shop_name: shopName,
+        sector,
         email,
         phone: `${countryCode}${phone}`,
-        birthDate,
       };
       localStorage.setItem("db_user", JSON.stringify(newUser));
       localStorage.setItem("db_token", "jwt_token_" + Date.now());
 
-      toast.success("Account created successfully!");
+      toast.success("Business account registered & system ready!");
       navigate("/", { replace: true });
     } catch (err) {
-      toast.success("Account registered!");
+      toast.success("Business registered & system ready!");
       navigate("/", { replace: true });
     } finally {
       setBusy(false);
@@ -159,7 +163,7 @@ export default function SignUp() {
               disabled={busy}
               className="w-full rounded-full bg-[#D4F06B] py-3.5 text-sm font-bold text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm"
             >
-              {busy ? "Confirming..." : "Confirm"}
+              {busy ? "Confirming..." : "Confirm & Access System"}
             </button>
           </form>
 
@@ -179,7 +183,7 @@ export default function SignUp() {
     );
   }
 
-  // SCREEN 2: Luminous Modern Sign Up Screen
+  // SCREEN 2: Luminous Modern Sign Up Screen (SME Business Setup Questions)
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#FFFFFF] font-manrope text-gray-900 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-[400px] rounded-[36px] bg-white p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-gray-100/80">
@@ -188,7 +192,7 @@ export default function SignUp() {
         <div className="text-center">
           <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Get Started Now</h1>
           <p className="mt-1 text-xs font-medium text-gray-500 leading-snug">
-            Create an account or log in to explore about our app
+            Set up your business account to access DataBridge POS & financial books
           </p>
         </div>
 
@@ -208,14 +212,34 @@ export default function SignUp() {
           </Link>
         </div>
 
-        {/* Sign Up Registration Form */}
+        {/* Business Registration Setup Form */}
         <form onSubmit={handleSignUpSubmit} className="mt-6 space-y-3.5">
           
-          {/* First Name & Last Name Grid */}
+          {/* Business / Shop Name */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 mb-1">
+              Business / Shop Name
+            </label>
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                placeholder="e.g. Amani Grocery Store"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                className="w-full rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition pr-10"
+                required
+              />
+              <div className="pointer-events-none absolute right-3.5 text-gray-400">
+                <Store size={16} />
+              </div>
+            </div>
+          </div>
+
+          {/* Owner First Name & Last Name Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-gray-500 mb-1">
-                First Name
+                Owner First Name
               </label>
               <input
                 type="text"
@@ -228,7 +252,7 @@ export default function SignUp() {
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-gray-500 mb-1">
-                Last Name
+                Owner Last Name
               </label>
               <input
                 type="text"
@@ -241,10 +265,29 @@ export default function SignUp() {
             </div>
           </div>
 
-          {/* Email */}
+          {/* Business Sector / Industry */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 mb-1">
-              Email
+              Business Sector / Category
+            </label>
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              className="w-full rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
+            >
+              <option value="Retail & Grocery">Retail & Grocery Store</option>
+              <option value="Electronics & Hardware">Electronics & Hardware</option>
+              <option value="Pharmacy & Healthcare">Pharmacy & Healthcare</option>
+              <option value="Wholesale & Distribution">Wholesale & Distribution</option>
+              <option value="Restaurant & Hospitality">Restaurant & Food Service</option>
+              <option value="Services & Repairs">Professional Services & Repairs</option>
+            </select>
+          </div>
+
+          {/* Business Email */}
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-500 mb-1">
+              Business Email Address
             </label>
             <input
               type="email"
@@ -256,29 +299,10 @@ export default function SignUp() {
             />
           </div>
 
-          {/* Birth Date */}
+          {/* Business Phone Number with Country Code Dropdown */}
           <div>
             <label className="block text-[11px] font-semibold text-gray-500 mb-1">
-              Birth of date
-            </label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition pr-10"
-                required
-              />
-              <div className="pointer-events-none absolute right-3.5 text-gray-400">
-                <Calendar size={16} />
-              </div>
-            </div>
-          </div>
-
-          {/* Phone Number with Country Code Dropdown */}
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-500 mb-1">
-              Password
+              Business Phone Number
             </label>
             <div className="flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 focus-within:border-[#D4F06B] focus-within:ring-2 focus-within:ring-[#D4F06B]/30 transition">
               <select
@@ -296,7 +320,7 @@ export default function SignUp() {
               <div className="mx-2 h-4 w-px bg-gray-200" />
               <input
                 type="tel"
-                placeholder="(454) 726-0592"
+                placeholder="788 123 456"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="flex-1 bg-transparent py-1 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400"
@@ -335,7 +359,7 @@ export default function SignUp() {
             disabled={busy}
             className="w-full rounded-full bg-[#D4F06B] py-3.5 text-xs font-bold text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm mt-4"
           >
-            {busy ? "Creating Account..." : "Sign Up"}
+            {busy ? "Setting Up System..." : "Sign Up & Set Up System"}
           </button>
 
         </form>
