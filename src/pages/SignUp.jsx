@@ -285,12 +285,12 @@ export default function SignUp() {
                 onChange={(e) => setCountryCode(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-800 outline-none pr-1 cursor-pointer"
               >
-                <option value="+250">🇷🇼 +250</option>
-                <option value="+254">🇰🇪 +254</option>
-                <option value="+256">🇺🇬 +256</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+44">🇬🇧 +44</option>
-                <option value="+880">🇧🇩 +880</option>
+                <option value="+250">+250 (RW)</option>
+                <option value="+254">+254 (KE)</option>
+                <option value="+256">+256 (UG)</option>
+                <option value="+1">+1 (US)</option>
+                <option value="+44">+44 (UK)</option>
+                <option value="+880">+880 (BD)</option>
               </select>
               <div className="mx-2 h-4 w-px bg-gray-200" />
               <input

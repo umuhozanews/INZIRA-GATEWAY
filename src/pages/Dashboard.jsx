@@ -100,7 +100,7 @@ export default function Dashboard() {
             title="Switch Language / Hindura Ururimi"
           >
             <Globe size={15} className="text-purple-600 shrink-0" />
-            <span>{lang === "en" ? "EN 🇺🇸" : "RW 🇷🇼"}</span>
+            <span>{lang === "en" ? "EN" : "RW"}</span>
           </button>
 
           <button

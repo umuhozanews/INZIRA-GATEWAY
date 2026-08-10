@@ -1,36 +1,48 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../lib/api";
+import { useAuth } from "./AuthContext";
 
 const DataContext = createContext(null);
 
-const DB_STOCK_KEY = "db_local_stock_v1";
-const DB_SALES_KEY = "db_local_sales_v1";
-const DB_EXPENSES_KEY = "db_local_expenses_v1";
-
 export function DataProvider({ children }) {
-  // New account default is empty array [] (no stock, no sales, no expenses)
+  const { user } = useAuth();
+
+  // Scope storage keys specifically to the logged-in user account ID/email/phone
+  const userKey = useMemo(() => {
+    if (!user) return "guest";
+    const cleanId = String(user.id || user.email || user.phone || "guest").replace(/[^a-zA-Z0-9_-]/g, "_");
+    return cleanId;
+  }, [user]);
+
+  const STOCK_KEY = `db_stock_${userKey}`;
+  const SALES_KEY = `db_sales_${userKey}`;
+  const EXPENSES_KEY = `db_expenses_${userKey}`;
+
+  // Load account-specific stock
   const [stock, setStock] = useState(() => {
     try {
-      const saved = localStorage.getItem(DB_STOCK_KEY);
+      const saved = localStorage.getItem(`db_stock_${userKey}`);
       return saved !== null ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
 
+  // Load account-specific sales
   const [sales, setSales] = useState(() => {
     try {
-      const saved = localStorage.getItem(DB_SALES_KEY);
+      const saved = localStorage.getItem(`db_sales_${userKey}`);
       return saved !== null ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
 
+  // Load account-specific expenses
   const [expenses, setExpenses] = useState(() => {
     try {
-      const saved = localStorage.getItem(DB_EXPENSES_KEY);
+      const saved = localStorage.getItem(`db_expenses_${userKey}`);
       return saved !== null ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -39,64 +51,79 @@ export function DataProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
+  // Re-sync local state whenever active user account changes
+  useEffect(() => {
+    try {
+      const savedStock = localStorage.getItem(STOCK_KEY);
+      const savedSales = localStorage.getItem(SALES_KEY);
+      const savedExpenses = localStorage.getItem(EXPENSES_KEY);
+
+      setStock(savedStock !== null ? JSON.parse(savedStock) : []);
+      setSales(savedSales !== null ? JSON.parse(savedSales) : []);
+      setExpenses(savedExpenses !== null ? JSON.parse(savedExpenses) : []);
+    } catch (e) {
+      console.error("Failed to load user-scoped data:", e);
+    }
+  }, [userKey, STOCK_KEY, SALES_KEY, EXPENSES_KEY]);
+
   // Method to completely reset all data state for a fresh new account
   const resetData = useCallback(() => {
     setStock([]);
     setSales([]);
     setExpenses([]);
     try {
-      localStorage.setItem(DB_STOCK_KEY, JSON.stringify([]));
-      localStorage.setItem(DB_SALES_KEY, JSON.stringify([]));
-      localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify([]));
+      localStorage.setItem(STOCK_KEY, JSON.stringify([]));
+      localStorage.setItem(SALES_KEY, JSON.stringify([]));
+      localStorage.setItem(EXPENSES_KEY, JSON.stringify([]));
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [STOCK_KEY, SALES_KEY, EXPENSES_KEY]);
 
-  // Sync state to localStorage whenever it changes
+  // Sync state to user-scoped localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(DB_STOCK_KEY, JSON.stringify(stock));
+      localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
     } catch (e) {
       console.error("Failed to save stock to localStorage:", e);
     }
-  }, [stock]);
+  }, [stock, STOCK_KEY]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(DB_SALES_KEY, JSON.stringify(sales));
+      localStorage.setItem(SALES_KEY, JSON.stringify(sales));
     } catch (e) {
       console.error("Failed to save sales to localStorage:", e);
     }
-  }, [sales]);
+  }, [sales, SALES_KEY]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify(expenses));
+      localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
     } catch (e) {
       console.error("Failed to save expenses to localStorage:", e);
     }
-  }, [expenses]);
+  }, [expenses, EXPENSES_KEY]);
 
   // Real-Time Cross-Tab / Cross-Window Sync via Web Storage Listener
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === DB_STOCK_KEY) {
+      if (e.key === STOCK_KEY) {
         try { setStock(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
-      if (e.key === DB_SALES_KEY) {
+      if (e.key === SALES_KEY) {
         try { setSales(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
-      if (e.key === DB_EXPENSES_KEY) {
+      if (e.key === EXPENSES_KEY) {
         try { setExpenses(e.newValue ? JSON.parse(e.newValue) : []); } catch {}
       }
     };
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  }, [STOCK_KEY, SALES_KEY, EXPENSES_KEY]);
 
-  // Sync data with Backend API, keeping locally added offline items
+  // Sync data with Backend API, keeping user account consistent across devices
   const refreshAll = useCallback(async (silent = true) => {
     if (!silent) setLoading(true);
     try {
