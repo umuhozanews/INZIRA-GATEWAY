@@ -62,12 +62,15 @@ export default function Dashboard() {
   const s = stats || {};
   const todayRevenue = sales.reduce((sum, sa) => sum + (Number(sa.total_amount) || 0), 0);
   const todayExpensesSum = expenses.reduce((sum, ex) => sum + (Number(ex.amount_rwf) || 0), 0);
-  const todayExpenses = todayExpensesSum || (s.todayRevenue ? Math.max(0, s.todayRevenue - s.netCashToday) : 0);
+  const todayExpenses = todayExpensesSum;
   const cash = todayRevenue - todayExpenses;
-  const score = s.healthScore?.score ?? 82;
-  const band = s.healthScore?.band ?? "green";
+
+  // New accounts with 0 sales start with NULL health score & 0 stats
+  const hasData = sales.length > 0;
+  const score = hasData ? (s.healthScore?.score ?? 82) : null;
+  const band = hasData ? (s.healthScore?.band ?? "green") : "neutral";
   const lowAlert = (s.alerts || []).find((a) => a.type === "low_stock");
-  const salesChange = s.salesChangePct ?? 18.5;
+  const salesChange = hasData ? (s.salesChangePct ?? 18.5) : null;
 
   const quickActions = [
     { label: t("record_sale"), icon: ShoppingCart, to: "/sell", color: "bg-gray-900 text-white" },
@@ -85,7 +88,7 @@ export default function Dashboard() {
             {t("hello")}
           </span>
           <h1 className="font-manrope text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
-            {shopName || user?.name || "My Shop"}
+            {user?.shop_name || shopName || user?.name || "My Shop"}
             <Sparkles size={16} className="text-purple-600 shrink-0" />
           </h1>
         </div>
@@ -125,8 +128,10 @@ export default function Dashboard() {
                   <span className="font-manrope text-[11px] font-extrabold text-gray-900 group-hover:text-purple-600 transition">
                     {t("health_score")}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9.5px] font-black uppercase">
-                    {score >= 80 ? "Excellent" : "Good"}
+                  <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase ${
+                    score == null ? "bg-gray-100 text-gray-600" : score >= 80 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                  }`}>
+                    {score == null ? "New Account" : score >= 80 ? "Excellent" : "Good"}
                   </span>
                 </div>
                 {score != null ? (
@@ -141,7 +146,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-gray-400">{t("no_score")}</p>
+                  <p className="text-[11px] font-medium text-gray-400">Record your first sale to start tracking business health</p>
                 )}
               </div>
             </div>
@@ -156,8 +161,8 @@ export default function Dashboard() {
             <StatCard
               label={t("todays_sales")}
               value={rwfCompact(todayRevenue)}
-              sub={salesChange != null ? `+${salesChange}%` : undefined}
-              tone="up"
+              sub={hasData && salesChange != null ? `+${salesChange}%` : undefined}
+              tone={hasData ? "up" : undefined}
               onClick={() => navigate("/sell")}
             />
             <StatCard
@@ -224,7 +229,7 @@ export default function Dashboard() {
             <div className="space-y-2">
               {!recent || recent.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-xs text-gray-400 font-semibold">
-                  {t("no_activity")}
+                  No sales recorded yet. Click 'Record Sale' to start!
                 </div>
               ) : (
                 recent.map((sale) => (

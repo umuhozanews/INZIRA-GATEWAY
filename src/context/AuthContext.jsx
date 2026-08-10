@@ -3,13 +3,6 @@ import api, { TOKEN_KEY, REFRESH_KEY, USER_KEY } from "../lib/api";
 
 const AuthContext = createContext(null);
 
-const DEFAULT_STOCK = [
-  { id: 1, name: "Sugar 1kg", category: "Groceries", unit: "kg", quantity: 48, sell_price_rwf: 1500, cost_price_rwf: 1200, low_stock_threshold: 10, is_active: true },
-  { id: 2, name: "Cooking Oil 1L", category: "Groceries", unit: "litre", quantity: 28, sell_price_rwf: 2800, cost_price_rwf: 2200, low_stock_threshold: 5, is_active: true },
-  { id: 3, name: "Soap Bar", category: "Hygiene", unit: "pcs", quantity: 96, sell_price_rwf: 600, cost_price_rwf: 400, low_stock_threshold: 20, is_active: true },
-  { id: 4, name: "Rice 1kg", category: "Groceries", unit: "kg", quantity: 75, sell_price_rwf: 1200, cost_price_rwf: 900, low_stock_threshold: 15, is_active: true },
-];
-
 const DB_STOCK_KEY = "db_local_stock_v1";
 const DB_SALES_KEY = "db_local_sales_v1";
 const DB_EXPENSES_KEY = "db_local_expenses_v1";
@@ -56,7 +49,7 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  // Initialize brand new fresh business account directly from onboarding questions (No verification code required)
+  // Initialize brand new fresh business account with NULL / EMPTY DATA (0 stock, 0 sales, 0 expenses, 0 workers)
   const registerUser = useCallback(
     async ({
       shop_name,
@@ -84,9 +77,10 @@ export function AuthProvider({ children }) {
         teamSize,
         startDate,
         referralSource,
+        isNewAccount: true,
       };
 
-      // Store initial user settings and initialize fresh business account data
+      // Set user settings & CLEAR ALL PREVIOUS DEMO DATA -> Fresh NULL State
       localStorage.setItem(
         SETTINGS_KEY,
         JSON.stringify({
@@ -100,7 +94,7 @@ export function AuthProvider({ children }) {
         })
       );
       localStorage.setItem(TEAM_KEY, JSON.stringify([]));
-      localStorage.setItem(DB_STOCK_KEY, JSON.stringify(DEFAULT_STOCK));
+      localStorage.setItem(DB_STOCK_KEY, JSON.stringify([]));
       localStorage.setItem(DB_SALES_KEY, JSON.stringify([]));
       localStorage.setItem(DB_EXPENSES_KEY, JSON.stringify([]));
 

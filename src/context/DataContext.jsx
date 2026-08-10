@@ -4,112 +4,36 @@ import api from "../lib/api";
 
 const DataContext = createContext(null);
 
-const DEFAULT_STOCK = [
-  { id: 1, name: "Sugar 1kg", category: "Groceries", unit: "kg", quantity: 48, sell_price_rwf: 1500, cost_price_rwf: 1200, low_stock_threshold: 10, is_active: true },
-  { id: 2, name: "Cooking Oil 1L", category: "Groceries", unit: "litre", quantity: 28, sell_price_rwf: 2800, cost_price_rwf: 2200, low_stock_threshold: 5, is_active: true },
-  { id: 3, name: "Soap Bar", category: "Hygiene", unit: "pcs", quantity: 96, sell_price_rwf: 600, cost_price_rwf: 400, low_stock_threshold: 20, is_active: true },
-  { id: 4, name: "Rice 1kg", category: "Groceries", unit: "kg", quantity: 75, sell_price_rwf: 1200, cost_price_rwf: 900, low_stock_threshold: 15, is_active: true },
-  { id: 5, name: "Men Plain T-Shirt", category: "T-Shirts", unit: "pcs", quantity: 24, sell_price_rwf: 8500, cost_price_rwf: 5500, low_stock_threshold: 5, is_active: true },
-  { id: 6, name: "Women Floral Dress", category: "Dresses", unit: "pcs", quantity: 14, sell_price_rwf: 22000, cost_price_rwf: 14000, low_stock_threshold: 3, is_active: true },
-  { id: 7, name: "Men Slim Jeans", category: "Jeans", unit: "pcs", quantity: 18, sell_price_rwf: 18500, cost_price_rwf: 11000, low_stock_threshold: 5, is_active: true },
-];
-
-const DEFAULT_SALES = [
-  {
-    id: 101,
-    invoice_number: "INV-2026-001",
-    customer_name: "Walk-in Customer",
-    customer_phone: "",
-    cashier_name: "Demo Cashier",
-    payment_method: "cash",
-    total_amount: 4500,
-    amount_paid: 4500,
-    amount_owed: 0,
-    payment_status: "completed",
-    items_count: 2,
-    items: [
-      { item_name: "Sugar 1kg", quantity: 2, unit_price: 1500, subtotal: 3000 },
-      { item_name: "Cooking Oil 1L", quantity: 1, unit_price: 1500, subtotal: 1500 }
-    ],
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 102,
-    invoice_number: "INV-2026-002",
-    customer_name: "Jean Paul Bizimana",
-    customer_phone: "0788123456",
-    cashier_name: "Demo Cashier",
-    payment_method: "split",
-    split_payments: { cash: 5000, momo: 3000, momo_provider: "mtn_momo", credit: 4800 },
-    total_amount: 12800,
-    amount_paid: 8000,
-    amount_owed: 4800,
-    due_date: new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0],
-    payment_status: "partial",
-    items_count: 3,
-    items: [
-      { item_name: "Men Plain T-Shirt", quantity: 1, unit_price: 8500, subtotal: 8500 },
-      { item_name: "Soap Bar", quantity: 2, unit_price: 600, subtotal: 1200 },
-      { item_name: "Sugar 1kg", quantity: 2, unit_price: 1550, subtotal: 3100 }
-    ],
-    debt_payments: [],
-    created_at: new Date(Date.now() - 3600000).toISOString()
-  },
-  {
-    id: 103,
-    invoice_number: "INV-2026-003",
-    customer_name: "Claire Umutoni",
-    customer_phone: "0785987654",
-    cashier_name: "Demo Cashier",
-    payment_method: "credit",
-    total_amount: 22000,
-    amount_paid: 0,
-    amount_owed: 22000,
-    due_date: new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
-    payment_status: "debt",
-    items_count: 1,
-    items: [
-      { item_name: "Women Floral Dress", quantity: 1, unit_price: 22000, subtotal: 22000 }
-    ],
-    debt_payments: [],
-    created_at: new Date(Date.now() - 7200000).toISOString()
-  }
-];
-
-const DEFAULT_EXPENSES = [
-  { id: 1, category: "Rent", amount_rwf: 45000, title: "Store Monthly Rent", notes: "Kigali Market Stall", created_at: new Date().toISOString() },
-  { id: 2, category: "Utilities", amount_rwf: 12500, title: "Electricity & Water Bill", notes: "EUCL Topup", created_at: new Date().toISOString() }
-];
-
 const DB_STOCK_KEY = "db_local_stock_v1";
 const DB_SALES_KEY = "db_local_sales_v1";
 const DB_EXPENSES_KEY = "db_local_expenses_v1";
 
 export function DataProvider({ children }) {
+  // New account default is empty array [] (no stock, no sales, no expenses)
   const [stock, setStock] = useState(() => {
     try {
       const saved = localStorage.getItem(DB_STOCK_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_STOCK;
+      return saved !== null ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_STOCK;
+      return [];
     }
   });
 
   const [sales, setSales] = useState(() => {
     try {
       const saved = localStorage.getItem(DB_SALES_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_SALES;
+      return saved !== null ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_SALES;
+      return [];
     }
   });
 
   const [expenses, setExpenses] = useState(() => {
     try {
       const saved = localStorage.getItem(DB_EXPENSES_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_EXPENSES;
+      return saved !== null ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_EXPENSES;
+      return [];
     }
   });
 
@@ -208,12 +132,10 @@ export function DataProvider({ children }) {
   useEffect(() => {
     refreshAll(false);
 
-    // Auto Polling every 8 seconds for multi-user real-time changes
     const pollInterval = setInterval(() => {
       refreshAll(true);
     }, 8000);
 
-    // Instant re-sync when user returns to app/tab
     const handleFocus = () => refreshAll(true);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") refreshAll(true);
@@ -229,7 +151,7 @@ export function DataProvider({ children }) {
     };
   }, [refreshAll]);
 
-  // Interconnected Record Sale Action with Split Payment & Debt Support
+  // Interconnected Record Sale Action
   const recordSale = async ({
     items,
     payment_method,
@@ -269,7 +191,7 @@ export function DataProvider({ children }) {
       invoice_number: invNum,
       customer_name: customer_name?.trim() || "Walk-in Customer",
       customer_phone: customer_phone?.trim() || "",
-      cashier_name: "Demo Cashier",
+      cashier_name: "Cashier",
       payment_method: payment_method || "cash",
       split_payments: payment_method === "split" ? split_payments : null,
       total_amount: saleTotal,
@@ -290,10 +212,8 @@ export function DataProvider({ children }) {
       created_at: new Date().toISOString()
     };
 
-    // 1. Immediately update Sales history in state
     setSales(prev => [newSale, ...prev]);
 
-    // 2. Immediately decrement Stock quantities for all purchased stock items
     setStock(prevStock => {
       return prevStock.map(item => {
         const cartMatch = items.find(ci => ci.stock_item_id && String(ci.stock_item_id) === String(item.id));
@@ -306,7 +226,6 @@ export function DataProvider({ children }) {
       });
     });
 
-    // 3. Post to backend API asynchronously & trigger sync
     try {
       await api.post("/sales", {
         items,
