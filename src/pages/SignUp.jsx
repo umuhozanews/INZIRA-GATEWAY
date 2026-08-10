@@ -328,10 +328,10 @@ export default function SignUp() {
             </div>
           </div>
 
-          {/* 10. How did you learn about Kayko?* */}
+          {/* 10. How did you learn about INZIRA?* */}
           <div>
             <label className="block text-xs font-bold text-gray-800 mb-2">
-              How did you learn about Kayko?<span className="text-red-500">*</span>
+              How did you learn about INZIRA?<span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {[
