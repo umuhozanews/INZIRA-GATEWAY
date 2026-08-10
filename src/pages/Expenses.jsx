@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Plus, Wallet, TrendingDown, TrendingUp } from "lucide-react";
-import api, { errorMessage } from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf, timeAgo, todayISO } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
@@ -11,7 +10,7 @@ import Sheet from "../components/Sheet";
 import { Button, Field, TextInput } from "../components/ui";
 import { useData } from "../context/DataContext";
 
-const CAT_COLORS = ["#1F5C4E", "#E8A33D", "#2F8F6E", "#C24B3D", "#8A8272", "#2F7A67"];
+const CAT_COLORS = ["#D4F06B", "#8B5CF6", "#10B981", "#EF4444", "#6B7280", "#3B82F6"];
 
 const EMPTY = { category: "", amount: "", description: "", expense_date: todayISO() };
 
@@ -69,7 +68,7 @@ export default function Expenses() {
       setForm(EMPTY);
       setOpen(false);
     } catch (err) {
-      toast.error(errorMessage(err, "Could not add the expense."));
+      toast.error("Could not add the expense.");
     } finally {
       setSaving(false);
     }
@@ -78,13 +77,13 @@ export default function Expenses() {
   if (loading) return <Loading label={t("loading")} />;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto flex h-full flex-col">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto flex h-full flex-col font-manrope">
       <ScreenHeader
         title={t("expenses_title")}
         right={
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-lt transition"
+            className="flex items-center gap-1.5 rounded-full bg-[#D4F06B] px-4 py-2 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
           >
             <Plus size={16} /> <span>{t("add")}</span>
           </button>
@@ -92,43 +91,43 @@ export default function Expenses() {
       />
 
       {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start flex-1 overflow-y-auto pb-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start flex-1 overflow-y-auto pb-10">
         {/* Left Section: Expense Breakdown & Overview */}
         <div className="md:col-span-5 lg:col-span-4 space-y-4">
-          <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-4">
+          <div className="rounded-[28px] border border-gray-200/80 bg-white p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] space-y-4">
             <div>
-              <span className="text-xs font-bold text-muted uppercase tracking-wider">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                 {t("this_month_so_far")}
               </span>
-              <div className="mt-1 font-heading text-2xl md:text-3xl font-extrabold tabnum text-ink">
+              <div className="mt-1 font-manrope text-2xl md:text-3xl font-black tabnum text-gray-900">
                 {rwf(thisMonth)} RWF
               </div>
               {changePct != null && (
                 <div className="mt-1.5 flex items-center gap-1">
                   {down ? (
-                    <TrendingDown size={14} className="text-success" />
+                    <TrendingDown size={14} className="text-emerald-600" />
                   ) : (
-                    <TrendingUp size={14} className="text-danger" />
+                    <TrendingUp size={14} className="text-red-500" />
                   )}
-                  <span className={`text-xs font-bold ${down ? "text-success" : "text-danger"}`}>
+                  <span className={`text-xs font-bold ${down ? "text-emerald-600" : "text-red-500"}`}>
                     {Math.abs(changePct)}% {down ? "less than" : "more than"} {t("vs_last_month")}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="pt-3 border-t border-line space-y-3">
-              <span className="text-xs font-bold text-ink uppercase tracking-wider">Categories</span>
+            <div className="pt-3 border-t border-gray-100 space-y-3">
+              <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">Categories</span>
               {bars.length === 0 && (
-                <p className="text-xs text-muted py-2">{t("no_expenses")}</p>
+                <p className="text-xs text-gray-400 py-2">{t("no_expenses")}</p>
               )}
               {bars.map((r, i) => (
                 <div key={r.category || i} className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold text-ink">
+                  <div className="flex justify-between text-xs font-bold text-gray-900">
                     <span>{r.category || "—"}</span>
-                    <span className="tabnum text-muted">{rwf(r.this_month)} RWF</span>
+                    <span className="tabnum text-gray-500">{rwf(r.this_month)} RWF</span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-line overflow-hidden">
+                  <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
                     <div
                       className="h-2 rounded-full transition-all duration-300"
                       style={{
@@ -146,35 +145,35 @@ export default function Expenses() {
         {/* Right Section: Recent Expenses Stream */}
         <div className="md:col-span-7 lg:col-span-8 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-body text-xs font-bold text-ink uppercase tracking-wider">
+            <h2 className="font-manrope text-xs font-extrabold text-gray-400 uppercase tracking-wider">
               {t("recent_entries")}
             </h2>
           </div>
 
           <div className="space-y-2.5">
             {entries.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-line p-8 text-center text-xs md:text-sm text-muted">
+              <div className="rounded-[28px] border border-dashed border-gray-200 p-8 text-center text-xs md:text-sm text-gray-400 font-semibold">
                 {t("no_expenses")}
               </div>
             )}
             {entries.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center justify-between rounded-xl border border-line bg-card p-3.5 shadow-sm hover:border-primary/40 transition"
+                className="flex items-center justify-between rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:border-[#D4F06B] transition"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-danger-lt text-danger shrink-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 shrink-0">
                     <Wallet size={18} />
                   </div>
                   <div>
-                    <div className="text-xs md:text-sm font-bold text-ink">
+                    <div className="text-xs md:text-sm font-extrabold text-gray-900">
                       {e.category}
                       {e.description ? ` — ${e.description}` : ""}
                     </div>
-                    <div className="text-[11px] text-muted">{timeAgo(e.expense_date, lang)}</div>
+                    <div className="text-[11px] font-semibold text-gray-400">{timeAgo(e.expense_date, lang)}</div>
                   </div>
                 </div>
-                <span className="text-xs md:text-sm font-extrabold tabnum text-danger">
+                <span className="text-xs md:text-sm font-black tabnum text-red-500">
                   -{rwf(e.amount)} RWF
                 </span>
               </div>

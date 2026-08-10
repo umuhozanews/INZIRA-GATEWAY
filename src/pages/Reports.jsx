@@ -146,13 +146,13 @@ export default function Reports() {
   const tr = taxReport;
 
   return (
-    <div className="min-h-screen bg-paper pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
       <ScreenHeader
         title={t("nav_reports")}
         right={
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-xl border border-line bg-card px-3 py-1.5 text-xs font-bold text-ink shadow-sm hover:bg-paper transition"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 shadow-sm hover:bg-gray-100 transition"
           >
             <Printer size={15} />
             <span>Export</span>
@@ -162,7 +162,7 @@ export default function Reports() {
 
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-2xl border border-line shadow-sm overflow-x-auto">
+        <div className="flex items-center gap-1.5 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm overflow-x-auto">
           {[
             { id: "sales", label: "Sales Report", icon: TrendingUp },
             { id: "stock", label: "Stock Valuation", icon: Package },
@@ -174,10 +174,10 @@ export default function Reports() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-muted hover:text-ink hover:bg-paper"
+                    ? "bg-[#D4F06B] text-gray-900 shadow-sm font-black"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 <Icon size={15} />

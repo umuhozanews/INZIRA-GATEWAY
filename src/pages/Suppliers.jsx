@@ -244,25 +244,24 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="min-h-screen bg-paper pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
       <ScreenHeader
-        title="Customers & Payables"
+        title="Suppliers & Debtors"
         right={
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAddCustOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-primary-dark transition cursor-pointer"
+              className="flex items-center gap-1 rounded-full bg-[#D4F06B] px-3.5 py-1.5 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
             >
               <UserPlus size={14} />
-              <span>+ Customer</span>
+              <span>Customer</span>
             </button>
-
             <button
               onClick={() => setAddSupOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-line bg-card px-3 py-1.5 text-xs font-bold text-ink shadow-sm hover:bg-paper transition cursor-pointer"
+              className="flex items-center gap-1 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition"
             >
-              <Truck size={14} />
-              <span>+ Supplier</span>
+              <Plus size={14} />
+              <span>Supplier</span>
             </button>
           </div>
         }

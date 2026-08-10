@@ -5,7 +5,6 @@ import { Search, Plus, AlertTriangle, Package, DollarSign } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
-import Loading from "../components/Loading";
 import Sheet from "../components/Sheet";
 import { Button, Field, TextInput } from "../components/ui";
 import { getProductImage } from "../lib/productImages";
@@ -22,29 +21,28 @@ function statusOf(item) {
 
 function StockCard({ item, t }) {
   const st = statusOf(item);
-  const color = st === "out" ? "#C24B3D" : st === "low" ? "#E8A33D" : "#2F8F6E";
+  const color = st === "out" ? "bg-red-500" : st === "low" ? "bg-amber-400 text-gray-900" : "bg-[#D4F06B] text-gray-900";
   const th = Number(item.low_stock_threshold) || 5;
   const pct = Math.max(6, Math.min(100, (Number(item.quantity) / (th * 3)) * 100));
   const photoUrl = getProductImage(item);
 
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-line bg-card overflow-hidden shadow-card hover:border-primary/40 transition group">
+    <div className="flex flex-col justify-between rounded-[28px] border border-gray-200/80 bg-white overflow-hidden shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:border-[#D4F06B] hover:shadow-md transition duration-200 group font-manrope">
       {/* Product Image Header */}
-      <div className="relative h-32 w-full overflow-hidden bg-paper">
+      <div className="relative h-36 w-full overflow-hidden bg-gray-100">
         <SafeImage
           src={photoUrl}
           alt={item.name}
           className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent" />
         <span
-          className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase text-white shadow-sm"
-          style={{ background: color }}
+          className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm ${color}`}
         >
           {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
         </span>
         {item.category && (
-          <span className="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-lg bg-black/60 backdrop-blur text-[10px] font-bold text-white uppercase">
+          <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-extrabold text-white uppercase tracking-wider">
             {item.category}
           </span>
         )}
@@ -52,23 +50,23 @@ function StockCard({ item, t }) {
 
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="text-sm font-bold text-ink truncate group-hover:text-primary transition">{item.name}</h3>
+          <h3 className="text-sm font-extrabold text-gray-900 truncate group-hover:text-purple-600 transition">{item.name}</h3>
 
           <div className="flex items-baseline justify-between mt-2 text-xs">
-            <span className="text-muted font-semibold">{t("sell_price")}:</span>
-            <span className="font-extrabold tabnum text-primary">{rwf(item.sell_price_rwf)} RWF</span>
+            <span className="text-gray-400 font-semibold">{t("sell_price")}:</span>
+            <span className="font-black tabnum text-gray-900">{rwf(item.sell_price_rwf)} RWF</span>
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-line/60">
+        <div className="mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-muted">{t("quantity")}:</span>
-            <span className="font-extrabold tabnum text-ink">
+            <span className="font-semibold text-gray-400">{t("quantity")}:</span>
+            <span className="font-black tabnum text-gray-900">
               {Number(item.quantity)} {item.unit ? `${item.unit}` : ""}
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-line overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: color }} />
+          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-300 ${st === "out" ? "bg-red-500" : st === "low" ? "bg-amber-400" : "bg-[#D4F06B]"}`} style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>
@@ -139,58 +137,58 @@ export default function Stock() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto flex h-full flex-col">
+    <div className="p-4 md:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto flex h-full flex-col font-manrope">
       <ScreenHeader
         title={t("my_stock")}
         right={
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-lt transition"
+            className="flex items-center gap-1.5 rounded-full bg-[#D4F06B] px-4 py-2 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
           >
             <Plus size={16} /> <span>{t("add")}</span>
           </button>
         }
       />
 
-      {/* Overview Stat Cards (Responsive Grid) */}
+      {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-xlt text-primary shrink-0">
+        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 shrink-0 shadow-sm">
             <Package size={20} />
           </div>
           <div>
-            <div className="text-xs font-semibold text-muted">{t("all")} Products</div>
-            <div className="text-lg font-extrabold tabnum text-ink">{items.length}</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("all")} Products</div>
+            <div className="text-lg font-black tabnum text-gray-900">{items.length}</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 shrink-0">
+        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-800 shrink-0">
             <AlertTriangle size={20} />
           </div>
           <div>
-            <div className="text-xs font-semibold text-muted">{t("running_low")}</div>
-            <div className="text-lg font-extrabold tabnum text-ink">{lowCount}</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("running_low")}</div>
+            <div className="text-lg font-black tabnum text-gray-900">{lowCount}</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
+        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 shrink-0">
             <DollarSign size={20} />
           </div>
           <div>
-            <div className="text-xs font-semibold text-muted">Total Stock Value</div>
-            <div className="text-lg font-extrabold tabnum text-success">{rwf(totalValue)} RWF</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Stock Value</div>
+            <div className="text-lg font-black tabnum text-emerald-600">{rwf(totalValue)} RWF</div>
           </div>
         </div>
       </div>
 
       {/* Search Bar */}
       <div>
-        <div className="flex items-center gap-2 rounded-xl border border-line bg-card px-3.5 py-2.5 shadow-sm">
-          <Search size={16} className="text-muted shrink-0" />
+        <div className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white px-4 py-3 shadow-sm">
+          <Search size={16} className="text-gray-400 shrink-0" />
           <input
-            className="flex-1 bg-transparent text-xs md:text-sm text-ink outline-none placeholder:text-muted"
+            className="flex-1 bg-transparent text-xs md:text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
             placeholder={t("search_stock")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -199,8 +197,8 @@ export default function Stock() {
       </div>
 
       {lowCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-xl bg-danger-lt border border-danger/20 px-4 py-2.5 text-xs font-bold text-[#7A2E22]">
-          <AlertTriangle size={16} className="text-danger shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-full bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-900">
+          <AlertTriangle size={16} className="text-red-500 shrink-0" />
           <span>
             {lowCount} {t("running_low")}
           </span>
@@ -208,11 +206,11 @@ export default function Stock() {
       )}
 
       {/* Stock Cards Grid */}
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto pb-10">
         {visible.length === 0 ? (
-          <div className="mt-12 text-center text-xs md:text-sm text-muted">{t("no_stock")}</div>
+          <div className="mt-12 text-center text-xs md:text-sm text-gray-400 font-semibold">{t("no_stock")}</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {visible.map((item) => (
               <StockCard key={item.id} item={item} t={t} />
             ))}
