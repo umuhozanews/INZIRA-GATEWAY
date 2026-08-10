@@ -262,26 +262,32 @@ export function AuthProvider({ children }) {
   );
 
   const loginWithGoogle = useCallback(
-    async (googleToken) => {
+    async (emailInput, nameInput) => {
+      const email = typeof emailInput === "string" ? emailInput.trim() : "owner@gmail.com";
+      const name = typeof nameInput === "string" ? nameInput.trim() : (email.split("@")[0] || "Google SME Owner");
+      
+      const googleUser = {
+        id: "google_usr_" + Date.now(),
+        name,
+        email,
+        shop_name: `${name}'s Shop`,
+        sector: "Retail & Grocery",
+        phone: "+250 788 000 000",
+        picture: "https://lh3.googleusercontent.com/a/default-user",
+        role: "Merchant",
+        status: "Active",
+        createdAt: new Date().toISOString(),
+      };
+
       try {
-        const { data } = await api.post("/auth/google", { token: googleToken });
+        const { data } = await api.post("/auth/google", { email, name });
         return persist(data);
       } catch (err) {
-        const dummyGoogleUser = {
-          id: "google_usr_" + Date.now(),
-          name: "SME Owner (Google)",
-          email: "owner@gmail.com",
-          shop_name: "My Google SME Shop",
-          picture: "https://lh3.googleusercontent.com/a/default-user",
-          role: "Merchant",
-          status: "Active",
-          createdAt: new Date().toISOString(),
-        };
-        saveAccountToRegistry(dummyGoogleUser);
+        saveAccountToRegistry(googleUser);
         return persist({
           accessToken: "google_jwt_access_token_" + Date.now(),
           refreshToken: "google_jwt_refresh_token_" + Date.now(),
-          user: dummyGoogleUser
+          user: googleUser
         });
       }
     },
