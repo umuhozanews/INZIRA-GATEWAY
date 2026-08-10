@@ -340,13 +340,13 @@ export default function Sell() {
 
         {/* View Mode Toggle: Record Sale vs Customer Debts vs Today's History */}
         <div className="px-4 md:px-0">
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-paper border border-line overflow-x-auto">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white border border-gray-200/80 shadow-sm overflow-x-auto">
             <button
               onClick={() => setViewMode("sell")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "sell"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted hover:text-ink"
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <ShoppingCart size={15} /> Record Sale
@@ -354,10 +354,10 @@ export default function Sell() {
 
             <button
               onClick={() => setViewMode("debts")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "debts"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted hover:text-ink"
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <Clock size={15} /> Customer Debts ({debtSales.length})
@@ -365,10 +365,10 @@ export default function Sell() {
 
             <button
               onClick={() => setViewMode("history")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "history"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted hover:text-ink"
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <History size={15} /> Sales History ({salesHistory.length})
@@ -380,11 +380,11 @@ export default function Sell() {
         {viewMode === "sell" && (
           <>
             {/* Search & Custom Text Item Button */}
-            <div className="px-4 md:px-0 flex items-center gap-2">
-              <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-line bg-card px-3.5 py-2.5 shadow-sm">
-                <Search size={16} className="text-muted shrink-0" />
+            <div className="px-4 md:px-0 flex items-center gap-2 font-manrope">
+              <div className="flex flex-1 items-center gap-2.5 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
+                <Search size={16} className="text-gray-400 shrink-0" />
                 <input
-                  className="flex-1 bg-transparent text-xs md:text-sm text-ink outline-none placeholder:text-muted"
+                  className="flex-1 bg-transparent text-xs md:text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
                   placeholder={t("search")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -393,7 +393,7 @@ export default function Sell() {
 
               <button
                 onClick={() => setCustomOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-xlt px-3.5 py-2.5 text-xs font-bold text-primary hover:bg-primary hover:text-white active:scale-95 transition cursor-pointer shrink-0 shadow-sm"
+                className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-gray-800 active:scale-95 transition cursor-pointer shrink-0 shadow-sm"
               >
                 <Edit3 size={15} />
                 <span className="hidden sm:inline">+ Custom Item</span>
@@ -402,15 +402,15 @@ export default function Sell() {
             </div>
 
             {/* Category chips */}
-            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:px-0">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:px-0 font-manrope">
               {[{ value: "__all", label: t("all") }, ...cats.map((c) => ({ value: c, label: c }))].map((c) => (
                 <button
                   key={c.value}
                   onClick={() => setActiveCat(c.value)}
-                  className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                  className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-extrabold transition ${
                     activeCat === c.value
-                      ? "border-primary bg-primary text-white shadow-sm"
-                      : "border-line bg-card text-ink hover:bg-paper"
+                      ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {c.label}
@@ -419,13 +419,13 @@ export default function Sell() {
             </div>
 
             {/* Product grid */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6">
+            <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6 font-manrope">
               {visibleProducts.length === 0 ? (
-                <div className="mt-12 text-center text-xs md:text-sm text-muted space-y-3">
+                <div className="mt-12 text-center text-xs md:text-sm text-gray-400 space-y-3 font-semibold">
                   <p>{t("no_products")}</p>
                   <button
                     onClick={() => setCustomOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-xs font-bold text-white shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800"
                   >
                     <Plus size={14} /> Add Custom Item Manually
                   </button>
@@ -437,44 +437,44 @@ export default function Sell() {
                     return (
                       <div
                         key={p.id}
-                        className={`group flex flex-col justify-between overflow-hidden rounded-2xl border bg-card transition duration-150 ${
-                          inCart > 0 ? "border-primary shadow-sm" : "border-line hover:border-primary/40"
+                        className={`group flex flex-col justify-between overflow-hidden rounded-[24px] border bg-white transition duration-150 ${
+                          inCart > 0 ? "border-gray-900 shadow-md ring-1 ring-gray-900/10" : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
                         <button onClick={() => addToCart(p)} className="block w-full text-left flex-1">
-                          <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-paper">
+                          <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gray-100">
                             <SafeImage
                               src={getProductImage(p)}
                               alt={p.name}
                               className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                             />
                             {inCart > 0 && (
-                              <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-white shadow-sm">
+                              <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-[10px] font-black text-white shadow-md">
                                 {inCart}
                               </span>
                             )}
                           </div>
                           <div className="p-3">
-                            <div className="line-clamp-2 text-xs md:text-sm font-bold text-ink group-hover:text-primary transition">
+                            <div className="line-clamp-2 text-xs md:text-sm font-extrabold text-gray-900 group-hover:text-purple-600 transition">
                               {p.name}
                             </div>
-                            <div className="mt-1 text-xs font-extrabold tabnum text-primary">
+                            <div className="mt-1 text-xs font-black tabnum text-gray-900">
                               {rwf(p.sell_price_rwf)} RWF
                             </div>
                           </div>
                         </button>
                         {inCart > 0 ? (
-                          <div className="flex items-center justify-between border-t border-line bg-paper px-2.5 py-1.5">
+                          <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-2.5 py-1.5">
                             <button
                               onClick={() => decFromCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-card border border-line text-ink hover:bg-white"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100"
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="text-xs font-bold tabnum text-ink">{inCart}</span>
+                            <span className="text-xs font-black tabnum text-gray-900">{inCart}</span>
                             <button
                               onClick={() => addToCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-lt"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800"
                             >
                               <Plus size={14} />
                             </button>
@@ -483,7 +483,7 @@ export default function Sell() {
                           <div className="px-3 pb-3">
                             <button
                               onClick={() => addToCart(p)}
-                              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-line/80 bg-paper text-xs font-bold text-primary hover:bg-primary hover:text-white transition"
+                              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-900 text-xs font-extrabold text-white hover:bg-gray-800 transition shadow-sm"
                             >
                               <Plus size={14} /> {t("add")}
                             </button>
