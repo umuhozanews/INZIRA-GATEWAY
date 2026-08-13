@@ -62,11 +62,16 @@ export default function SignIn() {
     }
   }, [loginWithGoogle, navigate]);
 
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    clearRateLimit("login");
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     
     // Security Rate Limiter: Protect against brute-force password guessing
-    const rateCheck = checkRateLimit("login", 5, 60);
+    const rateCheck = checkRateLimit("login", 15, 30);
     if (!rateCheck.allowed) {
       toast.error(`Too many failed login attempts. Account temporarily locked for ${rateCheck.remainingSec} seconds for security.`);
       return;
@@ -88,7 +93,7 @@ export default function SignIn() {
       toast.success("Welcome back!");
       navigate("/", { replace: true });
     } catch (err) {
-      recordFailedAttempt("login", 5, 60);
+      recordFailedAttempt("login", 15, 30);
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));
     } finally {
       setBusy(false);
@@ -142,7 +147,7 @@ export default function SignIn() {
         <div className="mt-6 flex rounded-full bg-gray-100 p-1.5 border border-gray-200/50">
           <button
             type="button"
-            onClick={() => setTab("phone")}
+            onClick={() => handleTabChange("phone")}
             className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all duration-200 ${
               tab === "phone"
                 ? "bg-[#D4F06B] text-gray-900 shadow-sm"
@@ -153,7 +158,7 @@ export default function SignIn() {
           </button>
           <button
             type="button"
-            onClick={() => setTab("email")}
+            onClick={() => handleTabChange("email")}
             className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all duration-200 ${
               tab === "email"
                 ? "bg-[#D4F06B] text-gray-900 shadow-sm"

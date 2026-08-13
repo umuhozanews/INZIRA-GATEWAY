@@ -31,7 +31,7 @@ export function sanitizePhone(phone) {
 // 4. Client-Side Rate Limiter (Brute-Force Attack Prevention)
 const ATTEMPT_KEY = "inzira_sec_attempts";
 
-export function checkRateLimit(action = "login", maxAttempts = 5, lockDurationSeconds = 60) {
+export function checkRateLimit(action = "login", maxAttempts = 15, lockDurationSeconds = 30) {
   try {
     const raw = localStorage.getItem(`${ATTEMPT_KEY}_${action}`);
     const data = raw ? JSON.parse(raw) : { count: 0, lockUntil: 0 };
@@ -48,7 +48,7 @@ export function checkRateLimit(action = "login", maxAttempts = 5, lockDurationSe
   }
 }
 
-export function recordFailedAttempt(action = "login", maxAttempts = 5, lockDurationSeconds = 60) {
+export function recordFailedAttempt(action = "login", maxAttempts = 15, lockDurationSeconds = 30) {
   try {
     const key = `${ATTEMPT_KEY}_${action}`;
     const raw = localStorage.getItem(key);

@@ -144,6 +144,12 @@ export function AuthProvider({ children }) {
       referralSource,
       password,
     }) => {
+      // Clear any pre-existing session token or rate-limit lock to prevent stale state conflict
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_KEY);
+      localStorage.removeItem(USER_KEY);
+      try { localStorage.removeItem("inzira_sec_attempts_login"); } catch {}
+
       const newUser = {
         id: "usr_" + Date.now(),
         name,
