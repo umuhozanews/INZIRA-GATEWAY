@@ -68,8 +68,6 @@ export default function SignUp() {
     }
 
     setBusy(true);
-    // Clear all leftover stock, sales, expenses, and team data for fresh account
-    resetData();
 
     try {
       await registerUser({
@@ -86,12 +84,12 @@ export default function SignUp() {
         password,
       });
 
-      const targetEmail = email.trim() || `${phone.trim()}@inzira.rw`;
-      toast.success(`Welcome ${fullName.trim()}! Account settled. Acknowledgement email sent to ${targetEmail}`);
+      // Reset local cached store state for brand new business owner
+      resetData();
+      toast.success(`Welcome ${fullName.trim()}! Your account has been created successfully.`);
       navigate("/", { replace: true });
     } catch (err) {
-      toast.success(`Account created! Acknowledgement sent to ${email.trim() || phone.trim()}`);
-      navigate("/", { replace: true });
+      toast.error(errorMessage(err, "Account registration failed. If you already have an account, please log in."));
     } finally {
       setBusy(false);
     }
