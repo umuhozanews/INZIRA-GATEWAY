@@ -1,17 +1,19 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   FileText,
   Search,
   Plus,
   ArrowUpRight,
   Printer,
+  Download,
+  ArrowLeft
 } from "lucide-react";
 import api from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf, formatDate } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
-import Sheet from "../components/Sheet";
 import Loading from "../components/Loading";
 import { useData } from "../context/DataContext";
 import EbmReceipt from "../components/EbmReceipt";
@@ -23,15 +25,25 @@ export default function Invoices() {
 
   const [loading, setLoading] = useState(false);
   const [remoteInvoices, setRemoteInvoices] = useState([]);
+  const [shopSettings, setShopSettings] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const { data } = await api.get("/invoices");
-      if (Array.isArray(data?.data)) setRemoteInvoices(data.data);
-      else if (Array.isArray(data)) setRemoteInvoices(data);
+      const [invRes, setRes] = await Promise.allSettled([
+        api.get("/invoices"),
+        api.get("/settings"),
+      ]);
+      if (invRes.status === "fulfilled") {
+        const data = invRes.value.data;
+        if (Array.isArray(data?.data)) setRemoteInvoices(data.data);
+        else if (Array.isArray(data)) setRemoteInvoices(data);
+      }
+      if (setRes.status === "fulfilled" && setRes.value.data?.settings) {
+        setShopSettings(setRes.value.data.settings);
+      }
     } catch {
       /* network fallback */
     }
@@ -40,6 +52,26 @@ export default function Invoices() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function handleDownloadPDF(inv) {
+    if (!inv) return;
+    const toastId = toast.loading("Downloading PDF...");
+    try {
+      const response = await api.get(`/invoices/${inv.id}/pdf`, { responseType: "blob" });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${inv.invoice_number || 'invoice'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("PDF Downloaded successfully!", { id: toastId });
+    } catch (err) {
+      toast.error("Could not download PDF file. Using browser print...", { id: toastId });
+      window.print();
+    }
+  }
 
   const invoices = useMemo(() => {
     const derivedFromSales = (sales || []).map((s) => ({
@@ -80,6 +112,45 @@ export default function Invoices() {
   const totalPending = invoices.filter((i) => i.status === "pending").reduce((sum, i) => sum + (i.total_amount || 0), 0);
 
   if (loading) return <Loading label={t("loading")} />;
+
+  // Dedicated Single Page Document View for printing / saving as PDF
+  if (selectedInvoice) {
+    return (
+      <div className="min-h-screen bg-gray-100 font-manrope text-gray-900 pb-16 pt-4 px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {/* Header Action Bar */}
+          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-sm print:hidden">
+            <button
+              onClick={() => setSelectedInvoice(null)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-gray-50 text-xs font-bold text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+            >
+              <ArrowLeft size={16} /> <span>Back to Invoices</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleDownloadPDF(selectedInvoice)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-xs font-extrabold text-white hover:bg-purple-700 transition cursor-pointer shadow-sm"
+              >
+                <Download size={15} /> <span>Download PDF</span>
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4F06B] text-xs font-black text-gray-900 hover:bg-[#C5E456] transition cursor-pointer shadow-sm"
+              >
+                <Printer size={15} /> <span>Print Invoice</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Clean Single Page Document */}
+          <div className="w-full flex justify-center py-2">
+            <EbmReceipt sale={selectedInvoice} shopSettings={shopSettings} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
@@ -196,36 +267,6 @@ export default function Invoices() {
           )}
         </div>
       </div>
-
-      {/* Invoice Detail Sheet Modal */}
-      <Sheet
-        open={Boolean(selectedInvoice)}
-        onClose={() => setSelectedInvoice(null)}
-        title={`Invoice ${selectedInvoice?.invoice_number || ""}`}
-      >
-        {selectedInvoice && (
-          <div className="space-y-4 pt-2 pb-4 font-manrope">
-            <div className="w-full flex justify-center max-h-[60vh] overflow-y-auto p-2 bg-gray-50 rounded-2xl border border-gray-200">
-              <EbmReceipt sale={selectedInvoice} />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setSelectedInvoice(null)}
-                className="flex-1 py-3 rounded-full border border-gray-200 bg-white text-xs font-bold text-gray-900 hover:bg-gray-100 transition"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#D4F06B] text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
-              >
-                <Printer size={16} /> Print EBM Receipt
-              </button>
-            </div>
-          </div>
-        )}
-      </Sheet>
     </div>
   );
 }

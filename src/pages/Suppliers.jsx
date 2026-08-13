@@ -65,13 +65,25 @@ export default function Suppliers() {
     }
   });
 
+  // Fetch remote backend customers on mount
+  useEffect(() => {
+    api.get("/customers")
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (Array.isArray(data) && data.length > 0) {
+          setCustomers(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Re-sync local state whenever active user account changes
   useEffect(() => {
     try {
       const savedCust = localStorage.getItem(CUST_KEY);
       const savedSupp = localStorage.getItem(SUPP_KEY);
-      setCustomers(savedCust !== null ? JSON.parse(savedCust) : []);
-      setSuppliers(savedSupp !== null ? JSON.parse(savedSupp) : []);
+      if (savedCust !== null) setCustomers(JSON.parse(savedCust));
+      if (savedSupp !== null) setSuppliers(JSON.parse(savedSupp));
     } catch (e) {
       console.error("Failed to load user-scoped customers/suppliers:", e);
     }
@@ -111,6 +123,60 @@ export default function Suppliers() {
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
 
+  // Dynamically compile Customer accounts merging DB/manual entries with POS Sales records
+  const allCustomers = useMemo(() => {
+    const map = new Map();
+
+    // 1. Add explicitly saved/backend customers
+    (customers || []).forEach((c) => {
+      if (!c || !c.name) return;
+      const key = c.name.trim().toLowerCase();
+      map.set(key, {
+        id: c.id || `cust_${key}`,
+        name: c.name.trim(),
+        phone: c.phone || "N/A",
+        email: c.email || "",
+        owed_to_us_rwf: Number(c.owed_to_us_rwf || c.amount_owed || 0),
+        total_spent_rwf: Number(c.total_spent_rwf || c.total_spent || 0),
+        credit_limit_rwf: Number(c.credit_limit_rwf || 200000),
+        created_at: c.created_at || new Date().toISOString(),
+        sales_count: Number(c.sales_count || 0),
+      });
+    });
+
+    // 2. Automatically derive customer records from live sales recorded at POS
+    (sales || []).forEach((s) => {
+      const rawName = s.customer_name?.trim();
+      if (!rawName || rawName === "Walk-in Customer") return;
+
+      const key = rawName.toLowerCase();
+      const existing = map.get(key) || {
+        id: `cust_sale_${key}`,
+        name: rawName,
+        phone: s.customer_phone?.trim() || "N/A",
+        email: "",
+        owed_to_us_rwf: 0,
+        total_spent_rwf: 0,
+        credit_limit_rwf: 200000,
+        created_at: s.created_at || new Date().toISOString(),
+        sales_count: 0,
+      };
+
+      if (s.customer_phone && (existing.phone === "N/A" || !existing.phone)) {
+        existing.phone = s.customer_phone.trim();
+      }
+
+      existing.total_spent_rwf += Number(s.total_amount || 0);
+      const owed = Number(s.amount_owed || (s.payment_status === "pending" || s.payment_status === "partial" ? s.total_amount : 0));
+      existing.owed_to_us_rwf += owed;
+      existing.sales_count += 1;
+
+      map.set(key, existing);
+    });
+
+    return Array.from(map.values());
+  }, [customers, sales]);
+
   // Derived Owed to Us (Receivables) from live sales
   const receivables = useMemo(() => {
     return (sales || []).filter((s) => (Number(s.amount_owed) || 0) > 0 || s.payment_status === "pending" || s.payment_status === "partial");
@@ -118,9 +184,9 @@ export default function Suppliers() {
 
   const totalOwedToUs = useMemo(() => {
     const saleOwed = receivables.reduce((sum, s) => sum + (Number(s.amount_owed) || 0), 0);
-    const custOwed = customers.reduce((sum, c) => sum + (Number(c.owed_to_us_rwf) || 0), 0);
+    const custOwed = allCustomers.reduce((sum, c) => sum + (Number(c.owed_to_us_rwf) || 0), 0);
     return Math.max(saleOwed, custOwed);
-  }, [receivables, customers]);
+  }, [receivables, allCustomers]);
 
   const totalPayables = useMemo(() => {
     return suppliers.reduce((sum, s) => sum + (Number(s.amount_we_owe_rwf) || 0), 0);
@@ -239,7 +305,7 @@ export default function Suppliers() {
                 <Users size={20} />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-ink tabnum">{customers.length}</div>
+            <div className="mt-2 text-2xl font-extrabold text-ink tabnum">{allCustomers.length}</div>
             <span className="text-[11px] font-semibold text-muted block mt-0.5">Active Client Accounts</span>
           </div>
 
@@ -282,7 +348,7 @@ export default function Suppliers() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-2xl border border-line shadow-sm overflow-x-auto">
             {[
-              { id: "customers", label: "Customers", count: customers.length },
+              { id: "customers", label: "Customers", count: allCustomers.length },
               { id: "owed", label: "Owed to Us (Receivables)", count: receivables.length },
               { id: "payables", label: "Payables (Suppliers)", count: suppliers.length },
             ].map((tab) => (
@@ -318,7 +384,7 @@ export default function Suppliers() {
         {/* Tab 1: Customers Directory */}
         {activeTab === "customers" && (
           <div className="space-y-3">
-            {customers.filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+            {allCustomers.filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
               <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-900 shadow-sm">
                   <Users size={36} className="text-gray-800" />
@@ -339,7 +405,7 @@ export default function Suppliers() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {customers
+                {allCustomers
                   .filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((c) => (
                     <div

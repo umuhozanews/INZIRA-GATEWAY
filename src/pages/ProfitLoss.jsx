@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
@@ -19,14 +19,37 @@ import { useData } from "../context/DataContext";
 export default function ProfitLoss() {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { sales, expenses } = useData();
+  const { sales, expenses, stock } = useData();
 
   const [period, setPeriod] = useState("this_month");
 
   const grossRevenue = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
-  const cogs = Math.round(grossRevenue * 0.45);
+
+  const stockCostMap = useMemo(() => {
+    const map = {};
+    (stock || []).forEach((s) => {
+      if (s.id) map[String(s.id)] = Number(s.cost_price_rwf) || 0;
+    });
+    return map;
+  }, [stock]);
+
+  const cogs = useMemo(() => {
+    let totalCost = 0;
+    (sales || []).forEach((s) => {
+      const items = s.items || [];
+      items.forEach((item) => {
+        const qty = Number(item.quantity || item.qty) || 1;
+        const knownCost = Number(item.cost_price_rwf) || (item.stock_item_id ? stockCostMap[String(item.stock_item_id)] : 0);
+        // If exact cost price is known, use it; otherwise fallback to standard estimated 60% wholesale cost
+        const unitCost = knownCost > 0 ? knownCost : Math.round((Number(item.unit_price || item.price) || 0) * 0.60);
+        totalCost += unitCost * qty;
+      });
+    });
+    return Math.round(totalCost);
+  }, [sales, stockCostMap]);
+
   const grossProfit = grossRevenue - cogs;
-  const operatingExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount_rwf) || 0), 0);
+  const operatingExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount_rwf || e.amount) || 0), 0);
   const netProfit = grossProfit - operatingExpenses;
   const marginPct = grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : 0;
 

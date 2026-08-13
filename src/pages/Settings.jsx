@@ -54,10 +54,11 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
   const { t, lang, setLang } = useLang();
-
   const [activeTab, setActiveTab] = useState("business");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const isAdmin = user?.role === "Admin" || (user?.email && user.email.toLowerCase().includes("creator"));
 
   // Business Info State
   const [shopName, setShopName] = useState(() => {
@@ -229,28 +230,30 @@ export default function Settings() {
       <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
 
       {/* Creator / Super Admin Management Access Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4.5 rounded-[28px] border border-purple-900/20 bg-gradient-to-r from-gray-900 via-purple-950 to-gray-900 text-white shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md text-amber-300">
-            <ShieldCheck size={22} />
+      {isAdmin && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4.5 rounded-[28px] border border-purple-900/20 bg-gradient-to-r from-gray-900 via-purple-950 to-gray-900 text-white shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md text-amber-300">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                Creator & Admin Management Portal 👑
+              </h3>
+              <p className="text-[11px] text-purple-200">
+                Inspect, manage, activate/suspend and monitor all business accounts registered on INZIRA
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
-              Creator & Admin Management Portal 👑
-            </h3>
-            <p className="text-[11px] text-purple-200">
-              Inspect, manage, activate/suspend and monitor all business accounts registered on INZIRA
-            </p>
-          </div>
-        </div>
 
-        <button
-          onClick={() => navigate("/admin")}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#D4F06B] text-gray-900 text-xs font-black hover:bg-[#C5E456] transition cursor-pointer shadow-sm shrink-0"
-        >
-          Open Creator Admin Panel →
-        </button>
-      </div>
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#D4F06B] text-gray-900 text-xs font-black hover:bg-[#C5E456] transition cursor-pointer shadow-sm shrink-0"
+          >
+            Open Creator Admin Panel →
+          </button>
+        </div>
+      )}
 
         {/* Settings Category Navigation Tabs */}
         <div className="flex items-center gap-1.5 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm overflow-x-auto">

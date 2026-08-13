@@ -15,6 +15,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 
+import Logomark from "../components/Logomark";
+
 export default function SignUp() {
   const navigate = useNavigate();
   const { registerUser } = useAuth();
@@ -101,8 +103,8 @@ export default function SignUp() {
         
         {/* Header Branding */}
         <div className="text-center mb-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4F06B] text-gray-900 shadow-sm mb-3">
-            <Store size={24} />
+          <div className="mx-auto mb-3 flex items-center justify-center">
+            <Logomark size={56} className="shadow-md border-2 border-white ring-2 ring-[#D4F06B]" />
           </div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Create Business Account</h1>
           <p className="text-xs font-semibold text-gray-500 mt-1">

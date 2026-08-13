@@ -20,10 +20,17 @@ import {
 import ScreenHeader from "../components/ScreenHeader";
 import Sheet from "../components/Sheet";
 import { Button, Field, TextInput } from "../components/ui";
+import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 import { ALL_ACCOUNTS_KEY, DEFAULT_ACCOUNTS, saveAccountToRegistry } from "../context/AuthContext";
 import { rwf, formatDate } from "../lib/format";
 
 export default function Admin() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Admin" || user?.role === "pulse_admin" || (user?.email && user.email.toLowerCase().includes("creator"));
+
   const [accounts, setAccounts] = useState(() => {
     try {
       const saved = localStorage.getItem(ALL_ACCOUNTS_KEY);
@@ -33,6 +40,18 @@ export default function Admin() {
       return DEFAULT_ACCOUNTS;
     }
   });
+
+  // Fetch real-time backend registered users and activity
+  useEffect(() => {
+    api.get("/admin/smes")
+      .then((res) => {
+        const data = res.data?.smes || res.data?.data || res.data;
+        if (Array.isArray(data) && data.length > 0) {
+          setAccounts(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [query, setQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState("all");
@@ -51,6 +70,26 @@ export default function Admin() {
     teamSize: "2-5",
     role: "Merchant",
   });
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-[60vh] space-y-4 font-manrope">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+          <ShieldCheck size={32} />
+        </div>
+        <h2 className="text-xl font-black text-gray-900">Access Restricted</h2>
+        <p className="text-sm font-medium text-gray-500 max-w-md">
+          The Creator & Admin Management Portal is reserved exclusively for platform administrators. Normal SME merchant accounts cannot view or access this portal.
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="px-6 py-2.5 rounded-full bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition cursor-pointer"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   // Re-save to localStorage whenever accounts change
   useEffect(() => {

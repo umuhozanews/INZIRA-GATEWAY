@@ -9,16 +9,16 @@ export default function EbmReceipt({ sale, shopSettings }) {
   if (!sale) return null;
 
   // Business & Fiscal Header Info
-  const shopName = shopSettings?.shop_name || sale.branch_name || "KIGALI GASABO GISOZI GAKINJIRO";
-  const shopAddress = shopSettings?.shop_address || sale.branch_location || "KIGALI GASABO GISOZI GAKINJIRO";
-  const shopTel = shopSettings?.shop_phone || sale.branch_phone || "0788862708";
-  const shopEmail = shopSettings?.shop_email || "andrenikobatuye@gmail.com";
-  const tinNumber = shopSettings?.tin_number || "103777856";
-  const cashierName = sale.cashier_name || sale.worker_name || "Andre Nikobatuye";
+  const shopName = shopSettings?.shop_name || sale.shop_name || sale.branch_name || "INZIRA SME STORE";
+  const shopAddress = shopSettings?.shop_address || sale.shop_address || sale.branch_location || "Kigali, Rwanda";
+  const shopTel = shopSettings?.shop_phone || sale.shop_phone || sale.branch_phone || "";
+  const shopEmail = shopSettings?.shop_email || sale.shop_email || "";
+  const tinNumber = shopSettings?.tin_number || sale.tin_number || "TIN Pending";
+  const cashierName = sale.cashier_name || sale.worker_name || sale.done_by || "Cashier";
   const cashierTin = shopSettings?.cashier_tin || tinNumber;
 
   // Client Details
-  const clientTin = sale.customer_tin || "781055845";
+  const clientTin = sale.customer_tin || "N/A";
   const clientName = sale.customer_name || "Walk-in Customer";
 
   // Items & Amounts
@@ -69,11 +69,24 @@ export default function EbmReceipt({ sale, shopSettings }) {
   // Print Style Injector for Thermal Paper & Standard Printers
   useEffect(() => {
     const styleId = "ebm-thermal-print-styles";
-    if (document.getElementById(styleId)) return;
-    const style = document.createElement("style");
-    style.id = styleId;
+    let style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
     style.textContent = `
       @media print {
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+        html, body {
+          background: #ffffff !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+        }
         body * {
           visibility: hidden !important;
         }
@@ -82,24 +95,25 @@ export default function EbmReceipt({ sale, shopSettings }) {
         }
         #ebm-thermal-receipt {
           position: absolute !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
+          left: 0 !important;
           top: 0 !important;
           width: 80mm !important;
           max-width: 80mm !important;
           margin: 0 auto !important;
-          padding: 12px !important;
+          padding: 8mm 6mm !important;
           border: none !important;
           box-shadow: none !important;
+          border-radius: 0 !important;
           background: #ffffff !important;
           color: #000000 !important;
-          z-index: 9999999 !important;
+          z-index: 99999999 !important;
+          page-break-after: avoid !important;
+          page-break-inside: avoid !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
       }
     `;
-    document.head.appendChild(style);
   }, []);
 
   return (

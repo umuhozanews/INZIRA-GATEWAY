@@ -50,6 +50,7 @@ export function DataProvider({ children }) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   // Re-sync local state whenever active user account changes
   useEffect(() => {
@@ -175,7 +176,7 @@ export function DataProvider({ children }) {
     }
   }, []);
 
-  // Initial load + Automatic 8-second polling + Window Focus Sync
+  // Initial load + Automatic 8-second polling + Window Focus & Online Sync
   useEffect(() => {
     refreshAll(false);
 
@@ -187,14 +188,25 @@ export function DataProvider({ children }) {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") refreshAll(true);
     };
+    const handleOnline = () => {
+      setIsOnline(true);
+      refreshAll(true);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
 
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
       clearInterval(pollInterval);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, [refreshAll]);
 
@@ -274,23 +286,55 @@ export function DataProvider({ children }) {
     });
 
     try {
-      await api.post("/sales", {
-        items,
-        payment_method,
-        customer_name,
-        customer_phone,
-        due_date: newSale.due_date,
-        amount_paid: paidVal,
-        amount_owed: owedVal,
-        split_payments,
-        notes
-      });
+      const idempotencyKey = `sale_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      await api.post(
+        "/sales",
+        {
+          items,
+          payment_method,
+          customer_name,
+          customer_phone,
+          due_date: newSale.due_date,
+          amount_paid: paidVal,
+          amount_owed: owedVal,
+          split_payments,
+          notes,
+        },
+        {
+          headers: { "Idempotency-Key": idempotencyKey },
+        }
+      );
       setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async sale post fallback:", err.message);
     }
 
     return newSale;
+  };
+
+  // Void a sale and restore inventory quantity
+  const voidSale = async (saleId) => {
+    const saleToVoid = sales.find(s => String(s.id) === String(saleId));
+    if (saleToVoid && Array.isArray(saleToVoid.items)) {
+      setStock(prevStock => {
+        return prevStock.map(item => {
+          const itemMatch = saleToVoid.items.find(i => i.stock_item_id && String(i.stock_item_id) === String(item.id));
+          if (itemMatch) {
+            return { ...item, quantity: (Number(item.quantity) || 0) + Number(itemMatch.quantity) };
+          }
+          return item;
+        });
+      });
+    }
+
+    setSales(prev => prev.filter(s => String(s.id) !== String(saleId)));
+
+    try {
+      await api.post(`/sales/${saleId}/void`, { void_reason: "Customer cancellation" });
+      setTimeout(() => refreshAll(true), 1000);
+    } catch (err) {
+      console.warn("[DataContext] Async sale void fallback:", err.message);
+    }
   };
 
   // Record a payment towards an existing customer debt
@@ -369,6 +413,30 @@ export function DataProvider({ children }) {
     return created;
   };
 
+  // Update Stock Item Action
+  const updateStockItem = async (id, updatedFields) => {
+    setStock(prev =>
+      prev.map(item => (String(item.id) === String(id) ? { ...item, ...updatedFields } : item))
+    );
+    try {
+      await api.put(`/stock/${id}`, updatedFields);
+      setTimeout(() => refreshAll(true), 1000);
+    } catch (err) {
+      console.warn("[DataContext] Async stock update fallback:", err.message);
+    }
+  };
+
+  // Delete Stock Item Action
+  const deleteStockItem = async (id) => {
+    setStock(prev => prev.filter(item => String(item.id) !== String(id)));
+    try {
+      await api.delete(`/stock/${id}`);
+      setTimeout(() => refreshAll(true), 1000);
+    } catch (err) {
+      console.warn("[DataContext] Async stock delete fallback:", err.message);
+    }
+  };
+
   // Interconnected Add Expense Action
   const addExpense = async (newExpense) => {
     const timestamp = Date.now();
@@ -395,6 +463,37 @@ export function DataProvider({ children }) {
     return created;
   };
 
+  // Update Expense Action
+  const updateExpense = async (id, updatedFields) => {
+    setExpenses(prev =>
+      prev.map(exp => (String(exp.id) === String(id) ? { ...exp, ...updatedFields } : exp))
+    );
+    try {
+      await api.put(`/expenses/${id}`, updatedFields);
+      setTimeout(() => refreshAll(true), 1000);
+    } catch (err) {
+      console.warn("[DataContext] Async expense update fallback:", err.message);
+    }
+  };
+
+  // Delete Expense Action
+  const deleteExpense = async (id) => {
+    setExpenses(prev => prev.filter(exp => String(exp.id) !== String(id)));
+    try {
+      await api.delete(`/expenses/${id}`);
+      setTimeout(() => refreshAll(true), 1000);
+    } catch (err) {
+      console.warn("[DataContext] Async expense delete fallback:", err.message);
+    }
+  };
+
+  const pendingSyncCount = useMemo(() => {
+    const localStock = stock.filter(p => typeof p.id === "number" && p.id > 1000000000000).length;
+    const localSales = sales.filter(s => typeof s.id === "number" && s.id > 1000000000000).length;
+    const localExpenses = expenses.filter(e => typeof e.id === "number" && e.id > 1000000000000).length;
+    return localStock + localSales + localExpenses;
+  }, [stock, sales, expenses]);
+
   return (
     <DataContext.Provider
       value={{
@@ -402,10 +501,17 @@ export function DataProvider({ children }) {
         sales,
         expenses,
         loading,
+        isOnline,
+        pendingSyncCount,
         recordSale,
+        voidSale,
         recordDebtPayment,
         addStockItem,
+        updateStockItem,
+        deleteStockItem,
         addExpense,
+        updateExpense,
+        deleteExpense,
         refreshAll,
         resetData,
       }}

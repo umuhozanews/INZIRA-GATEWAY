@@ -198,11 +198,11 @@ export function AuthProvider({ children }) {
       localStorage.setItem(`db_expenses_${userKey}`, JSON.stringify([]));
 
       try {
-        const { data } = await api.post("/auth/signup", {
+        const { data } = await api.post("/auth/register", {
           name,
           shop_name,
-          email,
-          phone,
+          email: email?.trim() || (phone ? `${phone.replace(/\D/g, "")}@inzira.rw` : ""),
+          phone: phone?.trim(),
           businessType,
           dailySales,
           needEbm,
@@ -213,11 +213,20 @@ export function AuthProvider({ children }) {
         });
         return persist(data);
       } catch (err) {
-        return persist({
-          accessToken: "jwt_access_token_" + Date.now(),
-          refreshToken: "jwt_refresh_token_" + Date.now(),
-          user: newUser,
-        });
+        try {
+          const { data } = await api.post("/auth/signup", {
+            name,
+            shop_name,
+            email: email?.trim() || (phone ? `${phone.replace(/\D/g, "")}@inzira.rw` : ""),
+            phone: phone?.trim(),
+            businessType,
+            password,
+          });
+          return persist(data);
+        } catch (retryErr) {
+          console.error("[Auth] Registration failed on backend:", retryErr);
+          throw retryErr;
+        }
       }
     },
     [persist]
@@ -225,30 +234,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(
     async (emailOrPhone, password) => {
-      try {
-        const { data } = await api.post("/auth/login", { email: emailOrPhone, password });
-        return persist(data);
-      } catch (err) {
-        const savedUser = localStorage.getItem(USER_KEY);
-        let parsed = savedUser ? JSON.parse(savedUser) : null;
-        if (!parsed || (parsed.email !== emailOrPhone && parsed.phone !== emailOrPhone && emailOrPhone !== "demo")) {
-          parsed = {
-            id: "usr_" + Date.now(),
-            name: emailOrPhone.split("@")[0] || "Shop Owner",
-            email: emailOrPhone.includes("@") ? emailOrPhone : `${emailOrPhone.replace(/\D/g, "")}@inzira.rw`,
-            phone: !emailOrPhone.includes("@") ? emailOrPhone : "+250 788 123 456",
-            shop_name: "My Shop",
-            role: "Merchant",
-            status: "Active",
-            createdAt: new Date().toISOString(),
-          };
-        }
-        saveAccountToRegistry(parsed);
-        return persist({
-          accessToken: "jwt_token_" + Date.now(),
-          user: parsed,
-        });
-      }
+      const { data } = await api.post("/auth/login", { email: emailOrPhone, phone: emailOrPhone, password });
+      return persist(data);
     },
     [persist]
   );
@@ -261,59 +248,52 @@ export function AuthProvider({ children }) {
 
   const verifyOtp = useCallback(
     async (phone, code) => {
-      try {
-        const { data } = await api.post("/auth/otp/verify", { phone, code });
-        return persist(data);
-      } catch {
-        const saved = localStorage.getItem(USER_KEY);
-        const parsed = saved ? JSON.parse(saved) : { id: "usr_" + Date.now(), phone };
-        saveAccountToRegistry(parsed);
-        return persist({ accessToken: "jwt_token_" + Date.now(), user: parsed });
-      }
+      const { data } = await api.post("/auth/otp/verify", { phone, code });
+      return persist(data);
     },
     [persist]
   );
 
   const loginWithGoogle = useCallback(
-    async (emailInput, nameInput) => {
-      const email = typeof emailInput === "string" ? emailInput.trim() : "owner@gmail.com";
-      const name = typeof nameInput === "string" ? nameInput.trim() : (email.split("@")[0] || "Google SME Owner");
-      
-      const googleUser = {
-        id: "google_usr_" + Date.now(),
-        name,
-        email,
-        shop_name: `${name}'s Shop`,
-        sector: "Retail & Grocery",
-        phone: "+250 788 000 000",
-        picture: "https://lh3.googleusercontent.com/a/default-user",
-        role: "Merchant",
-        status: "Active",
-        createdAt: new Date().toISOString(),
-      };
-
-      try {
-        const { data } = await api.post("/auth/google", { email, name });
-        return persist(data);
-      } catch (err) {
-        saveAccountToRegistry(googleUser);
-        return persist({
-          accessToken: "google_jwt_access_token_" + Date.now(),
-          refreshToken: "google_jwt_refresh_token_" + Date.now(),
-          user: googleUser
-        });
+    async (idTokenOrCredential) => {
+      const token = typeof idTokenOrCredential === "string" ? idTokenOrCredential.trim() : "";
+      if (!token) {
+        throw new Error("Valid Google ID Token is required for authentication");
       }
+      const { data } = await api.post("/auth/google", { idToken: token, credential: token });
+      return persist(data);
     },
     [persist]
   );
 
-  const logout = useCallback(() => {
-    api.post("/auth/logout").catch(() => {});
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    localStorage.removeItem(USER_KEY);
-    setUser(null);
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      /* network cleanup fallback */
+    } finally {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_KEY);
+      localStorage.removeItem(USER_KEY);
+
+      Object.keys(localStorage).forEach((key) => {
+        if (
+          key.startsWith("db_stock_") ||
+          key.startsWith("db_sales_") ||
+          key.startsWith("db_expenses_") ||
+          key.startsWith("db_settings_") ||
+          key.startsWith("db_team_") ||
+          key.startsWith("db_customers_") ||
+          key.startsWith("db_suppliers_")
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      setUser(null);
+    }
   }, []);
 
   useEffect(() => {

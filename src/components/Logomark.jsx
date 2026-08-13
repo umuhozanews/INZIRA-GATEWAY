@@ -1,14 +1,17 @@
-export default function Logomark({ size = 30, className = "" }) {
+export default function Logomark({ size = 32, className = "" }) {
   return (
-    <img
-      src="/logo.png"
-      alt="Inzira Logo"
+    <div
+      className={`relative inline-flex shrink-0 items-center justify-center rounded-full bg-white shadow-sm border border-gray-200/80 overflow-hidden ${className}`}
       style={{ width: size, height: size }}
-      className={`object-contain shrink-0 ${className}`}
-      onError={(e) => {
-        // Fallback to stylized brand badge if image fails to render
-        e.target.style.display = "none";
-      }}
-    />
+    >
+      <img
+        src="/logo-round.png"
+        alt="Inzira Logo"
+        className="h-full w-full rounded-full object-cover"
+        onError={(e) => {
+          e.target.style.display = "none";
+        }}
+      />
+    </div>
   );
 }

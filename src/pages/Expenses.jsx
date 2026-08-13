@@ -12,7 +12,22 @@ import { useData } from "../context/DataContext";
 
 const CAT_COLORS = ["#D4F06B", "#8B5CF6", "#10B981", "#EF4444", "#6B7280", "#3B82F6"];
 
-const EMPTY = { category: "", amount: "", description: "", expense_date: todayISO() };
+const EXPENSE_CATEGORIES = [
+  "Rent & Facility",
+  "Utilities (Electricity, Water, Internet)",
+  "Salaries & Wages",
+  "Transport & Fuel",
+  "Inventory & Supplies",
+  "Taxes, EBM & Licenses",
+  "Marketing & Advertising",
+  "Equipment Maintenance & Repairs",
+  "Packaging & Bags",
+  "Bank & Mobile Money Fees",
+  "Meals & Office Expenses",
+  "Other Expenses",
+];
+
+const EMPTY = { category: "Rent & Facility", amount: "", description: "", expense_date: todayISO() };
 
 export default function Expenses() {
   const { t, lang } = useLang();
@@ -194,7 +209,18 @@ export default function Expenses() {
         }
       >
         <Field label={t("category")}>
-          <TextInput value={form.category} onChange={set("category")} placeholder="Rent, Transport…" />
+          <select
+            value={form.category}
+            onChange={set("category")}
+            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs md:text-sm font-extrabold text-gray-900 shadow-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 cursor-pointer"
+          >
+            <option value="">-- Select Category --</option>
+            {EXPENSE_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label={t("amount")}>
           <TextInput inputMode="numeric" value={form.amount} onChange={set("amount")} placeholder="0" />

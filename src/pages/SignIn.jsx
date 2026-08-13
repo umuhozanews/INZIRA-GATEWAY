@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Store, X } from "lucide-react";
@@ -12,6 +12,8 @@ import {
   recordFailedAttempt,
   clearRateLimit,
 } from "../lib/security";
+
+import Logomark from "../components/Logomark";
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -28,10 +30,37 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Google Sign-In Interactive Modal State
+  // Google Sign-In Interactive Modal State & Token Input
   const [googleOpen, setGoogleOpen] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState("");
-  const [googleName, setGoogleName] = useState("");
+  const [googleCredential, setGoogleCredential] = useState("");
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+    if (window.google?.accounts?.id && clientId) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (response) => {
+            if (response?.credential) {
+              setBusy(true);
+              try {
+                await loginWithGoogle(response.credential);
+                toast.success("Successfully authenticated with Google Account!");
+                setGoogleOpen(false);
+                navigate("/", { replace: true });
+              } catch (err) {
+                toast.error(errorMessage(err, "Google authentication failed."));
+              } finally {
+                setBusy(false);
+              }
+            }
+          },
+        });
+      } catch (err) {
+        console.error("[GIS] Google Identity Services init error:", err);
+      }
+    }
+  }, [loginWithGoogle, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -54,7 +83,7 @@ export default function SignIn() {
         return;
       }
 
-      await login(identifier, password);
+      await login(identifier, password.trim());
       clearRateLimit("login");
       toast.success("Welcome back!");
       navigate("/", { replace: true });
@@ -66,19 +95,31 @@ export default function SignIn() {
     }
   };
 
+  const handleGoogleClick = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          setGoogleOpen(true);
+        }
+      });
+    } else {
+      setGoogleOpen(true);
+    }
+  };
+
   const handleGoogleSubmit = async (e) => {
     e.preventDefault();
-    if (!googleEmail.trim()) {
-      return toast.error("Please enter your Google Email address.");
+    if (!googleCredential.trim()) {
+      return toast.error("Please enter or paste a valid Google OAuth ID Token (credential).");
     }
     setBusy(true);
     try {
-      await loginWithGoogle(googleEmail.trim(), googleName.trim());
-      toast.success(`Signed in with Google Account (${googleEmail.trim()})`);
+      await loginWithGoogle(googleCredential.trim());
+      toast.success("Authenticated with Google Account!");
       setGoogleOpen(false);
       navigate("/", { replace: true });
-    } catch {
-      toast.error("Google authentication failed.");
+    } catch (err) {
+      toast.error(errorMessage(err, "Google authentication failed."));
     } finally {
       setBusy(false);
     }
@@ -90,8 +131,8 @@ export default function SignIn() {
         
         {/* Header Branding */}
         <div className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4F06B] text-gray-900 shadow-sm">
-            <Store size={24} />
+          <div className="mx-auto mb-3 flex items-center justify-center">
+            <Logomark size={56} className="shadow-md border-2 border-white ring-2 ring-[#D4F06B]" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Welcome Back</h1>
           <p className="mt-1 text-xs font-medium text-gray-500">Login to access your business account</p>
@@ -220,7 +261,7 @@ export default function SignIn() {
         <div>
           <button
             type="button"
-            onClick={() => setGoogleOpen(true)}
+            onClick={handleGoogleClick}
             className="w-full flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-gray-50/80 py-3 text-xs font-black text-gray-800 hover:bg-gray-100 transition shadow-sm cursor-pointer"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -246,7 +287,7 @@ export default function SignIn() {
       {/* REAL GOOGLE ACCOUNT INTERACTIVE SIGN IN MODAL */}
       {googleOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl border border-gray-200 relative space-y-4">
+          <div className="w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl border border-gray-200 relative space-y-4 font-manrope">
             <button
               onClick={() => setGoogleOpen(false)}
               className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -261,36 +302,23 @@ export default function SignIn() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <h3 className="text-base font-black text-gray-900">Sign in with Google</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Choose or enter your Google account details to log in to INZIRA</p>
+              <h3 className="text-base font-black text-gray-900">Google OAuth Verification</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Google Identity Services token validation</p>
             </div>
 
             <form onSubmit={handleGoogleSubmit} className="space-y-3 pt-2">
               <div>
                 <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                  Google Email Address *
+                  Google Signed ID Token (Credential) *
                 </label>
-                <input
-                  type="email"
+                <textarea
                   required
-                  placeholder="e.g. boygatete@gmail.com"
-                  value={googleEmail}
-                  onChange={(e) => setGoogleEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-semibold outline-none focus:border-gray-900"
+                  rows={3}
+                  placeholder="Paste Google OAuth ID Token (JWT)"
+                  value={googleCredential}
+                  onChange={(e) => setGoogleCredential(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-mono outline-none focus:border-gray-900"
                   autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                  Owner Full Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Boy Gatete"
-                  value={googleName}
-                  onChange={(e) => setGoogleName(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-semibold outline-none focus:border-gray-900"
                 />
               </div>
 
@@ -299,7 +327,7 @@ export default function SignIn() {
                 disabled={busy}
                 className="w-full rounded-full bg-gray-900 py-3 text-xs font-black text-white hover:bg-gray-800 transition shadow-md mt-2 cursor-pointer"
               >
-                {busy ? "Authenticating with Google..." : "Continue to INZIRA →"}
+                {busy ? "Verifying Google Token..." : "Verify & Authenticate →"}
               </button>
             </form>
           </div>

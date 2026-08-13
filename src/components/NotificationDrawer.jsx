@@ -180,7 +180,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                   Business Health Gauge <ChevronRight size={14} />
                 </span>
                 <span className="text-[11px] text-gray-500 font-semibold block">
-                  {hasData ? `Score: ${healthScore}/100` : "New Account Setup"}
+                  {hasData ? `Score: ${healthScore}/100` : "Tap to calculate health score"}
                 </span>
               </div>
             </div>

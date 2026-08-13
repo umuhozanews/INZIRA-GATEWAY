@@ -135,11 +135,13 @@ export default function Dashboard() {
                   <span className="font-manrope text-[11px] font-extrabold text-gray-900 group-hover:text-purple-600 transition">
                     {t("health_score")}
                   </span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase ${
-                    score == null ? "bg-gray-100 text-gray-600" : score >= 80 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                  }`}>
-                    {score == null ? "New Account" : score >= 80 ? "Excellent" : "Good"}
-                  </span>
+                  {score != null && (
+                    <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase ${
+                      score >= 80 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {score >= 80 ? "Excellent" : "Good"}
+                    </span>
+                  )}
                 </div>
                 {score != null ? (
                   <div className="mt-0.5 flex items-center gap-1">

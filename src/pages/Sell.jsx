@@ -25,7 +25,9 @@ import {
   CreditCard,
   User,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  Image,
+  ImageOff
 } from "lucide-react";
 import api, { errorMessage } from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
@@ -48,6 +50,7 @@ export default function Sell() {
   const [cart, setCart] = useState({}); // id -> { item, qty }
   const [payOpen, setPayOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(false);
 
   // View Mode: "sell" | "debts" | "history"
   const [viewMode, setViewMode] = useState("sell");
@@ -399,7 +402,7 @@ export default function Sell() {
         {/* VIEW 1: RECORD SALE (Product Catalog & Manual Items) */}
         {viewMode === "sell" && (
           <>
-            {/* Search & Custom Text Item Button */}
+            {/* Search, Photo Toggle & Custom Text Item Button */}
             <div className="px-4 md:px-0 flex items-center gap-2 font-manrope">
               <div className="flex flex-1 items-center gap-2.5 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
                 <Search size={16} className="text-gray-400 shrink-0" />
@@ -410,6 +413,15 @@ export default function Sell() {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPhotos(!showPhotos)}
+                className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3.5 py-2.5 text-xs font-extrabold text-gray-700 shadow-sm hover:bg-gray-50 transition cursor-pointer shrink-0"
+              >
+                {showPhotos ? <ImageOff size={15} className="text-gray-500" /> : <Image size={15} className="text-purple-600" />}
+                <span className="hidden sm:inline">{showPhotos ? "Hide Photos" : "Show Photos"}</span>
+              </button>
 
               <button
                 onClick={() => setCustomOpen(true)}
@@ -462,27 +474,46 @@ export default function Sell() {
                         }`}
                       >
                         <button onClick={() => addToCart(p)} className="block w-full text-left flex-1">
-                          <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gray-100">
-                            <SafeImage
-                              src={getProductImage(p)}
-                              alt={p.name}
-                              className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                            {inCart > 0 && (
-                              <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-[10px] font-black text-white shadow-md">
-                                {inCart}
+                          {/* Optional Product Image */}
+                          {showPhotos && (
+                            <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gray-100">
+                              <SafeImage
+                                src={getProductImage(p)}
+                                alt={p.name}
+                                className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                              />
+                              {inCart > 0 && (
+                                <span className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-[10px] font-black text-white shadow-md">
+                                  {inCart}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="p-3.5">
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="line-clamp-2 text-xs md:text-sm font-extrabold text-gray-900 group-hover:text-purple-600 transition">
+                                {p.name}
+                              </div>
+                              {inCart > 0 && !showPhotos && (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-black text-white shrink-0 shadow-sm">
+                                  {inCart}
+                                </span>
+                              )}
+                            </div>
+
+                            {p.category && (
+                              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[9px] font-extrabold uppercase tracking-wider">
+                                {p.category}
                               </span>
                             )}
-                          </div>
-                          <div className="p-3">
-                            <div className="line-clamp-2 text-xs md:text-sm font-extrabold text-gray-900 group-hover:text-purple-600 transition">
-                              {p.name}
-                            </div>
-                            <div className="mt-1 text-xs font-black tabnum text-gray-900">
+
+                            <div className="mt-2 text-xs font-black tabnum text-gray-900">
                               {rwf(p.sell_price_rwf)} RWF
                             </div>
                           </div>
                         </button>
+
                         {inCart > 0 ? (
                           <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-2 py-1.5 gap-1">
                             <button

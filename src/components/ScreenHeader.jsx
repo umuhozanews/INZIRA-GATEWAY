@@ -4,6 +4,8 @@ import { ArrowLeft, Bell } from "lucide-react";
 import OfflineBadge from "./OfflineBadge";
 import NotificationDrawer from "./NotificationDrawer";
 
+import Logomark from "./Logomark";
+
 export default function ScreenHeader({ title, back, right }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,8 +27,8 @@ export default function ScreenHeader({ title, back, right }) {
         className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[#F4FBE4]/90 px-4 pb-3 pt-3 backdrop-blur-md border-b border-gray-200/60 select-none font-manrope"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
       >
-        <div className="flex items-center gap-2">
-          {showBack && (
+        <div className="flex items-center gap-2.5">
+          {showBack ? (
             <button
               onClick={handleBack}
               aria-label="Back"
@@ -34,6 +36,8 @@ export default function ScreenHeader({ title, back, right }) {
             >
               <ArrowLeft size={18} />
             </button>
+          ) : (
+            <Logomark size={32} className="shadow-sm border border-gray-200/80" />
           )}
           <span className="font-manrope text-[18px] font-extrabold text-gray-900">{title}</span>
         </div>
