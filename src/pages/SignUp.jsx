@@ -42,7 +42,7 @@ export default function SignUp() {
   useEffect(() => {
     const GOOGLE_CLIENT_ID =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      "566140797459-iaml5c6201dh0qpvs86fnm1dtd25rd30.apps.googleusercontent.com";
+      "566140797459-hat4bt1lcl09inbi3gql5ekp2ilh1aom.apps.googleusercontent.com";
 
     // Ensure Google Identity Services script is dynamically loaded if missing in production DOM
     if (!window.google?.accounts?.id && !document.getElementById("google-gsi-script")) {
