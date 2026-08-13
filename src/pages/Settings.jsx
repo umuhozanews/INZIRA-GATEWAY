@@ -97,6 +97,24 @@ export default function Settings() {
     }
   });
 
+  const [businessEmail, setBusinessEmail] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      return saved ? JSON.parse(saved).businessEmail : (user?.business_email || user?.email || "business@inzira.rw");
+    } catch {
+      return user?.business_email || user?.email || "business@inzira.rw";
+    }
+  });
+
+  const [currency, setCurrency] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      return saved ? JSON.parse(saved).currency : (user?.currency || "RWF");
+    } catch {
+      return user?.currency || "RWF";
+    }
+  });
+
   // Team & Workers State
   const [team, setTeam] = useState(() => {
     try {
@@ -130,12 +148,12 @@ export default function Settings() {
     try {
       localStorage.setItem(
         SETTINGS_KEY,
-        JSON.stringify({ shopName, shopAddress, sector, shopPhone })
+        JSON.stringify({ shopName, shopAddress, sector, shopPhone, businessEmail, currency })
       );
     } catch (e) {
       console.error(e);
     }
-  }, [shopName, shopAddress, sector, shopPhone]);
+  }, [shopName, shopAddress, sector, shopPhone, businessEmail, currency]);
 
   useEffect(() => {
     try {
@@ -335,6 +353,38 @@ export default function Settings() {
                     className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-semibold text-ink focus:border-primary focus:outline-none shadow-sm"
                     required
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1">Business Contact Email</label>
+                  <input
+                    type="email"
+                    value={businessEmail}
+                    onChange={(e) => setBusinessEmail(e.target.value)}
+                    placeholder="e.g. orders@mybusiness.rw"
+                    className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-semibold text-ink focus:border-primary focus:outline-none shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1">Business Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink focus:border-primary focus:outline-none shadow-sm cursor-pointer"
+                  >
+                    <option value="RWF">RWF — Rwandan Franc (Frw)</option>
+                    <option value="USD">USD — US Dollar ($)</option>
+                    <option value="EUR">EUR — Euro (€)</option>
+                    <option value="KES">KES — Kenyan Shilling (KSh)</option>
+                    <option value="UGX">UGX — Ugandan Shilling (USh)</option>
+                    <option value="TZS">TZS — Tanzanian Shilling (TSh)</option>
+                    <option value="GBP">GBP — British Pound (£)</option>
+                    <option value="CAD">CAD — Canadian Dollar ($)</option>
+                    <option value="CNY">CNY — Chinese Yuan (¥)</option>
+                  </select>
                 </div>
               </div>
 

@@ -53,6 +53,20 @@ export default function Admin() {
       .catch(() => {});
   }, []);
 
+  const [alerts, setAlerts] = useState(() => {
+    try {
+      const saved = localStorage.getItem("inzira_admin_alerts");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const clearAlerts = () => {
+    localStorage.removeItem("inzira_admin_alerts");
+    setAlerts([]);
+    toast.success("Admin alerts cleared.");
+  };
   const [query, setQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState("all");
   const [selectedAcc, setSelectedAcc] = useState(null);
@@ -64,6 +78,8 @@ export default function Admin() {
     shop_name: "",
     email: "",
     phone: "",
+    location: "Kigali, Rwanda",
+    currency: "RWF",
     sector: "Retail & Supermarket",
     dailySales: "20-50",
     needEbm: "Yes",
@@ -108,7 +124,9 @@ export default function Admin() {
         acc.name?.toLowerCase().includes(q) ||
         acc.shop_name?.toLowerCase().includes(q) ||
         acc.email?.toLowerCase().includes(q) ||
+        acc.location?.toLowerCase().includes(q) ||
         acc.phone?.includes(q) ||
+        acc.referralCode?.toLowerCase().includes(q) ||
         acc.referralSource?.toLowerCase().includes(q);
 
       const matchesSector =
@@ -142,13 +160,17 @@ export default function Admin() {
       id: "usr_" + Date.now(),
       name: newAccForm.name.trim(),
       shop_name: newAccForm.shop_name.trim(),
+      location: newAccForm.location || "Kigali, Rwanda",
+      currency: newAccForm.currency || "RWF",
       sector: newAccForm.sector,
       email: newAccForm.email.trim() || `${Date.now()}@inzira.rw`,
+      business_email: newAccForm.email.trim() || `${Date.now()}@inzira.rw`,
       phone: newAccForm.phone.trim() || "+250 788 000 000",
       dailySales: newAccForm.dailySales,
       needEbm: newAccForm.needEbm,
       teamSize: newAccForm.teamSize,
       startDate: "Immediately",
+      referralCode: "ADMIN_CREATOR",
       referralSource: "Created by Admin Creator",
       status: "Active",
       role: newAccForm.role,
@@ -164,6 +186,8 @@ export default function Admin() {
       shop_name: "",
       email: "",
       phone: "",
+      location: "Kigali, Rwanda",
+      currency: "RWF",
       sector: "Retail & Supermarket",
       dailySales: "20-50",
       needEbm: "Yes",
@@ -234,13 +258,53 @@ export default function Admin() {
         </div>
       </div>
 
+      {/* REAL-TIME NEW MERCHANT SIGNUP ALERTS BANNER */}
+      {alerts.length > 0 && (
+        <div className="rounded-[28px] bg-gradient-to-r from-purple-900 to-gray-900 text-white p-5 shadow-lg border border-purple-800/40">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4F06B] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#D4F06B]"></span>
+              </span>
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#D4F06B]">
+                New Merchant Signup Alerts ({alerts.length})
+              </h3>
+            </div>
+            <button
+              onClick={clearAlerts}
+              className="text-[11px] font-bold text-gray-400 hover:text-white underline cursor-pointer"
+            >
+              Clear Alerts
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {alerts.slice(0, 3).map((al) => (
+              <div
+                key={al.id}
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 text-xs"
+              >
+                <div>
+                  <span className="font-extrabold text-white">{al.title}</span>
+                  <p className="text-gray-300 text-[11px] mt-0.5">{al.message}</p>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 shrink-0">
+                  {formatDate(al.createdAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search & Filter Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white px-4 py-3 shadow-sm flex-1">
           <Search size={16} className="text-gray-400 shrink-0" />
           <input
             className="flex-1 bg-transparent text-xs md:text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-            placeholder="Search accounts by owner name, shop name, phone, email or referral source..."
+            placeholder="Search by owner name, shop name, location, phone, currency or referral..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -291,7 +355,7 @@ export default function Admin() {
                           </span>
                         </div>
                         <p className="text-xs font-bold text-gray-500 mt-0.5">
-                          Owner: <span className="text-gray-900">{acc.name}</span>
+                          Owner: <span className="text-gray-900">{acc.name}</span> • <span className="text-purple-700 font-extrabold">{acc.location || "Kigali, Rwanda"}</span>
                         </p>
                       </div>
                     </div>
@@ -312,12 +376,12 @@ export default function Admin() {
                       <span className="font-extrabold text-gray-900 truncate block">{acc.sector || "Retail"}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400 font-semibold block text-[11px]">Contact</span>
+                      <span className="text-gray-400 font-semibold block text-[11px]">Contact & Email</span>
                       <span className="font-extrabold text-gray-900 truncate block">{acc.phone || acc.email}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400 font-semibold block text-[11px]">Daily Sales</span>
-                      <span className="font-extrabold text-gray-900 block">{acc.dailySales || "N/A"}</span>
+                      <span className="text-gray-400 font-semibold block text-[11px]">Currency Standard</span>
+                      <span className="font-extrabold text-emerald-700 block">{acc.currency || "RWF"}</span>
                     </div>
                     <div>
                       <span className="text-gray-400 font-semibold block text-[11px]">EBM Status</span>
@@ -330,7 +394,7 @@ export default function Admin() {
                   {/* Referral Source & Actions */}
                   <div className="flex items-center justify-between pt-1">
                     <div className="text-[11px] font-semibold text-gray-400 truncate max-w-[180px]">
-                      Source: <strong className="text-gray-700">{acc.referralSource || "Direct"}</strong>
+                      Referral: <strong className="text-gray-700">{acc.referralCode || acc.referralSource || "Direct"}</strong>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -388,28 +452,36 @@ export default function Admin() {
                 <span className="font-extrabold text-gray-900">{selectedAcc.name}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-400 font-semibold">Location / Address</span>
+                <span className="font-extrabold text-gray-900">{selectedAcc.location || "Kigali, Rwanda"}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-400 font-semibold">Business Currency</span>
+                <span className="font-extrabold text-emerald-700">{selectedAcc.currency || "RWF"}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-400 font-semibold">Business Sector</span>
                 <span className="font-extrabold text-gray-900">{selectedAcc.sector}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-400 font-semibold">Email Address</span>
+                <span className="text-gray-400 font-semibold">Owner Email</span>
                 <span className="font-extrabold text-gray-900">{selectedAcc.email}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-400 font-semibold">Business Email</span>
+                <span className="font-extrabold text-gray-900">{selectedAcc.business_email || selectedAcc.email}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-400 font-semibold">Phone Number</span>
                 <span className="font-extrabold text-gray-900">{selectedAcc.phone}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-400 font-semibold">Daily Sales Volume</span>
-                <span className="font-extrabold text-gray-900">{selectedAcc.dailySales}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-400 font-semibold">Team Size</span>
                 <span className="font-extrabold text-gray-900">{selectedAcc.teamSize}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-400 font-semibold">Referral Source</span>
-                <span className="font-extrabold text-gray-900">{selectedAcc.referralSource}</span>
+                <span className="text-gray-400 font-semibold">Referral Code</span>
+                <span className="font-extrabold text-purple-800 font-mono">{selectedAcc.referralCode || selectedAcc.referralSource || "DIRECT"}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-400 font-semibold">Registration Date</span>
