@@ -19,7 +19,7 @@ import Logomark from "../components/Logomark";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { registerUser } = useAuth();
+  const { registerUser, loginWithGoogle } = useAuth();
   const { resetData } = useData();
 
   const [busy, setBusy] = useState(false);
@@ -38,6 +38,82 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [referralSource, setReferralSource] = useState("Google Search");
+
+  useEffect(() => {
+    const GOOGLE_CLIENT_ID =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      "566140797459-iaml5c6201dh0qpvs86fnm1dtd25rd30.apps.googleusercontent.com";
+
+    // Ensure Google Identity Services script is dynamically loaded if missing in production DOM
+    if (!window.google?.accounts?.id && !document.getElementById("google-gsi-script")) {
+      const script = document.createElement("script");
+      script.id = "google-gsi-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    const handleGoogleResponse = async (response) => {
+      if (response?.credential) {
+        setBusy(true);
+        try {
+          await loginWithGoogle(response.credential);
+          resetData();
+          toast.success("Successfully authenticated with Google!");
+          navigate("/", { replace: true });
+        } catch (err) {
+          toast.error(errorMessage(err, "Google sign-up failed."));
+        } finally {
+          setBusy(false);
+        }
+      }
+    };
+
+    const initGIS = () => {
+      if (!window.google?.accounts?.id || !GOOGLE_CLIENT_ID) return false;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+          auto_select: false,
+          itp_support: true,
+        });
+
+        const btnContainer = document.getElementById("google-signup-button");
+        if (btnContainer) {
+          btnContainer.innerHTML = "";
+          window.google.accounts.id.renderButton(btnContainer, {
+            theme: "outline",
+            size: "large",
+            type: "standard",
+            text: "signup_with",
+            shape: "pill",
+            width: "340",
+          });
+        }
+
+        window.google.accounts.id.prompt();
+        return true;
+      } catch (err) {
+        console.error("[GIS] Google Identity Services init error:", err);
+        return false;
+      }
+    };
+
+    if (initGIS()) return;
+
+    // Poll every 200ms for up to 10 seconds if script loaded asynchronously after mount
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (initGIS() || attempts > 50) {
+        clearInterval(interval);
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [loginWithGoogle, navigate, resetData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,25 +144,34 @@ export default function SignUp() {
     }
 
     setBusy(true);
-
     try {
-      await registerUser({
-        shop_name: shopName.trim(),
+      // Clear out stale tokens and counters before register
+      localStorage.removeItem("db_token");
+      localStorage.removeItem("db_refresh");
+      localStorage.removeItem("db_user");
+
+      const sanitizedEmail = email ? sanitizeEmail(email) : "";
+      const rawPhone = (countryCode + phone).trim();
+      const sanitizedPhone = sanitizePhone(rawPhone);
+
+      const payload = {
         name: fullName.trim(),
-        email: email.trim(),
-        phone: `${countryCode}${phone.trim()}`,
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        password,
+        role: "sme_owner",
+        shopName: shopName.trim(),
         businessType,
         dailySales,
         needEbm,
         teamSize,
         startDate,
         referralSource,
-        password,
-      });
+      };
 
-      // Reset local cached store state for brand new business owner
+      await registerUser(payload);
       resetData();
-      toast.success(`Welcome ${fullName.trim()}! Your account has been created successfully.`);
+      toast.success("Welcome to INZIRA! Account created successfully.");
       navigate("/", { replace: true });
     } catch (err) {
       toast.error(errorMessage(err, "Account registration failed. If you already have an account, please log in."));
@@ -124,6 +209,17 @@ export default function SignUp() {
           >
             Log In
           </Link>
+        </div>
+
+        {/* Official Google Identity Services Sign Up Button Container */}
+        <div className="mb-6 flex flex-col items-center">
+          <div id="google-signup-button" className="w-full flex justify-center overflow-hidden rounded-full min-h-[44px]"></div>
+          <div className="relative my-4 w-full flex items-center justify-center">
+            <div className="w-full border-t border-gray-100" />
+            <span className="absolute bg-white px-3 text-[11px] font-semibold text-gray-400">
+              Or register business details manually
+            </span>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
