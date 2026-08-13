@@ -1,8 +1,15 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import Sidebar from "./Sidebar";
+import { useAuth, checkIsAdmin } from "../context/AuthContext";
 
 export default function AppLayout() {
+  const { user, isAdmin } = useAuth();
+
+  if (isAdmin || checkIsAdmin(user)) {
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-paper">
       {/* Sidebar for Desktop & Tablet */}

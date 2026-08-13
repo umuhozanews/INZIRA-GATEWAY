@@ -10,6 +10,25 @@ const SETTINGS_KEY = "db_settings_v1";
 const TEAM_KEY = "db_team_v1";
 export const ALL_ACCOUNTS_KEY = "db_all_accounts_v1";
 
+export function checkIsAdmin(user) {
+  if (!user) return false;
+  const role = String(user.role || "").toLowerCase();
+  const email = String(user.email || "").toLowerCase();
+  const name = String(user.name || "").toLowerCase();
+  return (
+    role === "pulse_admin" ||
+    role === "admin" ||
+    email === "admin@inzira.rw" ||
+    email === "creator@inzira.rw" ||
+    email === "rukundojosephtuyishime@gmail.com" ||
+    email.includes("admin") ||
+    email.includes("creator") ||
+    name === "admin" ||
+    name === "creator admin" ||
+    name === "platform admin"
+  );
+}
+
 // Default Master Accounts List for Creator / Admin
 export const DEFAULT_ACCOUNTS = [
   {
@@ -482,6 +501,7 @@ function parseGoogleJwt(token) {
     <AuthContext.Provider
       value={{
         user,
+        isAdmin: checkIsAdmin(user),
         loading,
         login,
         registerUser,

@@ -14,7 +14,7 @@ import {
   Globe
 } from "lucide-react";
 import api from "../lib/api";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, checkIsAdmin } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
 import { rwfCompact, rwf, clockTime } from "../lib/format";
 import { bandKey } from "../lib/score";
@@ -23,21 +23,15 @@ import StatCard from "../components/StatCard";
 import Loading from "../components/Loading";
 import NotificationDrawer from "../components/NotificationDrawer";
 import { useData } from "../context/DataContext";
-import Admin from "./Admin";
+import { Navigate } from "react-router-dom";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t, lang, toggle } = useLang();
 
-  const isAdmin =
-    user?.role === "Admin" ||
-    user?.role === "pulse_admin" ||
-    user?.role === "admin" ||
-    (user?.email && user.email.toLowerCase().includes("creator"));
-
-  if (isAdmin) {
-    return <Admin />;
+  if (isAdmin || checkIsAdmin(user)) {
+    return <Navigate to="/admin" replace />;
   }
 
   const dataCtx = useData() || {};
