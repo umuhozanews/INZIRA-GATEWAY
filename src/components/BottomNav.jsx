@@ -12,19 +12,28 @@ import {
   BarChart3,
   Users,
   Activity,
-  Settings
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
+import { useAuth } from "../context/AuthContext";
 import Sheet from "./Sheet";
 
-const PRIMARY_ITEMS = [
+const MERCHANT_PRIMARY_ITEMS = [
   { to: "/", key: "nav_home", icon: Home, end: true },
   { to: "/sell", key: "nav_sell", icon: ShoppingCart },
   { to: "/stock", key: "nav_stock", icon: Package },
   { to: "/expenses", key: "nav_expenses", icon: Wallet },
 ];
 
-const MORE_ITEMS = [
+const ADMIN_PRIMARY_ITEMS = [
+  { to: "/", label: "Overview", icon: ShieldCheck, end: true },
+  { to: "/admin", label: "All SMEs", icon: Users },
+  { to: "/pnl", label: "Financials", icon: TrendingUp },
+  { to: "/reports", label: "Reports", icon: BarChart3 },
+];
+
+const BASE_MORE_ITEMS = [
   { to: "/invoices", label: "Invoices", icon: FileText, desc: "Customer factures & billing" },
   { to: "/pnl", label: "Profit & Loss", icon: TrendingUp, desc: "Executive financial P&L" },
   { to: "/books", label: "Financial Books", icon: BookOpen, desc: "Journal, Ledger & Trial balance" },
@@ -34,10 +43,26 @@ const MORE_ITEMS = [
   { to: "/settings", label: "Settings", icon: Settings, desc: "Profile & exchange rates" },
 ];
 
+const ADMIN_MORE_ITEMS = [
+  { to: "/books", label: "Financial Books & Ledger", icon: BookOpen, desc: "General Ledger & Trial balance" },
+  { to: "/health-score", label: "SACCO & Scoring Readiness", icon: Activity, desc: "Credit scoring & portfolio health" },
+  { to: "/settings", label: "Platform Settings & Backup", icon: Settings, desc: "Database backup & global settings" },
+];
+
 export default function BottomNav() {
   const { t } = useLang();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  const isAdmin =
+    user?.role === "Admin" ||
+    user?.role === "pulse_admin" ||
+    user?.role === "admin" ||
+    (user?.email && user.email.toLowerCase().includes("creator"));
+
+  const primaryItems = isAdmin ? ADMIN_PRIMARY_ITEMS : MERCHANT_PRIMARY_ITEMS;
+  const moreItems = isAdmin ? ADMIN_MORE_ITEMS : BASE_MORE_ITEMS;
 
   return (
     <>
@@ -45,33 +70,42 @@ export default function BottomNav() {
         className="sticky bottom-0 z-30 flex items-center justify-around border-t border-gray-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.04)] font-manrope select-none w-full"
         style={{ height: 64, paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {PRIMARY_ITEMS.map(({ to, key, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className="flex flex-1 flex-col items-center justify-center py-1 transition"
-          >
-            {({ isActive }) => (
-              <div className="flex flex-col items-center gap-0.5">
-                <div
-                  className={`flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200 ${
-                    isActive ? "bg-[#D4F06B] text-gray-900 shadow-sm scale-105" : "text-gray-400 hover:text-gray-700"
-                  }`}
-                >
-                  <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} />
+        {primaryItems.map((item) => {
+          const Icon = item.icon;
+          const label = item.key ? t(item.key) : item.label;
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className="flex flex-1 flex-col items-center justify-center py-1 transition"
+            >
+              {({ isActive }) => (
+                <div className="flex flex-col items-center gap-0.5">
+                  <div
+                    className={`flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200 ${
+                      isActive
+                        ? isAdmin
+                          ? "bg-purple-900 text-white shadow-sm scale-105"
+                          : "bg-[#D4F06B] text-gray-900 shadow-sm scale-105"
+                        : "text-gray-400 hover:text-gray-700"
+                    }`}
+                  >
+                    <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} />
+                  </div>
+                  <span
+                    className={`text-[10px] font-extrabold tracking-tight ${
+                      isActive ? (isAdmin ? "text-purple-950 font-black" : "text-gray-900") : "text-gray-400"
+                    }`}
+                  >
+                    {label}
+                  </span>
                 </div>
-                <span
-                  className={`text-[10px] font-extrabold tracking-tight ${
-                    isActive ? "text-gray-900" : "text-gray-400"
-                  }`}
-                >
-                  {t(key)}
-                </span>
-              </div>
-            )}
-          </NavLink>
-        ))}
+              )}
+            </NavLink>
+          );
+        })}
 
         {/* More Apps Quick Button */}
         <button
@@ -90,7 +124,7 @@ export default function BottomNav() {
       {/* More Modules Sheet */}
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Platform Modules & Financials">
         <div className="grid grid-cols-1 gap-2.5 pt-2 pb-6 font-manrope">
-          {MORE_ITEMS.map(({ to, label, icon: Icon, desc }) => (
+          {moreItems.map(({ to, label, icon: Icon, desc }) => (
             <button
               key={to}
               onClick={() => {

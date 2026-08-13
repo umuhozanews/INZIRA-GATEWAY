@@ -23,11 +23,22 @@ import StatCard from "../components/StatCard";
 import Loading from "../components/Loading";
 import NotificationDrawer from "../components/NotificationDrawer";
 import { useData } from "../context/DataContext";
+import Admin from "./Admin";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, lang, toggle } = useLang();
+
+  const isAdmin =
+    user?.role === "Admin" ||
+    user?.role === "pulse_admin" ||
+    user?.role === "admin" ||
+    (user?.email && user.email.toLowerCase().includes("creator"));
+
+  if (isAdmin) {
+    return <Admin />;
+  }
 
   const dataCtx = useData() || {};
   const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];

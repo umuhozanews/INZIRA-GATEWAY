@@ -250,7 +250,14 @@ export default function SignUp() {
       toast.success(`🎉 Welcome to INZIRA! "${shopName}" is ready.`);
       navigate("/", { replace: true });
     } catch (err) {
-      toast.error(errorMessage(err, "Registration failed. Please try again."));
+      const msg = errorMessage(err, "Registration failed. Please try again.");
+      toast.error(msg, { duration: 5000 });
+      // If error is about email or phone already registered, take user back to Step 1 to edit or log in
+      const code = err?.response?.data?.code;
+      const field = err?.response?.data?.field;
+      if (code === "EMAIL_EXISTS" || code === "PHONE_EXISTS" || code === "ACCOUNT_EXISTS" || field === "email" || field === "phone") {
+        setCurrentStep(1);
+      }
     } finally {
       setBusy(false);
     }

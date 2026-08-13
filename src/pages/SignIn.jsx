@@ -53,9 +53,14 @@ export default function SignIn() {
       if (response?.credential) {
         setBusy(true);
         try {
-          await loginWithGoogle(response.credential);
+          const loggedUser = await loginWithGoogle(response.credential);
           toast.success("Successfully authenticated with Google!");
-          navigate("/", { replace: true });
+          const isAdmin =
+            loggedUser?.role === "Admin" ||
+            loggedUser?.role === "pulse_admin" ||
+            loggedUser?.role === "admin" ||
+            (loggedUser?.email && loggedUser.email.toLowerCase().includes("creator"));
+          navigate(isAdmin ? "/admin" : "/", { replace: true });
         } catch (err) {
           toast.error(errorMessage(err, "Google sign-in failed."));
         } finally {
@@ -135,10 +140,15 @@ export default function SignIn() {
         return;
       }
 
-      await login(identifier, password.trim());
+      const loggedUser = await login(identifier, password.trim());
       clearRateLimit("login");
       toast.success("Welcome back!");
-      navigate("/", { replace: true });
+      const isAdmin =
+        loggedUser?.role === "Admin" ||
+        loggedUser?.role === "pulse_admin" ||
+        loggedUser?.role === "admin" ||
+        (loggedUser?.email && loggedUser.email.toLowerCase().includes("creator"));
+      navigate(isAdmin ? "/admin" : "/", { replace: true });
     } catch (err) {
       recordFailedAttempt("login", 15, 30);
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));

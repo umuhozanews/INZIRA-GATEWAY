@@ -1,4 +1,3 @@
-import { NavLink } from "react-router-dom";
 import {
   Home,
   ShoppingCart,
@@ -11,6 +10,7 @@ import {
   BookOpen,
   BarChart3,
   Settings,
+  ShieldCheck,
   Globe,
   LogOut,
   ChevronRight,
@@ -20,7 +20,7 @@ import { useLang } from "../lib/i18n.jsx";
 import Logomark from "./Logomark";
 import OfflineBadge from "./OfflineBadge";
 
-const NAV_ITEMS = [
+const MERCHANT_NAV_ITEMS = [
   { to: "/", key: "nav_home", icon: Home, end: true },
   { to: "/sell", key: "nav_sell", icon: ShoppingCart },
   { to: "/stock", key: "nav_stock", icon: Package },
@@ -34,9 +34,26 @@ const NAV_ITEMS = [
   { to: "/settings", key: "nav_settings", icon: Settings },
 ];
 
+const ADMIN_NAV_ITEMS = [
+  { to: "/", label: "Platform Overview", icon: ShieldCheck, end: true },
+  { to: "/admin", label: "All SME Merchants", icon: Users },
+  { to: "/pnl", label: "Platform Financials", icon: TrendingUp },
+  { to: "/books", label: "Financial Books & Ledger", icon: BookOpen },
+  { to: "/reports", label: "Reports & Tax Compliance", icon: BarChart3 },
+  { to: "/health-score", label: "SACCO Readiness", icon: Activity },
+  { to: "/settings", label: "Platform Settings & Backup", icon: Settings },
+];
+
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { t, lang, toggle } = useLang();
+  const isAdmin =
+    user?.role === "Admin" ||
+    user?.role === "pulse_admin" ||
+    user?.role === "admin" ||
+    (user?.email && user.email.toLowerCase().includes("creator"));
+
+  const navItems = isAdmin ? ADMIN_NAV_ITEMS : MERCHANT_NAV_ITEMS;
 
   return (
     <aside className="hidden md:flex w-64 flex-col justify-between border-r border-gray-200/80 bg-white p-5 shrink-0 select-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] h-screen overflow-y-auto font-manrope">
@@ -50,7 +67,7 @@ export default function Sidebar() {
                 DataBridge
               </h1>
               <p className="text-[10px] font-extrabold text-purple-600 tracking-wider">
-                INZIRA INSIGHTS
+                {isAdmin ? "ADMIN CONTROL CENTER" : "INZIRA INSIGHTS"}
               </p>
             </div>
           </div>
@@ -59,36 +76,55 @@ export default function Sidebar() {
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1.5">
           <span className="px-3 text-[10px] font-extrabold tracking-wider text-gray-400 uppercase">
-            Menu Navigation
+            {isAdmin ? "Admin Navigation" : "Menu Navigation"}
           </span>
-          {NAV_ITEMS.map(({ to, key, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `group flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
-                  isActive
-                    ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      size={17}
-                      className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700"}
-                      strokeWidth={isActive ? 2.4 : 1.8}
-                    />
-                    <span>{t(key)}</span>
-                  </div>
-                  {isActive && <ChevronRight size={14} className="text-gray-900/80" />}
-                </>
-              )}
-            </NavLink>
-          ))}
+
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const label = item.key ? t(item.key) : item.label;
+
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `group flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    isActive
+                      ? isAdmin
+                        ? "bg-purple-900 text-white shadow-md shadow-purple-900/20"
+                        : "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        size={17}
+                        className={
+                          isActive
+                            ? isAdmin
+                              ? "text-[#D4F06B]"
+                              : "text-gray-900"
+                            : "text-gray-400 group-hover:text-gray-700"
+                        }
+                        strokeWidth={isActive ? 2.4 : 1.8}
+                      />
+                      <span>{label}</span>
+                    </div>
+                    {isActive && (
+                      <ChevronRight
+                        size={14}
+                        className={isAdmin ? "text-[#D4F06B]" : "text-gray-900/80"}
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
 

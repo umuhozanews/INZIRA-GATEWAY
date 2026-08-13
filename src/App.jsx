@@ -45,7 +45,15 @@ const ProfitLoss = lazyWithRetry(() => import("./pages/ProfitLoss"));
 const FinancialBooks = lazyWithRetry(() => import("./pages/FinancialBooks"));
 const Reports = lazyWithRetry(() => import("./pages/Reports"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
-const Admin = lazyWithRetry(() => import("./pages/Admin"));
+
+// Dedicated Admin Portal
+const AdminLayout = lazyWithRetry(() => import("./layouts/AdminLayout"));
+const AdminOverview = lazyWithRetry(() => import("./pages/admin/AdminOverview"));
+const SmeDirectory = lazyWithRetry(() => import("./pages/admin/SmeDirectory"));
+const SmeShopView = lazyWithRetry(() => import("./pages/admin/SmeShopView"));
+const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"));
+const AdminAudit = lazyWithRetry(() => import("./pages/admin/AdminAudit"));
+const AdminSettings = lazyWithRetry(() => import("./pages/admin/AdminSettings"));
 
 export default function App() {
   return (
@@ -54,7 +62,24 @@ export default function App() {
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* All application pages wrapped inside AppLayout */}
+        {/* Dedicated Admin Portal Routes (Separate from Merchant) */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="smes" element={<SmeDirectory />} />
+          <Route path="smes/:id" element={<SmeShopView />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="audit" element={<AdminAudit />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
+        {/* SME Merchant Store Pages wrapped inside AppLayout */}
         <Route
           element={
             <ProtectedRoute>
@@ -74,7 +99,6 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/health-score" element={<HealthScore />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/admin" element={<Admin />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
