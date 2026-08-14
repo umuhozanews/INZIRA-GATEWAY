@@ -20,6 +20,7 @@ export function checkIsAdmin(user) {
     role === "admin" ||
     email === "admin@inzira.rw" ||
     email === "creator@inzira.rw" ||
+    email === "umuhozanews@gmail.com" ||
     email === "rukundojosephtuyishime@gmail.com" ||
     email.includes("admin") ||
     email.includes("creator") ||

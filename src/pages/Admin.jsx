@@ -23,13 +23,13 @@ import { Button, Field, TextInput } from "../components/ui";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { ALL_ACCOUNTS_KEY, DEFAULT_ACCOUNTS, saveAccountToRegistry } from "../context/AuthContext";
+import { checkIsAdmin, ALL_ACCOUNTS_KEY, DEFAULT_ACCOUNTS, saveAccountToRegistry } from "../context/AuthContext";
 import { rwf, formatDate } from "../lib/format";
 
 export default function Admin() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === "Admin" || user?.role === "pulse_admin" || (user?.email && user.email.toLowerCase().includes("creator"));
+  const isAdmin = checkIsAdmin(user);
 
   const [accounts, setAccounts] = useState(() => {
     try {
@@ -489,9 +489,23 @@ export default function Admin() {
               </div>
             </div>
 
-            <Button variant="paper" onClick={() => setSelectedAcc(null)} className="w-full font-bold">
-              Close Inspection
-            </Button>
+            <div className="pt-2 flex flex-col gap-2">
+              <Button
+                variant="green"
+                onClick={() => {
+                  if (selectedAcc.id) {
+                    navigate(`/admin/smes/${selectedAcc.id}`);
+                  }
+                }}
+                className="w-full font-extrabold shadow-sm flex items-center justify-center gap-2 py-3"
+              >
+                <Store size={16} />
+                <span>Visit Merchant Store Dashboard</span>
+              </Button>
+              <Button variant="paper" onClick={() => setSelectedAcc(null)} className="w-full font-bold">
+                Close Inspection
+              </Button>
+            </div>
           </div>
         )}
       </Sheet>
