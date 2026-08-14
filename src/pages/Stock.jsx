@@ -106,10 +106,20 @@ export default function Stock() {
     if (params.get("new") === "1") setOpen(true);
   }, [params]);
 
-  const visible = useMemo(
-    () => items.filter((i) => !query || i.name?.toLowerCase().includes(query.toLowerCase())),
-    [items, query]
-  );
+  const visible = useMemo(() => {
+    const seenIds = new Set();
+    const seenNames = new Set();
+    return items.filter((i) => {
+      if (!i || !i.id) return false;
+      const cleanName = (i.name || "").toLowerCase().trim();
+      if (seenIds.has(i.id) || (cleanName && seenNames.has(cleanName))) return false;
+      seenIds.add(i.id);
+      if (cleanName) seenNames.add(cleanName);
+
+      return !query || cleanName.includes(query.toLowerCase());
+    });
+  }, [items, query]);
+
   const lowCount = items.filter((i) => statusOf(i) !== "ok").length;
   const totalValue = items.reduce(
     (sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.sell_price_rwf) || 0),
@@ -133,6 +143,14 @@ export default function Stock() {
   };
 
   async function handleQuickAddPreset(preset) {
+    const cleanPresetName = preset.name?.toLowerCase().trim();
+    const existing = items.find(
+      (i) => (i.name || "").toLowerCase().trim() === cleanPresetName
+    );
+    if (existing) {
+      return toast.error(`"${preset.name}" is already in your stock!`);
+    }
+
     try {
       await addStockItem({
         name: preset.name,
@@ -152,18 +170,30 @@ export default function Stock() {
   async function handleAddAllPresets() {
     setSaving(true);
     try {
+      let added = 0;
       for (const preset of PRESET_PRODUCTS.slice(0, 6)) {
-        await addStockItem({
-          name: preset.name,
-          category: preset.category,
-          unit: preset.unit,
-          quantity: preset.default_qty || 10,
-          cost_price_rwf: preset.cost_price_rwf,
-          sell_price_rwf: preset.sell_price_rwf,
-          low_stock_threshold: preset.low_stock_threshold,
-        });
+        const cleanPresetName = preset.name?.toLowerCase().trim();
+        const existing = items.find(
+          (i) => (i.name || "").toLowerCase().trim() === cleanPresetName
+        );
+        if (!existing) {
+          await addStockItem({
+            name: preset.name,
+            category: preset.category,
+            unit: preset.unit,
+            quantity: preset.default_qty || 10,
+            cost_price_rwf: preset.cost_price_rwf,
+            sell_price_rwf: preset.sell_price_rwf,
+            low_stock_threshold: preset.low_stock_threshold,
+          });
+          added++;
+        }
       }
-      toast.success("Initialized stock with standard catalog items!");
+      if (added > 0) {
+        toast.success(`Added ${added} new standard catalog items!`);
+      } else {
+        toast.success("All preset catalog items already exist in your stock.");
+      }
     } catch {
       toast.error("Failed to add preset catalog.");
     } finally {
@@ -172,11 +202,20 @@ export default function Stock() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) return toast.error(t("item_name"));
+    const cleanName = form.name.trim();
+    if (!cleanName) return toast.error(t("item_name"));
+    
+    const existing = items.find(
+      (i) => (i.name || "").toLowerCase().trim() === cleanName.toLowerCase()
+    );
+    if (existing) {
+      return toast.error(`Product "${cleanName}" is already in your stock!`);
+    }
+
     setSaving(true);
     try {
       await addStockItem({
-        name: form.name.trim(),
+        name: cleanName,
         category: form.category.trim() || null,
         unit: form.unit.trim() || null,
         quantity: Number(form.quantity) || 0,

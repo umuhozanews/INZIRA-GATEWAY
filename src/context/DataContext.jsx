@@ -136,38 +136,54 @@ export function DataProvider({ children }) {
 
       if (stkRes.status === "fulfilled" && Array.isArray(stkRes.value.data?.data)) {
         const serverItems = stkRes.value.data.data;
-        if (serverItems.length > 0) {
-          setStock(prev => {
-            const localOnly = prev.filter(p => typeof p.id === "number" && p.id > 1000000000000);
-            const serverIds = new Set(serverItems.map(s => s.id));
-            const filteredLocal = localOnly.filter(p => !serverIds.has(p.id));
-            return [...filteredLocal, ...serverItems];
+        setStock(prev => {
+          const serverIds = new Set(serverItems.map(s => s.id));
+          const serverNames = new Set(serverItems.map(s => s.name?.toLowerCase().trim()));
+          // Only keep local-only optimistic items that haven't been saved on server yet
+          const unsavedLocal = prev.filter(p => 
+            typeof p.id === "number" && 
+            p.id > 1000000000000 && 
+            !serverIds.has(p.id) &&
+            !serverNames.has(p.name?.toLowerCase().trim())
+          );
+          const combined = [...serverItems, ...unsavedLocal];
+          const seen = new Set();
+          return combined.filter(item => {
+            if (!item || !item.id || seen.has(item.id)) return false;
+            seen.add(item.id);
+            return true;
           });
-        }
+        });
       }
 
       if (saleRes.status === "fulfilled" && Array.isArray(saleRes.value.data?.data)) {
         const serverSales = saleRes.value.data.data;
-        if (serverSales.length > 0) {
-          setSales(prev => {
-            const localOnly = prev.filter(s => typeof s.id === "number" && s.id > 1000000000000);
-            const serverIds = new Set(serverSales.map(s => s.id));
-            const filteredLocal = localOnly.filter(s => !serverIds.has(s.id));
-            return [...filteredLocal, ...serverSales];
+        setSales(prev => {
+          const serverIds = new Set(serverSales.map(s => s.id));
+          const unsavedLocal = prev.filter(s => typeof s.id === "number" && s.id > 1000000000000 && !serverIds.has(s.id));
+          const combined = [...serverSales, ...unsavedLocal];
+          const seen = new Set();
+          return combined.filter(s => {
+            if (!s || !s.id || seen.has(s.id)) return false;
+            seen.add(s.id);
+            return true;
           });
-        }
+        });
       }
 
       if (expRes.status === "fulfilled" && Array.isArray(expRes.value.data?.data)) {
         const serverExpenses = expRes.value.data.data;
-        if (serverExpenses.length > 0) {
-          setExpenses(prev => {
-            const localOnly = prev.filter(e => typeof e.id === "number" && e.id > 1000000000000);
-            const serverIds = new Set(serverExpenses.map(e => e.id));
-            const filteredLocal = localOnly.filter(e => !serverIds.has(e.id));
-            return [...filteredLocal, ...serverExpenses];
+        setExpenses(prev => {
+          const serverIds = new Set(serverExpenses.map(e => e.id));
+          const unsavedLocal = prev.filter(e => typeof e.id === "number" && e.id > 1000000000000 && !serverIds.has(e.id));
+          const combined = [...serverExpenses, ...unsavedLocal];
+          const seen = new Set();
+          return combined.filter(e => {
+            if (!e || !e.id || seen.has(e.id)) return false;
+            seen.add(e.id);
+            return true;
           });
-        }
+        });
       }
     } catch (err) {
       console.warn("[DataContext] Network sync warning, using local persistent state:", err.message);
@@ -390,9 +406,10 @@ export function DataProvider({ children }) {
   // Interconnected Add Stock Item Action
   const addStockItem = async (newItem) => {
     const timestamp = Date.now();
+    const cleanName = (newItem.name || "").trim();
     const created = {
       id: timestamp,
-      name: newItem.name.trim(),
+      name: cleanName,
       category: newItem.category || "General",
       unit: newItem.unit || "pcs",
       quantity: Number(newItem.quantity) || 0,
@@ -401,16 +418,33 @@ export function DataProvider({ children }) {
       low_stock_threshold: Number(newItem.low_stock_threshold) || 5,
       is_active: true,
     };
-    setStock(prev => [created, ...prev]);
+
+    setStock(prev => {
+      const exists = prev.some(
+        p => (p.name || "").toLowerCase().trim() === cleanName.toLowerCase()
+      );
+      if (exists) return prev;
+      return [created, ...prev];
+    });
 
     try {
-      await api.post("/stock", newItem);
-      setTimeout(() => refreshAll(true), 1000);
+      const res = await api.post("/stock", newItem);
+      const serverItem = res?.data;
+      if (serverItem && serverItem.id) {
+        setStock(prev =>
+          prev.map(p =>
+            p.id === timestamp || (p.name || "").toLowerCase().trim() === cleanName.toLowerCase()
+              ? serverItem
+              : p
+          )
+        );
+      }
+      setTimeout(() => refreshAll(true), 400);
+      return serverItem || created;
     } catch (err) {
       console.warn("[DataContext] Async stock add fallback:", err.message);
+      return created;
     }
-
-    return created;
   };
 
   // Update Stock Item Action

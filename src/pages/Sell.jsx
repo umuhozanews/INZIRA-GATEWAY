@@ -101,9 +101,17 @@ export default function Sell() {
   const safeHistory = Array.isArray(salesHistory) ? salesHistory : [];
 
   const visibleProducts = useMemo(() => {
+    const seenIds = new Set();
+    const seenNames = new Set();
     return safeProducts.filter((p) => {
+      if (!p || !p.id) return false;
+      const cleanName = (p.name || "").toLowerCase().trim();
+      if (seenIds.has(p.id) || (cleanName && seenNames.has(cleanName))) return false;
+      seenIds.add(p.id);
+      if (cleanName) seenNames.add(cleanName);
+
       if (activeCat !== "__all" && p.category !== activeCat) return false;
-      if (query && !p.name?.toLowerCase().includes(query.toLowerCase())) return false;
+      if (query && !cleanName.includes(query.toLowerCase())) return false;
       return true;
     });
   }, [safeProducts, activeCat, query]);
