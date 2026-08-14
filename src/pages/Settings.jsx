@@ -115,6 +115,12 @@ export default function Settings() {
     }
   });
 
+  // EBM Fiscal Details State
+  const [hasEbm, setHasEbm] = useState(false);
+  const [tinNumber, setTinNumber] = useState("");
+  const [sdcId, setSdcId] = useState("");
+  const [mrcNumber, setMrcNumber] = useState("");
+
   // Team & Workers State
   const [team, setTeam] = useState(() => {
     try {
@@ -148,12 +154,12 @@ export default function Settings() {
     try {
       localStorage.setItem(
         SETTINGS_KEY,
-        JSON.stringify({ shopName, shopAddress, sector, shopPhone, businessEmail, currency })
+        JSON.stringify({ shopName, shopAddress, sector, shopPhone, businessEmail, currency, hasEbm, tinNumber, sdcId, mrcNumber })
       );
     } catch (e) {
       console.error(e);
     }
-  }, [shopName, shopAddress, sector, shopPhone, businessEmail, currency]);
+  }, [shopName, shopAddress, sector, shopPhone, businessEmail, currency, hasEbm, tinNumber, sdcId, mrcNumber]);
 
   useEffect(() => {
     try {
@@ -171,6 +177,12 @@ export default function Settings() {
       if (s.shop_address) setShopAddress(s.shop_address);
       if (s.sector) setSector(s.sector);
       if (s.shop_phone) setShopPhone(s.shop_phone);
+      if (s.shop_email) setBusinessEmail(s.shop_email);
+      if (s.currency) setCurrency(s.currency);
+      if (s.has_ebm !== undefined) setHasEbm(Boolean(s.has_ebm));
+      if (s.tin_number) setTinNumber(s.tin_number);
+      if (s.sdc_id) setSdcId(s.sdc_id);
+      if (s.mrc_number) setMrcNumber(s.mrc_number);
     } catch {
       /* network fallback */
     }
@@ -183,15 +195,21 @@ export default function Settings() {
   const handleSaveBusiness = async (e) => {
     e.preventDefault();
     setSaving(true);
-    updateUser({ shop_name: shopName, sector, phone: shopPhone });
+    updateUser({ shop_name: shopName, sector, phone: shopPhone, currency });
     try {
       await api.put("/settings", {
         shop_name: shopName,
         shop_address: shopAddress,
         sector,
         shop_phone: shopPhone,
+        shop_email: businessEmail,
+        currency,
+        has_ebm: hasEbm,
+        tin_number: tinNumber,
+        sdc_id: sdcId,
+        mrc_number: mrcNumber,
       });
-      toast.success("Business Info & Shop Name updated successfully!");
+      toast.success("Business Info & Invoice Settings updated successfully!");
     } catch {
       toast.success("Business Info saved!");
     } finally {
@@ -398,6 +416,60 @@ export default function Settings() {
                   className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-semibold text-ink focus:border-primary focus:outline-none shadow-sm"
                   required
                 />
+              </div>
+
+              {/* EBM / Fiscal Receipt Settings Block */}
+              <div className="pt-3 border-t border-line/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-extrabold text-ink">Rwanda Revenue Authority (RRA) EBM v2</h4>
+                    <p className="text-[11px] text-muted">Enable EBM v2 fiscal receipt formatting for your shop invoices</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasEbm}
+                      onChange={(e) => setHasEbm(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                {hasEbm && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-paper border border-line animate-fadeIn">
+                    <div>
+                      <label className="block text-[11px] font-bold text-ink mb-1">Company TIN Number</label>
+                      <input
+                        type="text"
+                        value={tinNumber}
+                        onChange={(e) => setTinNumber(e.target.value)}
+                        placeholder="e.g. 103777856"
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-ink mb-1">SDC Device ID</label>
+                      <input
+                        type="text"
+                        value={sdcId}
+                        onChange={(e) => setSdcId(e.target.value)}
+                        placeholder="e.g. SDC010013000"
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-ink mb-1">MRC Number</label>
+                      <input
+                        type="text"
+                        value={mrcNumber}
+                        onChange={(e) => setMrcNumber(e.target.value)}
+                        placeholder="e.g. MIS00013705"
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

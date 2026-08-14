@@ -1,21 +1,26 @@
 import React, { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { rwf, formatDate, clockTime } from "../lib/format";
 
 /**
- * Authentic Rwanda Revenue Authority (RRA) EBM v2 Fiscal Thermal Receipt & Invoice Component
- * Shared with full Inzira Insights / DataBridge ecosystem.
+ * Authentic Invoice & Receipt Component for Inzira / DataBridge
+ * Supports both Official RRA EBM v2 Fiscal Receipts and Standard Commercial Store Receipts.
  */
 export default function EbmReceipt({ sale, shopSettings }) {
+  const { user } = useAuth();
   if (!sale) return null;
 
-  // Business & Fiscal Header Info
-  const shopName = shopSettings?.shop_name || sale.shop_name || sale.branch_name || "INZIRA SME STORE";
-  const shopAddress = shopSettings?.shop_address || sale.shop_address || sale.branch_location || "Kigali, Rwanda";
-  const shopTel = shopSettings?.shop_phone || sale.shop_phone || sale.branch_phone || "";
-  const shopEmail = shopSettings?.shop_email || sale.shop_email || "";
-  const tinNumber = shopSettings?.tin_number || sale.tin_number || "TIN Pending";
-  const cashierName = sale.cashier_name || sale.worker_name || sale.done_by || "Cashier";
-  const cashierTin = shopSettings?.cashier_tin || tinNumber;
+  // Dynamically resolve registered merchant details
+  const shopName = shopSettings?.shop_name || user?.shop_name || sale.shop_name || sale.branch_name || (user?.name ? `${user.name}'s Shop` : "INZIRA SME STORE");
+  const shopAddress = shopSettings?.shop_address || user?.district || sale.shop_address || sale.branch_location || "Kigali, Rwanda";
+  const shopTel = shopSettings?.shop_phone || user?.phone || sale.shop_phone || sale.branch_phone || "";
+  const shopEmail = shopSettings?.shop_email || user?.email || sale.shop_email || "";
+  
+  // EBM Configuration
+  const hasEbm = Boolean(shopSettings?.has_ebm) || (Boolean(shopSettings?.tin_number) && shopSettings?.tin_number !== "TIN Pending");
+  const tinNumber = hasEbm ? (shopSettings?.tin_number || sale.tin_number || "TIN Registered") : null;
+  const cashierName = sale.cashier_name || sale.worker_name || sale.done_by || user?.name || "Cashier";
+  const cashierTin = hasEbm ? (shopSettings?.cashier_tin || tinNumber) : null;
 
   // Client Details
   const clientTin = sale.customer_tin || "N/A";
@@ -125,16 +130,22 @@ export default function EbmReceipt({ sale, shopSettings }) {
       {/* 1. Header Section */}
       <div className="text-center space-y-1 pb-3">
         <p className="font-bold text-[14px] uppercase">{shopName}</p>
-        <p className="text-[11px] uppercase">{shopAddress}</p>
-        <p className="text-[11px]">TEL: {shopTel}</p>
-        {shopEmail && <p className="text-[11px]">EMAIL: {shopEmail}</p>}
-        <p className="font-bold text-[12px]">TIN: {tinNumber}</p>
-        <p className="text-[11px]">CASHIER: {cashierName} ({cashierTin})</p>
+        <p className="text-[11px] uppercase text-gray-700">{shopAddress}</p>
+        {shopTel && <p className="text-[11px] font-semibold">TEL: {shopTel}</p>}
+        {shopEmail && <p className="text-[11px] text-gray-600">EMAIL: {shopEmail}</p>}
+        {hasEbm ? (
+          <>
+            <p className="font-bold text-[12px] pt-0.5">TIN: {tinNumber}</p>
+            <p className="text-[11px]">CASHIER: {cashierName} {cashierTin ? `(${cashierTin})` : ""}</p>
+          </>
+        ) : (
+          <p className="text-[11px] pt-0.5 font-medium">CASHIER: {cashierName}</p>
+        )}
       </div>
 
       {/* Client Details Section */}
       <div className="my-2 pt-2 border-t border-dashed border-black">
-        <p className="font-bold">CLIENT TIN: {clientTin}</p>
+        {hasEbm && <p className="font-bold">CLIENT TIN: {clientTin}</p>}
         <p className="font-bold uppercase">CLIENT NAME: {clientName}</p>
         {sale.customer_phone && <p className="font-bold text-[11px]">CLIENT TEL: {sale.customer_phone}</p>}
       </div>
@@ -246,52 +257,68 @@ export default function EbmReceipt({ sale, shopSettings }) {
         </div>
       </div>
 
-      {/* 4. SDC Fiscal Data Section */}
-      <div className="my-3 pt-2 border-t border-dashed border-black text-center space-y-1">
-        <p className="font-bold tracking-wider">SDC INFORMATION</p>
-        
-        <div className="flex justify-between text-[11px] pt-1">
-          <span>Date: {dateFormatted}</span>
-          <span>Time: {timeFormatted}</span>
-        </div>
-
-        <p className="text-left text-[11px]">SDC ID : {sdcId}</p>
-        <p className="text-left text-[11px]">RECEIPT NUMBER : {receiptNoStr}</p>
-        
-        <div className="text-left pt-1">
-          <p className="text-[11px]">Internal Data :</p>
-          <p className="text-[10px] font-bold break-all">{internalData}</p>
-        </div>
-
-        <div className="text-left pt-1">
-          <p className="text-[11px]">Receipt Signature :</p>
-          <p className="text-[10px] font-bold break-all">{receiptSignature}</p>
-        </div>
-
-        <div className="pt-2 text-left space-y-0.5 border-t border-dotted border-black mt-2">
-          <p className="text-[11px]">RECEIPT NUMBER : {receiptSeq}</p>
-          <div className="flex justify-between text-[11px]">
+      {/* 4. SDC Fiscal Data Section OR Official Commercial Seal */}
+      {hasEbm ? (
+        <div className="my-3 pt-2 border-t border-dashed border-black text-center space-y-1">
+          <p className="font-bold tracking-wider">SDC INFORMATION</p>
+          
+          <div className="flex justify-between text-[11px] pt-1">
             <span>Date: {dateFormatted}</span>
             <span>Time: {timeFormatted}</span>
           </div>
-          <p className="text-[11px]">MRC: {mrcNumber}</p>
-        </div>
 
-        <div className="pt-3 pb-1">
-          <p className="font-bold text-[11px]">End of Legal Receipt</p>
-          <p className="text-[11px] italic">Powered by EBM v2</p>
-        </div>
+          <p className="text-left text-[11px]">SDC ID : {sdcId || "SDC010013000"}</p>
+          <p className="text-left text-[11px]">RECEIPT NUMBER : {receiptNoStr}</p>
+          
+          <div className="text-left pt-1">
+            <p className="text-[11px]">Internal Data :</p>
+            <p className="text-[10px] font-bold break-all">{internalData}</p>
+          </div>
 
-        {/* 5. QR Code for Verification */}
-        <div className="flex flex-col items-center justify-center pt-2">
-          <img 
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`} 
-            alt="EBM Verification QR Code"
-            className="w-28 h-28 object-contain border border-black p-1 bg-white"
-          />
-          <span className="text-[9px] mt-1 text-gray-600">Scan to verify with RRA</span>
+          <div className="text-left pt-1">
+            <p className="text-[11px]">Receipt Signature :</p>
+            <p className="text-[10px] font-bold break-all">{receiptSignature}</p>
+          </div>
+
+          <div className="pt-2 text-left space-y-0.5 border-t border-dotted border-black mt-2">
+            <p className="text-[11px]">RECEIPT NUMBER : {receiptSeq}</p>
+            <div className="flex justify-between text-[11px]">
+              <span>Date: {dateFormatted}</span>
+              <span>Time: {timeFormatted}</span>
+            </div>
+            <p className="text-[11px]">MRC: {mrcNumber || "MIS00013705"}</p>
+          </div>
+
+          <div className="pt-3 pb-1">
+            <p className="font-bold text-[11px]">End of Legal Receipt</p>
+            <p className="text-[11px] italic">Powered by EBM v2</p>
+          </div>
+
+          {/* 5. QR Code for Verification */}
+          <div className="flex flex-col items-center justify-center pt-2">
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`} 
+              alt="EBM Verification QR Code"
+              className="w-28 h-28 object-contain border border-black p-1 bg-white"
+            />
+            <span className="text-[9px] mt-1 text-gray-600">Scan to verify with RRA</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="my-3 pt-2 border-t border-dashed border-black text-center space-y-1.5">
+          <p className="font-bold tracking-wider text-[11px]">OFFICIAL STORE RECEIPT</p>
+          <div className="flex justify-between text-[11px] pt-0.5">
+            <span>Date: {dateFormatted}</span>
+            <span>Time: {timeFormatted}</span>
+          </div>
+          <p className="text-left text-[11px]">RECEIPT REF: {sale.invoice_number || receiptNoStr}</p>
+          {shopAddress && <p className="text-left text-[11px]">LOCATION: {shopAddress}</p>}
+          <div className="pt-3 pb-1">
+            <p className="font-bold text-[11px] text-gray-800">Thank you for your business!</p>
+            <p className="text-[10px] text-gray-500 italic mt-0.5">Verified Commercial Receipt • INZIRA Platform</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
