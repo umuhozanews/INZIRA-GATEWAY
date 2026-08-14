@@ -811,17 +811,13 @@ export default function Sell() {
                   key={item.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper p-2.5"
                 >
-                  {item.is_custom ? (
-                    <div className="h-10 w-10 rounded-lg bg-primary-xlt text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                      <Tag size={18} />
-                    </div>
-                  ) : (
-                    <SafeImage
-                      src={getProductImage(item)}
-                      alt={item.name}
-                      className="h-10 w-10 rounded-lg object-cover shrink-0 border border-line/60 bg-card"
-                    />
-                  )}
+                  <div className="h-10 w-10 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0 border border-gray-200 font-extrabold text-xs">
+                    {item.is_custom ? (
+                      <Tag size={16} className="text-purple-600" />
+                    ) : (
+                      <span>{String(item.name || "Item").trim().slice(0, 2).toUpperCase()}</span>
+                    )}
+                  </div>
                   <div className="flex-1 truncate pr-1">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-ink truncate">{item.name}</span>
