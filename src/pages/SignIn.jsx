@@ -98,7 +98,6 @@ export default function SignIn() {
           });
         }
 
-        window.google.accounts.id.prompt();
         return true;
       } catch (err) {
         console.error("[GIS] Google Identity Services init error:", err);

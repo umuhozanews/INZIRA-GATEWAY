@@ -121,10 +121,20 @@ export default function SignUp() {
       if (response?.credential) {
         setBusy(true);
         try {
-          await loginWithGoogle(response.credential);
-          resetData();
+          const loggedUser = await loginWithGoogle(response.credential);
           toast.success("Successfully authenticated with Google!");
-          navigate("/", { replace: true });
+          const isAdmin =
+            loggedUser?.role === "pulse_admin" ||
+            loggedUser?.role === "admin" ||
+            loggedUser?.email?.includes("creator");
+
+          if (isAdmin) {
+            navigate("/admin", { replace: true });
+          } else if (loggedUser?.profile_complete === false) {
+            navigate("/complete-setup", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
         } catch (err) {
           toast.error(errorMessage(err, "Google sign-up failed."));
         } finally {
