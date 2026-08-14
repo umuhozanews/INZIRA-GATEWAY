@@ -305,12 +305,24 @@ export default function SignIn() {
           <div id="google-signin-button" className="w-full flex justify-center overflow-hidden rounded-full"></div>
         </div>
 
-        {/* Footer Link */}
-        <div className="mt-6 text-center text-xs font-medium text-gray-500">
-          Don't have an account?{" "}
-          <Link to="/signup" className="font-bold text-purple-600 hover:underline">
-            Sign Up
-          </Link>
+        {/* Footer Link & Direct APK Download */}
+        <div className="mt-6 text-center text-xs font-medium text-gray-500 space-y-3">
+          <div>
+            Don't have an account?{" "}
+            <Link to="/signup" className="font-bold text-purple-600 hover:underline">
+              Sign Up
+            </Link>
+          </div>
+
+          <div className="pt-2 border-t border-gray-100">
+            <a
+              href="/INZIRA-DataBridge-v1.0.apk"
+              download="INZIRA-DataBridge-v1.0.apk"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-[#D4F06B] text-gray-800 text-[11px] font-extrabold transition shadow-sm"
+            >
+              <span>📲</span> <span>Download Android App (.APK)</span>
+            </a>
+          </div>
         </div>
 
       </div>
