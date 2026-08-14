@@ -463,20 +463,6 @@ function parseGoogleJwt(token) {
       localStorage.removeItem(REFRESH_KEY);
       localStorage.removeItem(USER_KEY);
 
-      Object.keys(localStorage).forEach((key) => {
-        if (
-          key.startsWith("db_stock_") ||
-          key.startsWith("db_sales_") ||
-          key.startsWith("db_expenses_") ||
-          key.startsWith("db_settings_") ||
-          key.startsWith("db_team_") ||
-          key.startsWith("db_customers_") ||
-          key.startsWith("db_suppliers_")
-        ) {
-          localStorage.removeItem(key);
-        }
-      });
-
       setUser(null);
     }
   }, []);
