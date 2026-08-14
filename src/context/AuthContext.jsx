@@ -376,30 +376,35 @@ function parseGoogleJwt(token) {
           return persist(data);
         }
       } catch (err) {
-        console.warn("[Auth] Backend /auth/google unavailable, authenticating with verified Google ID token.", err);
+        console.warn("[Auth] Backend /auth/google error:", err?.response?.data || err.message);
+        if (err.response?.data?.error) {
+          throw new Error(err.response.data.error);
+        }
       }
 
       if (!payload || !payload.email) {
         throw new Error("Could not extract verified profile from Google authentication");
       }
 
+      const cleanEmail = payload.email.toLowerCase().trim();
+
       // Check if user already exists in local registry or find by email
       const allAccounts = JSON.parse(localStorage.getItem(ALL_ACCOUNTS_KEY) || "[]");
       let existingAccount = allAccounts.find(
-        (acc) => acc.email?.toLowerCase() === payload.email.toLowerCase()
+        (acc) => acc.email?.toLowerCase().trim() === cleanEmail
       );
 
       const userId = existingAccount?.id || `usr_g_${payload.sub || Date.now()}`;
-      const fallbackName = payload.name || payload.email.split("@")[0];
+      const fallbackName = payload.name || cleanEmail.split("@")[0];
       const shopName = existingAccount?.shop_name || `${fallbackName}'s Business`;
 
-      const isBrandNewGoogle = !existingAccount || existingAccount.profile_complete === false;
+      const isBrandNewGoogle = !existingAccount;
       const googleUser = {
         ...(existingAccount || {}),
         id: userId,
         name: existingAccount?.name || fallbackName,
         shop_name: existingAccount?.shop_name || "",
-        email: payload.email,
+        email: cleanEmail,
         phone: existingAccount?.phone || "",
         sector: existingAccount?.sector || "Retail & General Merchandise",
         district: existingAccount?.district || "Gasabo (Kigali)",
