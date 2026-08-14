@@ -34,6 +34,7 @@ function lazyWithRetry(componentImport) {
 
 const SignIn = lazyWithRetry(() => import("./pages/SignIn"));
 const SignUp = lazyWithRetry(() => import("./pages/SignUp"));
+const CompleteSetup = lazyWithRetry(() => import("./pages/CompleteSetup"));
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const Sell = lazyWithRetry(() => import("./pages/Sell"));
 const Stock = lazyWithRetry(() => import("./pages/Stock"));
@@ -61,6 +62,14 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route
+          path="/complete-setup"
+          element={
+            <ProtectedRoute>
+              <CompleteSetup />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Dedicated Admin Portal Routes (Separate from Merchant) */}
         <Route

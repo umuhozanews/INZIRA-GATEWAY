@@ -10,6 +10,10 @@ export default function AppLayout() {
     return <Navigate to="/admin" replace />;
   }
 
+  if (user && user.profile_complete === false) {
+    return <Navigate to="/complete-setup" replace />;
+  }
+
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-paper">
       {/* Sidebar for Desktop & Tablet */}

@@ -359,26 +359,33 @@ export default function SmeDirectory() {
                     </td>
 
                     <td className="py-4 px-4">
-                      <button
-                        onClick={() => handleToggleStatus(sme)}
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition cursor-pointer flex items-center gap-1 ${
-                          sme.is_active !== false
-                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                            : "bg-red-100 text-red-800 hover:bg-red-200"
-                        }`}
-                      >
-                        {sme.is_active !== false ? (
-                          <>
-                            <CheckCircle2 size={11} />
-                            <span>Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle size={11} />
-                            <span>Suspended</span>
-                          </>
+                      <div className="flex flex-col gap-1 items-start">
+                        <button
+                          onClick={() => handleToggleStatus(sme)}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition cursor-pointer flex items-center gap-1 ${
+                            sme.is_active !== false
+                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                              : "bg-red-100 text-red-800 hover:bg-red-200"
+                          }`}
+                        >
+                          {sme.is_active !== false ? (
+                            <>
+                              <CheckCircle2 size={11} />
+                              <span>Active</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle size={11} />
+                              <span>Suspended</span>
+                            </>
+                          )}
+                        </button>
+                        {sme.profile_complete === false && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                            Setup Pending
+                          </span>
                         )}
-                      </button>
+                      </div>
                     </td>
 
                     <td className="py-4 px-4 sm:px-6 text-right">

@@ -56,11 +56,17 @@ export default function SignIn() {
           const loggedUser = await loginWithGoogle(response.credential);
           toast.success("Successfully authenticated with Google!");
           const isAdmin =
-            loggedUser?.role === "Admin" ||
             loggedUser?.role === "pulse_admin" ||
             loggedUser?.role === "admin" ||
-            (loggedUser?.email && loggedUser.email.toLowerCase().includes("creator"));
-          navigate(isAdmin ? "/admin" : "/", { replace: true });
+            loggedUser?.email?.includes("creator");
+
+          if (isAdmin) {
+            navigate("/admin", { replace: true });
+          } else if (loggedUser?.profile_complete === false) {
+            navigate("/complete-setup", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
         } catch (err) {
           toast.error(errorMessage(err, "Google sign-in failed."));
         } finally {
@@ -144,11 +150,17 @@ export default function SignIn() {
       clearRateLimit("login");
       toast.success("Welcome back!");
       const isAdmin =
-        loggedUser?.role === "Admin" ||
         loggedUser?.role === "pulse_admin" ||
         loggedUser?.role === "admin" ||
-        (loggedUser?.email && loggedUser.email.toLowerCase().includes("creator"));
-      navigate(isAdmin ? "/admin" : "/", { replace: true });
+        loggedUser?.email?.includes("creator");
+
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else if (loggedUser?.profile_complete === false) {
+        navigate("/complete-setup", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err) {
       recordFailedAttempt("login", 15, 30);
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));

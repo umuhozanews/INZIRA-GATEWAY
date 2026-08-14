@@ -393,17 +393,20 @@ function parseGoogleJwt(token) {
       const fallbackName = payload.name || payload.email.split("@")[0];
       const shopName = existingAccount?.shop_name || `${fallbackName}'s Business`;
 
+      const isBrandNewGoogle = !existingAccount || existingAccount.profile_complete === false;
       const googleUser = {
         ...(existingAccount || {}),
         id: userId,
         name: existingAccount?.name || fallbackName,
-        shop_name: shopName,
+        shop_name: existingAccount?.shop_name || "",
         email: payload.email,
-        phone: existingAccount?.phone || "+250 788 000 000",
-        sector: existingAccount?.sector || "Retail & Grocery",
+        phone: existingAccount?.phone || "",
+        sector: existingAccount?.sector || "Retail & General Merchandise",
+        district: existingAccount?.district || "Gasabo (Kigali)",
         currency: existingAccount?.currency || "RWF",
         picture: payload.picture || existingAccount?.picture,
-        role: existingAccount?.role || "Merchant",
+        role: existingAccount?.role || "sme_owner",
+        profile_complete: !isBrandNewGoogle,
         status: "Active",
         isGoogleAuth: true,
         createdAt: existingAccount?.createdAt || new Date().toISOString(),
@@ -497,6 +500,42 @@ function parseGoogleJwt(token) {
     };
   }, [scheduleRefresh]);
 
+  const completeSetup = useCallback(
+    async (setupData) => {
+      try {
+        const { data } = await api.post("/auth/complete-setup", setupData);
+        if (data?.user) {
+          const updatedUser = { ...data.user, profile_complete: true };
+          localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+          saveAccountToRegistry(updatedUser);
+          setUser(updatedUser);
+          return updatedUser;
+        }
+        return data;
+      } catch (err) {
+        // Fallback for local dev / offline
+        if (user) {
+          const localUpdated = {
+            ...user,
+            shop_name: setupData.shop_name,
+            district: setupData.district,
+            currency: setupData.currency,
+            phone: setupData.phone,
+            sector: setupData.sector,
+            referral_code: setupData.referral_code,
+            profile_complete: true,
+          };
+          localStorage.setItem(USER_KEY, JSON.stringify(localUpdated));
+          saveAccountToRegistry(localUpdated);
+          setUser(localUpdated);
+          return localUpdated;
+        }
+        throw err;
+      }
+    },
+    [user]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -506,6 +545,7 @@ function parseGoogleJwt(token) {
         login,
         registerUser,
         updateUser,
+        completeSetup,
         sendOtp,
         verifyOtp,
         loginWithGoogle,
