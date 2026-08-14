@@ -51,15 +51,26 @@ export default function SmeDirectory() {
   async function loadSmes() {
     try {
       setLoading(true);
-      const res = await api.get("/admin/smes", {
-        params: {
-          search: search || undefined,
-          status: statusFilter !== "all" ? statusFilter : undefined,
-          sector: sectorFilter !== "all" ? sectorFilter : undefined,
-          district: districtFilter !== "all" ? districtFilter : undefined,
-        },
-      });
-      setSmes(res.data.smes || []);
+      let res;
+      try {
+        res = await api.get("/admin/smes", {
+          params: {
+            search: search || undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            sector: sectorFilter !== "all" ? sectorFilter : undefined,
+            district: districtFilter !== "all" ? districtFilter : undefined,
+          },
+        });
+      } catch {
+        res = await api.get("/v2/admin/smes", {
+          params: {
+            search: search || undefined,
+            consent: statusFilter !== "all" ? statusFilter : undefined,
+            sector: sectorFilter !== "all" ? sectorFilter : undefined,
+          },
+        });
+      }
+      setSmes(res.data.smes || res.data || []);
     } catch (err) {
       console.warn("Falling back to local accounts registry:", err);
       const raw = localStorage.getItem("db_all_accounts_v1");

@@ -31,7 +31,12 @@ export default function AdminOverview() {
 
   async function loadData() {
     try {
-      const res = await api.get("/admin/overview");
+      let res;
+      try {
+        res = await api.get("/admin/overview");
+      } catch {
+        res = await api.get("/v2/admin/dashboard");
+      }
       setData(res.data);
     } catch (err) {
       console.warn("Failed to load live admin overview, using fallback metrics:", err);
