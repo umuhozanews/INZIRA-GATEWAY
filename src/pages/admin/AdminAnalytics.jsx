@@ -109,7 +109,7 @@ export default function AdminAnalytics() {
                   />
                 </div>
                 <span className="text-[9px] font-bold text-gray-500">
-                  {d.day.split("-").slice(1).join("/")}
+                  {d?.day ? String(d.day).split("-").slice(1).join("/") : ""}
                 </span>
               </div>
             );

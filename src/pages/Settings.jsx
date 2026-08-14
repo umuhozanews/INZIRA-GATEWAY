@@ -518,11 +518,11 @@ export default function Settings() {
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-xlt text-primary font-bold text-sm shrink-0">
-                        {w.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                        {String(w?.name || "Worker").split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-heading text-sm font-extrabold text-ink">{w.name}</h4>
+                          <h4 className="font-heading text-sm font-extrabold text-ink">{w?.name || "Worker"}</h4>
                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
                             {w.status}
                           </span>

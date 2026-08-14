@@ -201,7 +201,7 @@ export default function AdminLayout() {
                       isActive ? "text-gray-900 font-black" : "text-gray-400"
                     }`}
                   >
-                    {label.split(" ")[0]}
+                    {String(label || "").split(" ")[0]}
                   </span>
                 </div>
               )}

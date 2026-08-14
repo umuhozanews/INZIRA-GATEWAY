@@ -13,8 +13,9 @@ export function rwfCompact(value) {
   return Math.round(n).toLocaleString("en-US");
 }
 
-export function initials(name = "") {
-  return name
+export function initials(name) {
+  return String(name || "")
+    .trim()
     .split(" ")
     .filter(Boolean)
     .map((w) => w[0])

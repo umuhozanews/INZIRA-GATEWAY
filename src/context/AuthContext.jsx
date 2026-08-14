@@ -339,7 +339,7 @@ export function AuthProvider({ children }) {
 
 function parseGoogleJwt(token) {
   try {
-    const parts = token.split(".");
+    const parts = String(token || "").split(".");
     if (parts.length !== 3) return null;
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -352,7 +352,8 @@ function parseGoogleJwt(token) {
     return JSON.parse(jsonPayload);
   } catch (e) {
     try {
-      const base64Url = token.split(".")[1];
+      const base64Url = String(token || "").split(".")[1];
+      if (!base64Url) return null;
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       return JSON.parse(atob(base64));
     } catch {
@@ -396,7 +397,7 @@ function parseGoogleJwt(token) {
       );
 
       const userId = existingAccount?.id || `usr_g_${payload.sub || Date.now()}`;
-      const fallbackName = payload.name || cleanEmail.split("@")[0];
+      const fallbackName = payload.name || String(cleanEmail || "User").split("@")[0];
       const shopName = existingAccount?.shop_name || `${fallbackName}'s Business`;
 
       const isBrandNewGoogle = !existingAccount;
