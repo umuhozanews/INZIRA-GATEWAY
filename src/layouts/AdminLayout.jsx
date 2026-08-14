@@ -8,18 +8,18 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  Activity,
+  Globe,
+  Lock,
   Sparkles,
-  Search,
-  ExternalLink,
   Menu,
   X,
-  AlertCircle,
-  Database,
-  Lock,
+  Grid,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, checkIsAdmin } from "../context/AuthContext";
+import { useLang } from "../lib/i18n.jsx";
 import Logomark from "../components/Logomark";
+import OfflineBadge from "../components/OfflineBadge";
+import Sheet from "../components/Sheet";
 
 const ADMIN_NAV_LINKS = [
   { to: "/admin", label: "Platform Overview", icon: ShieldCheck, end: true },
@@ -30,38 +30,35 @@ const ADMIN_NAV_LINKS = [
 ];
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
+  const { t, lang, toggle } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isAdmin =
-    user?.role === "Admin" ||
-    user?.role === "pulse_admin" ||
-    user?.role === "admin" ||
-    (user?.email && user.email.toLowerCase().includes("creator"));
+  const isAuthorizedAdmin = isAdmin || checkIsAdmin(user);
 
-  if (!isAdmin) {
+  if (!isAuthorizedAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-manrope">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-red-100 shadow-xl text-center">
-          <div className="h-16 w-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock size={32} />
+      <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center p-4 font-manrope text-gray-900">
+        <div className="max-w-md w-full bg-white rounded-[32px] p-8 border border-gray-200/80 shadow-[0_20px_50px_rgba(0,0,0,0.06)] text-center space-y-4">
+          <div className="h-16 w-16 bg-[#F4FBE4] text-purple-900 border border-[#D4F06B] rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <Lock size={28} />
           </div>
-          <h2 className="text-xl font-black text-gray-900 mb-2">Restricted Access</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            This portal is strictly reserved for INZIRA Platform Administrators. Your account does not have sufficient permissions.
+          <h2 className="text-xl font-extrabold text-gray-900">Restricted Access</h2>
+          <p className="text-xs font-medium text-gray-500">
+            This portal is strictly reserved for INZIRA Platform Administrators. Your account does not have master governance permissions.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2">
             <button
               onClick={() => navigate("/")}
-              className="w-full py-3 px-4 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition"
+              className="w-full py-3 px-4 bg-[#D4F06B] text-gray-900 rounded-full font-black text-xs hover:bg-[#C5E456] transition shadow-sm active:scale-95 cursor-pointer"
             >
               Return to Store Dashboard
             </button>
             <button
               onClick={logout}
-              className="w-full py-2.5 px-4 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition"
+              className="w-full py-2.5 px-4 bg-gray-100 text-gray-700 rounded-full font-bold text-xs hover:bg-gray-200 transition cursor-pointer"
             >
               Sign Out
             </button>
@@ -72,61 +69,41 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-manrope flex flex-col md:flex-row">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#F9FAFB] font-manrope text-gray-900">
       {/* ─── DESKTOP SIDEBAR ─── */}
-      <aside className="hidden md:flex w-72 flex-col justify-between border-r border-slate-200/80 bg-slate-900 text-white p-5 shrink-0 shadow-2xl h-screen sticky top-0">
-        <div className="space-y-6">
+      <aside className="hidden md:flex w-64 flex-col justify-between border-r border-gray-200/80 bg-white p-5 shrink-0 select-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] h-screen overflow-y-auto">
+        <div className="flex flex-col gap-5">
           {/* Brand Header */}
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-            <Logomark size={38} className="ring-2 ring-purple-500/30" />
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-black text-base text-white tracking-tight leading-tight">
-                  INZIRA
-                </h1>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Control
-                </span>
-              </div>
-              <p className="text-[10px] font-bold text-slate-400 tracking-wider">
-                PLATFORM ADMIN PORTAL
-              </p>
-            </div>
-          </div>
-
-          {/* Admin Profile Card */}
-          <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-inner">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-black text-sm text-white shadow-md">
-                {(user?.name || "A")[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-black text-white truncate">{user?.name || "Administrator"}</h4>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                    {user?.role || "pulse_admin"}
-                  </span>
-                </div>
+              <Logomark size={36} />
+              <div>
+                <h1 className="font-manrope text-lg font-black text-gray-900 leading-tight">
+                  DataBridge
+                </h1>
+                <p className="text-[10px] font-extrabold text-purple-600 tracking-wider">
+                  ADMIN CONTROL CENTER
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <span className="px-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-              Management Suite
+          {/* Navigation Items */}
+          <nav className="flex flex-col gap-1.5">
+            <span className="px-3 text-[10px] font-extrabold tracking-wider text-gray-400 uppercase">
+              Admin Governance
             </span>
+
             {ADMIN_NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `group flex items-center justify-between rounded-xl px-4 py-3 text-xs font-black transition-all duration-200 ${
+                  `group flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
                     isActive
-                      ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30 translate-x-1"
-                      : "text-slate-300 hover:bg-slate-800/90 hover:text-white"
+                      ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20 font-black"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`
                 }
               >
@@ -134,12 +111,13 @@ export default function AdminLayout() {
                   <>
                     <div className="flex items-center gap-3">
                       <Icon
-                        size={18}
-                        className={isActive ? "text-white" : "text-slate-400 group-hover:text-purple-400"}
+                        size={17}
+                        className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700"}
+                        strokeWidth={isActive ? 2.4 : 1.8}
                       />
                       <span>{label}</span>
                     </div>
-                    {isActive && <ChevronRight size={14} className="text-white/80" />}
+                    {isActive && <ChevronRight size={14} className="text-gray-900/80" />}
                   </>
                 )}
               </NavLink>
@@ -147,95 +125,138 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="pt-4 border-t border-slate-800 space-y-2">
-          <div className="flex items-center justify-between px-2 text-[10px] text-slate-400 font-medium">
-            <span>System Health</span>
-            <span className="text-emerald-400 font-bold">99.8% Online</span>
-          </div>
-
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition cursor-pointer"
-          >
-            <LogOut size={15} />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* ─── MOBILE TOP BAR ─── */}
-      <header className="md:hidden sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Logomark size={30} />
-          <div>
-            <h2 className="text-xs font-black text-white leading-tight">INZIRA ADMIN</h2>
-            <p className="text-[9px] font-bold text-purple-400 uppercase">Platform Control</p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-200"
-        >
-          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
-      </header>
-
-      {/* ─── MOBILE DRAWER MENU ─── */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col justify-end">
-          <div className="bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={20} className="text-purple-400" />
-                <h3 className="font-black text-sm text-white">Platform Administration</h3>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <nav className="space-y-1">
-              {ADMIN_NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${
-                      isActive ? "bg-purple-600 text-white" : "text-slate-300 hover:bg-slate-800"
-                    }`
-                  }
-                >
-                  <Icon size={18} />
-                  <span>{label}</span>
-                </NavLink>
-              ))}
-            </nav>
-
+        {/* Footer Section */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-100 mt-4">
+          {/* Language & Network Status */}
+          <div className="flex items-center justify-between px-1">
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                logout();
-              }}
-              className="w-full py-3 rounded-xl bg-red-500/10 text-red-400 font-bold text-xs flex items-center justify-center gap-2"
+              onClick={toggle}
+              className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-extrabold text-gray-800 hover:bg-gray-100 transition cursor-pointer"
             >
-              <LogOut size={16} />
-              <span>Log Out Admin Session</span>
+              <Globe size={13} className="text-purple-600" />
+              <span>{lang === "en" ? "EN" : "RW"}</span>
+            </button>
+            <OfflineBadge />
+          </div>
+
+          {/* User Profile Pill */}
+          <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-[#F4FBE4]/50 p-2.5">
+            <div className="flex items-center gap-2.5 truncate">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] text-xs font-black text-gray-900 shadow-sm">
+                {(user?.name || "A")[0].toUpperCase()}
+              </div>
+              <div className="truncate text-left">
+                <p className="truncate text-xs font-bold text-gray-900">
+                  {user?.name || "Admin"}
+                </p>
+                <p className="truncate text-[10px] text-purple-700 font-bold">
+                  {user?.email || "admin@inzira.rw"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="rounded-full p-1.5 text-gray-400 hover:bg-white hover:text-red-500 transition cursor-pointer"
+              title="Sign Out"
+            >
+              <LogOut size={15} />
             </button>
           </div>
         </div>
-      )}
+      </aside>
 
       {/* ─── MAIN CONTENT AREA ─── */}
-      <main className="flex-1 min-w-0 bg-[#F8FAFC] overflow-y-auto">
-        <Outlet />
-      </main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-8">
+          <div className="mx-auto w-full max-w-7xl">
+            <Outlet />
+          </div>
+        </main>
+
+        {/* ─── MOBILE BOTTOM NAVIGATION ─── */}
+        <nav
+          className="md:hidden sticky bottom-0 z-30 flex items-center justify-around border-t border-gray-200/80 bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.04)] select-none w-full"
+          style={{ height: 64, paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          {ADMIN_NAV_LINKS.slice(0, 4).map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className="flex flex-1 flex-col items-center justify-center py-1 transition"
+            >
+              {({ isActive }) => (
+                <div className="flex flex-col items-center gap-0.5">
+                  <div
+                    className={`flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#D4F06B] text-gray-900 shadow-sm scale-105"
+                        : "text-gray-400 hover:text-gray-700"
+                    }`}
+                  >
+                    <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8} />
+                  </div>
+                  <span
+                    className={`text-[10px] font-extrabold tracking-tight ${
+                      isActive ? "text-gray-900 font-black" : "text-gray-400"
+                    }`}
+                  >
+                    {label.split(" ")[0]}
+                  </span>
+                </div>
+              )}
+            </NavLink>
+          ))}
+
+          {/* More Quick Action Button */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex flex-1 flex-col items-center justify-center py-1 text-gray-400 hover:text-gray-700 transition cursor-pointer"
+          >
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="flex h-8 w-12 items-center justify-center rounded-full text-gray-400">
+                <Grid size={19} strokeWidth={1.8} />
+              </div>
+              <span className="text-[10px] font-bold text-gray-400">More</span>
+            </div>
+          </button>
+        </nav>
+      </div>
+
+      {/* Mobile More Sheet */}
+      <Sheet open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} title="Platform Management">
+        <div className="grid grid-cols-1 gap-2.5 pt-2 pb-6">
+          {ADMIN_NAV_LINKS.map(({ to, label, icon: Icon }) => (
+            <button
+              key={to}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate(to);
+              }}
+              className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-gray-200/80 bg-white hover:bg-[#F4FBE4] hover:border-[#D4F06B] transition cursor-pointer text-left group"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 group-hover:scale-105 transition shadow-sm">
+                <Icon size={18} />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">{label}</h4>
+                <p className="text-[11px] text-gray-500">Access platform administration module</p>
+              </div>
+            </button>
+          ))}
+
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              logout();
+            }}
+            className="w-full py-3 rounded-2xl bg-red-50 text-red-700 font-black text-xs flex items-center justify-center gap-2 mt-2"
+          >
+            <LogOut size={16} />
+            <span>Sign Out Admin Session</span>
+          </button>
+        </div>
+      </Sheet>
     </div>
   );
 }

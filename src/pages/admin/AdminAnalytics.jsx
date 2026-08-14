@@ -20,7 +20,12 @@ export default function AdminAnalytics() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get("/admin/analytics");
+        let res;
+        try {
+          res = await api.get("/admin/analytics");
+        } catch {
+          res = await api.get("/v2/admin/dashboard");
+        }
         setAnalytics(res.data);
       } catch (err) {
         console.warn("Using fallback analytics data:", err);
@@ -58,91 +63,133 @@ export default function AdminAnalytics() {
   const topSmes = analytics?.topSmes || [];
   const sectorShares = analytics?.sectorShares || [];
 
+  const maxDailyVolume = Math.max(...dailyTrends.map((d) => d.volume || 1), 1);
+
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-6 font-manrope">
-      <div>
-        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-purple-900 border border-purple-200">
-          Platform-Wide Intelligence
-        </span>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-1">
-          Platform Sales & Market Analytics
-        </h1>
-        <p className="text-xs text-gray-500 font-medium">
-          Macro transaction trends, merchant leaderboards, and economic sector distribution across Rwanda.
-        </p>
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope">
+      {/* ─── Header ─── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
+            PLATFORM INTELLIGENCE
+          </span>
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+            Macro Analytics & Trends
+            <Sparkles size={18} className="text-purple-600 shrink-0" />
+          </h1>
+        </div>
+      </div>
+
+      {/* ─── 7-Day Sales Volume Velocity Chart ─── */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+              7-Day Combined Sales GMV Velocity
+            </h3>
+            <p className="text-[11px] text-gray-500">Gross transaction turnover across all active stores</p>
+          </div>
+          <span className="px-3 py-1 rounded-full text-xs font-black bg-[#F4FBE4] text-purple-950 border border-[#D4F06B]">
+            All Rwandan SMEs
+          </span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end pt-6 pb-2 h-44">
+          {dailyTrends.map((d, i) => {
+            const pct = Math.round((d.volume / maxDailyVolume) * 100);
+            return (
+              <div key={i} className="flex flex-col items-center gap-2 h-full justify-end group">
+                <span className="text-[9px] font-bold text-gray-400 group-hover:text-purple-600 transition">
+                  {rwfCompact(d.volume)}
+                </span>
+                <div className="w-full bg-gray-100 rounded-2xl h-full flex items-end overflow-hidden">
+                  <div
+                    style={{ height: `${pct}%` }}
+                    className="w-full bg-[#D4F06B] group-hover:bg-[#C5E456] rounded-2xl transition-all duration-300 shadow-sm"
+                  />
+                </div>
+                <span className="text-[9px] font-bold text-gray-500">
+                  {d.day.split("-").slice(1).join("/")}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ─── Top Performing SMEs Leaderboard ─── */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-black text-gray-900">Top Performing SMEs by Sales Volume</h3>
-            <p className="text-xs text-gray-500">Highest grossing business accounts on INZIRA</p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+        <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-xs font-black text-gray-900 uppercase">Top 10 Performing SME Merchants</h3>
+            <span className="text-xs font-bold text-gray-400">By Sales Volume</span>
           </div>
-          <span className="text-xs font-black text-purple-900">Platform Leaderboard</span>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
-              <tr>
-                <th className="py-3 px-4">Rank</th>
-                <th className="py-3 px-4">Shop Name</th>
-                <th className="py-3 px-4">Sector & District</th>
-                <th className="py-3 px-4">Transactions</th>
-                <th className="py-3 px-4">SACCO Health</th>
-                <th className="py-3 px-4 text-right">Total GMV Volume</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {topSmes.map((sme, idx) => (
-                <tr key={sme.id} className="hover:bg-slate-50">
-                  <td className="py-3.5 px-4 font-black text-purple-900">#{idx + 1}</td>
-                  <td className="py-3.5 px-4 font-bold text-gray-900">{sme.shop_name || sme.name}</td>
-                  <td className="py-3.5 px-4 text-gray-500">{sme.sector} • {sme.district}</td>
-                  <td className="py-3.5 px-4 text-gray-700">{sme.total_transactions || 0} txns</td>
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
-                      Score {sme.health_score || 80}/100
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-black text-gray-900">
-                    {rwf(sme.total_volume || 0)}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                  <th className="py-3 px-4 sm:px-6">Rank & Shop</th>
+                  <th className="py-3 px-4">Sector</th>
+                  <th className="py-3 px-4">Transactions</th>
+                  <th className="py-3 px-4">Health Score</th>
+                  <th className="py-3 px-4 sm:px-6 text-right">GMV Turnover</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {topSmes.map((sme, idx) => (
+                  <tr key={sme.id} className="hover:bg-gray-50">
+                    <td className="py-3.5 px-4 sm:px-6">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 rounded-full bg-[#F4FBE4] text-purple-950 font-black text-[11px] items-center justify-center">
+                          #{idx + 1}
+                        </span>
+                        <div>
+                          <h4 className="font-black text-gray-900">{sme.shop_name || sme.name}</h4>
+                          <p className="text-[10px] text-gray-400">{sme.district || "Kigali"}</p>
+                        </div>
+                      </div>
+                    </td>
 
-      {/* ─── Sector Market Share ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm space-y-4">
-          <h3 className="text-sm font-black text-gray-900">Sector Volume Distribution</h3>
+                    <td className="py-3.5 px-4 text-gray-600">{sme.sector}</td>
+                    <td className="py-3.5 px-4 font-bold text-gray-800">{sme.total_transactions || 0}</td>
+
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                        {sme.health_score || 80}/100
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 sm:px-6 text-right font-black text-gray-900">
+                      {rwf(sme.total_volume || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Sector Market Share */}
+        <div className="lg:col-span-4 bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+          <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+            Sector Market Share
+          </h3>
+
           <div className="space-y-3">
             {sectorShares.map((sec, idx) => (
-              <div key={idx} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs">
-                <div>
-                  <h4 className="font-black text-gray-900">{sec.sector}</h4>
-                  <p className="text-[11px] text-gray-500">{sec.merchant_count} merchants active</p>
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-gray-800">{sec.sector}</span>
+                  <span className="font-black text-gray-900">{rwfCompact(sec.total_sales || 0)}</span>
                 </div>
-                <span className="font-black text-purple-950">{rwfCompact(sec.total_sales || 0)} RWF</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-sm space-y-4">
-          <h3 className="text-sm font-black text-gray-900">Recent 7-Day Growth Trend</h3>
-          <div className="space-y-3">
-            {dailyTrends.map((d, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 text-xs">
-                <span className="font-bold text-gray-700">{d.day}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 font-medium">{d.transactions} sales</span>
-                  <span className="font-black text-emerald-700">{rwf(d.volume)}</span>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${Math.min(100, Math.max(15, (sec.merchant_count / 5) * 100))}%` }}
+                    className="h-full bg-[#D4F06B] rounded-full"
+                  />
                 </div>
+                <span className="text-[10px] text-gray-400">{sec.merchant_count} stores registered</span>
               </div>
             ))}
           </div>
