@@ -73,22 +73,31 @@ api.interceptors.response.use(
 );
 
 // Normalise an axios error into a friendly, plain-language message.
-export function errorMessage(err, fallback = "Action saved locally.") {
+export function errorMessage(err, fallback = "Invalid email/phone or password.") {
   const serverMsg = err?.response?.data?.error || err?.response?.data?.message || "";
   if (
     serverMsg &&
     typeof serverMsg === "string" &&
     !serverMsg.toLowerCase().includes("internal server") &&
+    !serverMsg.toLowerCase().includes("database query failed") &&
+    !serverMsg.toLowerCase().includes("connection terminated") &&
+    !serverMsg.toLowerCase().includes("econnreset") &&
     !serverMsg.toLowerCase().includes("500") &&
     !serverMsg.toLowerCase().includes("unhandled") &&
     !serverMsg.toLowerCase().includes("syntaxerror")
   ) {
     return serverMsg;
   }
-  if (err?.response?.status === 503 || err?.response?.status === 500) {
-    return "Saved locally (backend is syncing).";
+  if (err?.response?.status === 401) {
+    return "Invalid email/phone or password.";
   }
-  if (err?.message === "Network Error") return "Saved locally in offline mode.";
+  if (err?.response?.status === 403) {
+    return "Account access restricted. Please contact support.";
+  }
+  if (err?.response?.status === 503 || err?.response?.status === 500) {
+    return "Service temporarily busy. Please try again in a moment.";
+  }
+  if (err?.message === "Network Error") return "Network connection error. Please check your internet connection.";
   return fallback;
 }
 
