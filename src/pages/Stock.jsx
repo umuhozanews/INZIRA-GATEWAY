@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Search, Plus, AlertTriangle, Package, DollarSign, Image, ImageOff } from "lucide-react";
+import { Search, Plus, AlertTriangle, Package, DollarSign } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
 import Sheet from "../components/Sheet";
 import { Button, Field, TextInput } from "../components/ui";
-import { getProductImage } from "../lib/productImages";
-import SafeImage from "../components/SafeImage";
 import { useData } from "../context/DataContext";
 
 function statusOf(item) {
@@ -19,49 +17,24 @@ function statusOf(item) {
   return "ok";
 }
 
-function StockCard({ item, t, showPhotos }) {
+function StockCard({ item, t }) {
   const st = statusOf(item);
   const color = st === "out" ? "bg-red-500 text-white" : st === "low" ? "bg-amber-400 text-gray-900" : "bg-[#D4F06B] text-gray-900";
   const th = Number(item.low_stock_threshold) || 5;
   const pct = Math.max(6, Math.min(100, (Number(item.quantity) / (th * 3)) * 100));
-  const photoUrl = getProductImage(item);
 
   return (
     <div className="flex flex-col justify-between rounded-[28px] border border-gray-200/80 bg-white overflow-hidden shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:border-gray-400 hover:shadow-md transition duration-200 group font-manrope">
-      {/* Optional Product Image Header */}
-      {showPhotos && (
-        <div className="relative h-32 w-full overflow-hidden bg-gray-100">
-          <SafeImage
-            src={photoUrl}
-            alt={item.name}
-            className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent" />
-          <span
-            className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm ${color}`}
-          >
-            {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
-          </span>
-          {item.category && (
-            <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-extrabold text-white uppercase tracking-wider">
-              {item.category}
-            </span>
-          )}
-        </div>
-      )}
-
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-sm font-extrabold text-gray-900 truncate group-hover:text-purple-600 transition">{item.name}</h3>
-            {!showPhotos && (
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase shrink-0 shadow-sm ${color}`}>
-                {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
-              </span>
-            )}
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase shrink-0 shadow-sm ${color}`}>
+              {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
+            </span>
           </div>
 
-          {!showPhotos && item.category && (
+          {item.category && (
             <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-extrabold uppercase tracking-wider">
               {item.category}
             </span>
@@ -128,8 +101,6 @@ export default function Stock() {
   const [saving, setSaving] = useState(false);
   const [selectedPresetName, setSelectedPresetName] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  const [showPhotos, setShowPhotos] = useState(false);
 
   useEffect(() => {
     if (params.get("new") === "1") setOpen(true);
@@ -230,13 +201,6 @@ export default function Stock() {
         title={t("my_stock")}
         right={
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowPhotos(!showPhotos)}
-              className="flex items-center gap-1.5 rounded-full border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-extrabold text-gray-700 shadow-sm hover:bg-gray-50 transition cursor-pointer"
-            >
-              {showPhotos ? <ImageOff size={15} className="text-gray-500" /> : <Image size={15} className="text-purple-600" />}
-              <span>{showPhotos ? "Hide Photos" : "Show Photos"}</span>
-            </button>
             <button
               onClick={() => {
                 setForm(EMPTY);
@@ -380,7 +344,7 @@ export default function Stock() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {visible.map((item) => (
-              <StockCard key={item.id} item={item} t={t} showPhotos={showPhotos} />
+              <StockCard key={item.id} item={item} t={t} />
             ))}
           </div>
         )}
