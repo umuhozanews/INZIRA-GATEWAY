@@ -175,7 +175,17 @@ export function DataProvider({ children }) {
         const serverExpenses = expRes.value.data.data;
         setExpenses(prev => {
           const serverIds = new Set(serverExpenses.map(e => e.id));
-          const unsavedLocal = prev.filter(e => typeof e.id === "number" && e.id > 1000000000000 && !serverIds.has(e.id));
+          const unsavedLocal = prev.filter(e => {
+            const isLocal = typeof e.id === "number" && e.id > 1000000000000;
+            if (!isLocal || serverIds.has(e.id)) return false;
+            // Prevent duplicate double entry if server already has this exact expense
+            const isAlreadyOnServer = serverExpenses.some(se => 
+              se.category === e.category && 
+              Number(se.amount) === Number(e.amount) &&
+              String(se.expense_date).slice(0, 10) === String(e.expense_date).slice(0, 10)
+            );
+            return !isAlreadyOnServer;
+          });
           const combined = [...serverExpenses, ...unsavedLocal];
           const seen = new Set();
           return combined.filter(e => {
@@ -488,13 +498,19 @@ export function DataProvider({ children }) {
     setExpenses(prev => [created, ...prev]);
 
     try {
-      await api.post("/expenses", newExpense);
-      setTimeout(() => refreshAll(true), 1000);
+      const res = await api.post("/expenses", newExpense);
+      const serverExpense = res?.data?.data || res?.data;
+      if (serverExpense && serverExpense.id) {
+        setExpenses(prev =>
+          prev.map(exp => (exp.id === timestamp ? serverExpense : exp))
+        );
+      }
+      setTimeout(() => refreshAll(true), 300);
+      return serverExpense || created;
     } catch (err) {
       console.warn("[DataContext] Async expense add fallback:", err.message);
+      return created;
     }
-
-    return created;
   };
 
   // Update Expense Action
