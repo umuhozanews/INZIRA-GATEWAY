@@ -81,7 +81,8 @@ export default function Dashboard() {
     { label: t("record_sale"), icon: ShoppingCart, to: "/sell", color: "bg-gray-900 text-white" },
     { label: t("add_expense"), icon: Wallet, to: "/expenses?new=1", color: "bg-purple-100 text-purple-700" },
     { label: t("add_stock"), icon: Package, to: "/stock?new=1", color: "bg-emerald-100 text-emerald-800" },
-    { label: t("health_score"), icon: TrendingUp, to: "/health-score", color: "bg-blue-100 text-blue-800" },
+    // Temporarily hidden for now — will be re-enabled later
+    // { label: t("health_score"), icon: TrendingUp, to: "/health-score", color: "bg-blue-100 text-blue-800" },
   ];
 
   return (
@@ -125,10 +126,10 @@ export default function Dashboard() {
 
       {/* Main Responsive Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
-        {/* Left Column (Compact Health Card, Key Metrics & Quick Actions) */}
+        {/* Left Column (Key Metrics & Quick Actions) */}
         <div className="md:col-span-7 lg:col-span-7 space-y-4">
           
-          {/* COMPACT Business Health Banner Card */}
+          {/* COMPACT Business Health Banner Card — Temporarily hidden
           <button
             onClick={() => navigate("/health-score")}
             className="w-full flex items-center justify-between gap-3 rounded-2xl border border-gray-200/80 bg-white p-3.5 sm:p-4 text-left shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-gray-400 transition duration-150 cursor-pointer active:scale-[0.99] group"
@@ -169,6 +170,7 @@ export default function Dashboard() {
               {t("see_drivers")} <ChevronRight size={13} />
             </div>
           </button>
+          */}
 
           {/* Quick Stat Cards */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
