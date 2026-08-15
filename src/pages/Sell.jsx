@@ -375,7 +375,7 @@ export default function Sell() {
                   : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              <ShoppingCart size={15} /> Record Sale
+              <ShoppingCart size={15} /> {t("record_sale")}
             </button>
 
             <button
@@ -386,7 +386,7 @@ export default function Sell() {
                   : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              <Clock size={15} /> Customer Debts ({debtSales.length})
+              <Clock size={15} /> {t("customer_debts")} ({debtSales.length})
             </button>
 
             <button
@@ -397,7 +397,7 @@ export default function Sell() {
                   : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              <History size={15} /> Sales History ({salesHistory.length})
+              <History size={15} /> {t("sales_history")} ({salesHistory.length})
             </button>
           </div>
         </div>
@@ -422,14 +422,14 @@ export default function Sell() {
                 className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-gray-800 active:scale-95 transition cursor-pointer shrink-0 shadow-sm"
               >
                 <Edit3 size={15} />
-                <span className="hidden sm:inline">+ Custom Item</span>
-                <span className="sm:hidden">+ Manual</span>
+                <span className="hidden sm:inline">{t("add_custom_item_manually")}</span>
+                <span className="sm:hidden">{t("plus_manual")}</span>
               </button>
             </div>
 
             {/* Category chips */}
             <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:px-0 font-manrope">
-              {[{ value: "__all", label: t("all") }, ...cats.map((c) => ({ value: c, label: c }))].map((c) => (
+              {[{ value: "__all", label: t("byose") }, ...cats.map((c) => ({ value: c, label: c }))].map((c) => (
                 <button
                   key={c.value}
                   onClick={() => setActiveCat(c.value)}
@@ -448,12 +448,12 @@ export default function Sell() {
             <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6 font-manrope">
               {visibleProducts.length === 0 ? (
                 <div className="mt-12 text-center text-xs md:text-sm text-gray-400 space-y-3 font-semibold">
-                  <p>{t("no_products")}</p>
+                  <p>{t("no_products_found")}</p>
                   <button
                     onClick={() => setCustomOpen(true)}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800"
                   >
-                    <Plus size={14} /> Add Custom Item Manually
+                    <Plus size={14} /> {t("add_custom_item_manually")}
                   </button>
                 </div>
               ) : (
@@ -792,7 +792,7 @@ export default function Sell() {
             <div className="flex items-center gap-2">
               <ShoppingCart size={18} className="text-primary" />
               <h2 className="font-heading text-base font-extrabold text-ink">
-                {t("cart_empty").replace("Empty", "Cart")}
+                {t("cart")}
               </h2>
             </div>
             {lines.length > 0 && (

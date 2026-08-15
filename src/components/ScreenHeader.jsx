@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Bell } from "lucide-react";
 import OfflineBadge from "./OfflineBadge";
 import NotificationDrawer from "./NotificationDrawer";
-
+import { useLang } from "../lib/i18n.jsx";
 import Logomark from "./Logomark";
 
 export default function ScreenHeader({ title, back, right }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLang();
   const [notifOpen, setNotifOpen] = useState(false);
 
   const showBack = back !== undefined ? back : location.pathname !== "/";
@@ -31,7 +32,8 @@ export default function ScreenHeader({ title, back, right }) {
           {showBack ? (
             <button
               onClick={handleBack}
-              aria-label="Back"
+              aria-label={t("back")}
+              title={t("back")}
               className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 transition active:scale-95 cursor-pointer shadow-sm"
             >
               <ArrowLeft size={18} />
@@ -46,7 +48,8 @@ export default function ScreenHeader({ title, back, right }) {
           <button
             onClick={() => setNotifOpen(true)}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer"
-            aria-label="Alerts & Notifications"
+            aria-label={t("notifications")}
+            title={t("notifications")}
           >
             <Bell size={17} className="text-gray-800" />
           </button>

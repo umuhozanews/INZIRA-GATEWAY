@@ -8,11 +8,16 @@ const DICT = {
   save: { en: "Save Changes", rw: "Bika ibyahinduwe" },
   cancel: { en: "Cancel", rw: "Hagarika" },
   add: { en: "Add", rw: "Ongeraho" },
-  search: { en: "Search…", rw: "Shakisha…" },
+  plus_add: { en: "+ Add", rw: "+ Ongeraho" },
+  back: { en: "Back", rw: "Subira inyuma" },
+  notifications: { en: "Notifications", rw: "Imenyesha" },
+  notif_title: { en: "Notifications", rw: "Imenyesha" },
+  search: { en: "Search", rw: "Shakisha" },
   retry: { en: "Try again", rw: "Ongera ugerageze" },
   offline: { en: "OFFLINE", rw: "NTA MURONGO" },
   today: { en: "Today", rw: "Uyu munsi" },
   all: { en: "All", rw: "Byose" },
+  byose: { en: "ALL", rw: "BYOSE" },
   logout: { en: "Log out", rw: "Sohoka" },
   confirm: { en: "Confirm", rw: "Emeza" },
   delete: { en: "Delete", rw: "Siba" },
@@ -21,6 +26,12 @@ const DICT = {
   action: { en: "Action", rw: "Igikorwa" },
   download: { en: "Download PDF", rw: "Kura mo PDF" },
   print: { en: "Print Receipt", rw: "Capa Inyanzuro" },
+  more: { en: "More", rw: "Ibindi" },
+  checkout: { en: "Checkout", rw: "Kwishyura" },
+  cart: { en: "Cart", rw: "Ibyaguzwe / Ikarito y’Ibicuruzwa" },
+  cart_title: { en: "Cart", rw: "Ibyaguzwe / Ikarito y’Ibicuruzwa" },
+  manual: { en: "Manual", rw: "Intoki" },
+  plus_manual: { en: "+ Manual", rw: "+ Intoki" },
 
   // Sign in & Authentication
   welcome: { en: "Murakaza neza 👋", rw: "Murakaza neza 👋" },
@@ -88,27 +99,37 @@ const DICT = {
   setup_complete_title: { en: "Your shop is ready!", rw: "Duka ryawe ryatunganyijwe!" },
   setup_complete_sub: { en: "Everything is set up. You can start recording sales right away.", rw: "Byose byatunganyijwe. Ushobora gutangira kwandika igurisha n'ubu." },
 
-  // Main Bottom Navigation
+  // Main Bottom Navigation & Platform Modules
+  modules_title: { en: "Platform Modules & Financials", rw: "Ibice by’Urubuga n’Imari" },
   nav_home: { en: "Home", rw: "Ahabanza" },
   nav_sell: { en: "Sell", rw: "Gurisha" },
   nav_stock: { en: "Stock", rw: "Ububiko" },
-  nav_expenses: { en: "Expenses", rw: "Ibyakoreshejwe" },
-  nav_suppliers: { en: "Customers & Payables", rw: "Abakiriya n'Ababerewemo" },
-  nav_invoices: { en: "Invoices", rw: "Factures / Inyanzuro" },
-  nav_pnl: { en: "Profit & Loss", rw: "Inyungu n'Igihombo" },
-  nav_books: { en: "Financial Books", rw: "Ibitabo by'Imari" },
-  nav_reports: { en: "Reports", rw: "Raporu" },
+  nav_expenses: { en: "Expenses", rw: "Ibyakoreshejwe cyangwa Imari" },
+  nav_suppliers: { en: "Suppliers", rw: "Abatanga Ibicuruzwa" },
+  suppliers_desc: { en: "Supplier contacts & orders", rw: "Amakuru y’Abatanga Ibicuruzwa n’Ibicuruzwa byatumijwe" },
+  nav_invoices: { en: "Invoices", rw: "Inyemezabuguzi" },
+  invoices_desc: { en: "Customer invoices & billing", rw: "Inyemezabuguzi z’abakiriya n’Imyishyurire" },
+  nav_pnl: { en: "Profit & Loss", rw: "Inyungu n’Igihombo" },
+  pnl_desc: { en: "Executive financial P&L", rw: "Raporo y’Inyungu n’Igihombo" },
+  nav_books: { en: "Financial Books", rw: "Ibitabo by’Imari" },
+  books_desc: { en: "Journal, Ledger & Trial balance", rw: "Igitabo cy’Ibyakozwe, Igitabo cy’Imari n’Inyandiko y’Igenzura ry’Imibare" },
+  nav_reports: { en: "Reports & Tax", rw: "Raporo n’Imisoro" },
+  reports_desc: { en: "Sales, stock & EBM tax reports", rw: "Raporo z’Ubucuruzi, Ibyabitswe n’Imisoro ya EBM" },
   nav_settings: { en: "Settings", rw: "Igenamiterere" },
+  settings_desc: { en: "Profile & exchange rates", rw: "Umwirondoro n’Igipimo cy’ivunjisha" },
+  health_score: { en: "Business Health", rw: "Ubuzima bw’Ubucuruzi" },
+  health_desc: { en: "SACCO credit score readiness", rw: "Kwitegura amanota y’inguzanyo ya SACCO" },
 
   // Dashboard Overview
   hello: { en: "Muraho,", rw: "Muraho," },
-  health_score: { en: "Business Health Score", rw: "Amanota y'Ubuzima bw'Ubucuruzi" },
   see_drivers: { en: "See what's driving this", rw: "Reba icyabitera" },
   todays_sales: { en: "Today's Sales", rw: "Ibyacurujwe uyu munsi" },
   todays_expenses: { en: "Today's Expenses", rw: "Ibyakoreshejwe uyu munsi" },
   cash_in_till: { en: "Cash in Till", rw: "Amafaranga arimo mu ntoki" },
   quick_actions: { en: "Quick actions", rw: "Ibikorwa byihuse" },
-  record_sale: { en: "Record Sale", rw: "Andika igurisha" },
+  record_sale: { en: "Record Sale", rw: "Andika Igurisha" },
+  customer_debts: { en: "Customer Debts", rw: "Imyenda y’Abakiriya" },
+  sales_history: { en: "Sales History", rw: "Amateka y’Ibyagurishijwe" },
   add_expense: { en: "Add Expense", rw: "Ongeraho ikoreshwa" },
   add_stock: { en: "Add Stock", rw: "Ongeraho ibicuruzwa" },
   recent_activity: { en: "Recent activity", rw: "Ibyakozwe vuba" },
@@ -119,7 +140,9 @@ const DICT = {
   items: { en: "items", rw: "ibintu" },
   charge: { en: "Charge", rw: "Saba Kwishyura" },
   cart_empty: { en: "Tap products to add them to the sale.", rw: "Kanda ku bicuruzwa kugira ngo ubyongere mu igurisha." },
-  no_products: { en: "No products yet. Add stock first.", rw: "Nta bicuruzwa biraboneka. Banza wongere ibicuruzwa mu bubiko." },
+  no_products: { en: "No products yet. Add stock first.", rw: "Nta bicuruzwa bibonetse. Banza wongere ibicuruzwa mu bubiko." },
+  no_products_found: { en: "No products found.", rw: "Nta bicuruzwa bibonetse." },
+  add_custom_item_manually: { en: "Add Custom Item Manually", rw: "Ongeraho Igicuruzwa ku Ntoki" },
   payment_method: { en: "How did they pay?", rw: "Bishyuye mu buhe buryo?" },
   pay_cash: { en: "Cash", rw: "Amafaranga mu ntoki" },
   pay_momo: { en: "MTN MoMo", rw: "MTN Mobile Money" },
@@ -131,6 +154,13 @@ const DICT = {
 
   // Stock & Inventory Screen
   my_stock: { en: "My Stock", rw: "Ububiko Bwanjye" },
+  stock_title: { en: "STOCK", rw: "UBUBIKO" },
+  all_products_upper: { en: "ALL PRODUCTS", rw: "IBICURUZWA BYOSE" },
+  total_stock_value_upper: { en: "TOTAL STOCK VALUE", rw: "AGACIRO K’IBICURUZWA BYOSE" },
+  start_inventory_stock: { en: "Start Your Inventory Stock", rw: "Tangira Gushyiraho Ububiko" },
+  choose_standard_catalog: { en: "Choose from standard retail catalog products below to add them instantly, or create custom items manually.", rw: "Hitamo ibicuruzwa bisanzwe biri ku rutonde kugira ngo ubongeremo ako kanya, cyangwa wongereho igicuruzwa gishya ukoresheje intoki." },
+  add_stock_item: { en: "Add Stock Item", rw: "Ongeraho Igicuruzwa" },
+  plus_add_stock_item: { en: "+ Add Stock Item", rw: "+ Ongeraho Igicuruzwa" },
   search_stock: { en: "Search your stock…", rw: "Shakisha mu bicuruzwa…" },
   running_low: { en: "running low", rw: "birabura muri stoke" },
   out_of_stock: { en: "Out of stock", rw: "Byarangiye mu duka" },
@@ -146,7 +176,7 @@ const DICT = {
   low_threshold: { en: "Alert me when below", rw: "Ukuza mmenyesha iyo bigeze munsi ya" },
   no_stock: { en: "Your stock is empty. Add your first product.", rw: "Ububiko bwawe ni ubusa. Ongeraho igicuruzwa cya mbere." },
 
-  // Expenses Screen
+  // Expenses Screen & Categories
   expenses_title: { en: "Expenses", rw: "Ibyakoreshejwe" },
   this_month_so_far: { en: "This month, so far", rw: "Uku kwezi, kugeza ubu" },
   vs_last_month: { en: "vs last month", rw: "ugereranyije n'ukwezi gushize" },
@@ -156,9 +186,22 @@ const DICT = {
   description: { en: "Description (optional)", rw: "Ibisobanuro (bishoboka)" },
   date: { en: "Date", rw: "Itariki" },
   no_expenses: { en: "No expenses recorded yet.", rw: "Nta byakoreshejwe byanditswe." },
+  select_category: { en: "Select Category", rw: "Hitamo Icyiciro" },
+  exp_rent: { en: "Rent & Facility", rw: "Ubukode n’Inyubako" },
+  exp_utilities: { en: "Utilities (Electricity, Water, Internet)", rw: "Amashanyarazi, Amazi n’Interineti" },
+  exp_salaries: { en: "Salaries & Wages", rw: "Imishahara n’Ibindi Bihembo" },
+  exp_transport: { en: "Transport & Fuel", rw: "Ubwikorezi n’Amavuta" },
+  exp_inventory: { en: "Inventory & Supplies", rw: "Ububiko n’Ibikoresho" },
+  exp_taxes: { en: "Taxes, EBM & Licenses", rw: "Imisoro, EBM n’Impushya" },
+  exp_marketing: { en: "Marketing & Advertising", rw: "Kwamamaza no Kwamamaza" },
+  exp_maintenance: { en: "Equipment Maintenance & Repairs", rw: "Kubungabunga no Gusana Ibikoresho" },
+  exp_packaging: { en: "Packaging & Bags", rw: "Gupfunyika n’Imifuka" },
+  exp_fees: { en: "Bank & Mobile Money Fees", rw: "Amafaranga ya Banki na Mobile Money" },
+  exp_meals: { en: "Meals & Office Expenses", rw: "Amafunguro n’Ibindi Byangombwa by’Ibiro" },
+  exp_other: { en: "Other Expenses", rw: "Andi Mafaranga Asohoka" },
 
   // Customers & Suppliers Screen
-  suppliers_title: { en: "Customers & Payables", rw: "Abakiriya n'Ababerewemo" },
+  suppliers_title: { en: "Suppliers", rw: "Abatanga Ibicuruzwa" },
   tab_customers: { en: "Customers", rw: "Abakiriya" },
   tab_owed: { en: "Owed to Us (Receivables)", rw: "Abo tubereyemo ideni (Ibyacu)" },
   tab_payables: { en: "Payables (Suppliers)", rw: "Abatwanditseho (Abatwebereyemo)" },
@@ -171,25 +214,26 @@ const DICT = {
   no_suppliers: { en: "No suppliers yet. Add your first one.", rw: "Nta batanga ibicuruzwa. Ongeraho uwa mbere." },
 
   // Invoices & EBM Receipts
-  invoices_title: { en: "Customer Invoices", rw: "Inyanzuro y'Abakiriya / Factures" },
+  invoices_title: { en: "Invoices", rw: "Inyemezabuguzi" },
   ebm_receipt: { en: "EBM Receipt", rw: "Inyanzuro ya EBM" },
 
   // Financial Books Screen
-  books_title: { en: "Double-Entry Financial Books", rw: "Ibitabo by'Imari n'Ubucungamari" },
+  books_title: { en: "Financial Books", rw: "Ibitabo by’Imari" },
   journal_entries: { en: "Journal Entries", rw: "Ibyandikwa mu Gitabo Nyamukuru" },
   general_ledger: { en: "General Ledger", rw: "Igitabo cy'Imari Cyose" },
   cash_book: { en: "Cash Book", rw: "Igitabo cy'Amafaranga" },
   trial_balance: { en: "Trial Balance", rw: "Igenzura ry'Imari" },
 
   // Profit & Loss Screen
-  pnl_title: { en: "Profit & Loss Statement", rw: "Raporu y'Inyungu n'Igihombo" },
+  pnl_title: { en: "Profit & Loss", rw: "Inyungu n’Igihombo" },
   gross_profit: { en: "Gross Profit", rw: "Inyungu Mbonera" },
   net_profit: { en: "Net Profit", rw: "Inyungu Nshuro" },
 
   // Reports Screen
-  reports_title: { en: "Business Analytics & Reports", rw: "Raporu n'Ibipimo by'Ubucuruzi" },
+  reports_title: { en: "Reports & Tax", rw: "Raporo n’Imisoro" },
 
   // Settings & Profile
+  settings_title: { en: "Settings", rw: "Igenamiterere" },
   business_info: { en: "Business Info", rw: "Amakuru y'Ubucuruzi" },
   team_workers: { en: "Team & Workers", rw: "Abakozi n'Abagize Ikipe" },
   roles_access: { en: "Roles & Access", rw: "Inshingano n'Uburenganzira" },
@@ -201,7 +245,7 @@ const DICT = {
   sector: { en: "Business Sector", rw: "Urwego rw'Ubucuruzi" },
 
   // Business Health Score
-  health_title: { en: "Business Health Score", rw: "Amanota y'Ubuzima bw'Ubucuruzi" },
+  health_title: { en: "Business Health", rw: "Ubuzima bw’Ubucuruzi" },
   better_than: { en: "A quick, honest read on your business", rw: "Isuzuma ryihuse kandi ryukuri ku bucuruzi bwawe" },
   top_factors: { en: "What's helping & hurting", rw: "Ibifasha n'ibibangamira ubucuruzi" },
   recommendations: { en: "What to do next", rw: "Icyakorwa ubutaha" },

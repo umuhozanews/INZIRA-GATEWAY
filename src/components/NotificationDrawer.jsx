@@ -16,10 +16,12 @@ import { rwf, rwfCompact } from "../lib/format";
 import HealthGauge from "./HealthGauge";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
+import { useLang } from "../lib/i18n.jsx";
 
 export default function NotificationDrawer({ open, onClose, stats }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLang();
   const dataCtx = useData() || {};
 
   const userStock = Array.isArray(dataCtx.stock) ? dataCtx.stock : [];
@@ -143,7 +145,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold text-gray-900">
-                  Notification Center
+                  {t("notifications")}
                 </h3>
                 {unreadCount > 0 && (
                   <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-black text-white">

@@ -248,7 +248,7 @@ export default function Stock() {
               }}
               className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
             >
-              <Plus size={16} /> <span>+ Add Stock Item</span>
+              <Plus size={16} /> <span>{t("plus_add_stock_item")}</span>
             </button>
           </div>
         }
@@ -261,7 +261,7 @@ export default function Stock() {
             <Package size={20} />
           </div>
           <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("all")} Products</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("all_products_upper")}</div>
             <div className="text-lg font-black tabnum text-gray-900">{items.length}</div>
           </div>
         </div>
@@ -281,7 +281,7 @@ export default function Stock() {
             <DollarSign size={20} />
           </div>
           <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Stock Value</div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("total_stock_value_upper")}</div>
             <div className="text-lg font-black tabnum text-emerald-600">{rwf(totalValue)} RWF</div>
           </div>
         </div>
@@ -320,9 +320,9 @@ export default function Stock() {
                 <Package size={30} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-gray-900">Start Your Inventory Stock</h3>
+                <h3 className="text-lg font-black text-gray-900">{t("start_inventory_stock")}</h3>
                 <p className="mt-1 text-xs text-gray-500 font-medium leading-relaxed max-w-sm mx-auto">
-                  Choose from standard retail catalog products below to add them instantly, or create custom items manually.
+                  {t("choose_standard_catalog")}
                 </p>
               </div>
 

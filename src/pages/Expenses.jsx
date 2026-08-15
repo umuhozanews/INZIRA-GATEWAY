@@ -13,19 +13,26 @@ import { useData } from "../context/DataContext";
 const CAT_COLORS = ["#D4F06B", "#8B5CF6", "#10B981", "#EF4444", "#6B7280", "#3B82F6"];
 
 const EXPENSE_CATEGORIES = [
-  "Rent & Facility",
-  "Utilities (Electricity, Water, Internet)",
-  "Salaries & Wages",
-  "Transport & Fuel",
-  "Inventory & Supplies",
-  "Taxes, EBM & Licenses",
-  "Marketing & Advertising",
-  "Equipment Maintenance & Repairs",
-  "Packaging & Bags",
-  "Bank & Mobile Money Fees",
-  "Meals & Office Expenses",
-  "Other Expenses",
+  { key: "exp_rent", label: "Rent & Facility", value: "Rent & Facility" },
+  { key: "exp_utilities", label: "Utilities (Electricity, Water, Internet)", value: "Utilities (Electricity, Water, Internet)" },
+  { key: "exp_salaries", label: "Salaries & Wages", value: "Salaries & Wages" },
+  { key: "exp_transport", label: "Transport & Fuel", value: "Transport & Fuel" },
+  { key: "exp_inventory", label: "Inventory & Supplies", value: "Inventory & Supplies" },
+  { key: "exp_taxes", label: "Taxes, EBM & Licenses", value: "Taxes, EBM & Licenses" },
+  { key: "exp_marketing", label: "Marketing & Advertising", value: "Marketing & Advertising" },
+  { key: "exp_maintenance", label: "Equipment Maintenance & Repairs", value: "Equipment Maintenance & Repairs" },
+  { key: "exp_packaging", label: "Packaging & Bags", value: "Packaging & Bags" },
+  { key: "exp_fees", label: "Bank & Mobile Money Fees", value: "Bank & Mobile Money Fees" },
+  { key: "exp_meals", label: "Meals & Office Expenses", value: "Meals & Office Expenses" },
+  { key: "exp_other", label: "Other Expenses", value: "Other Expenses" },
 ];
+
+function getCategoryLabel(catValue, t) {
+  if (!catValue) return "—";
+  const match = EXPENSE_CATEGORIES.find((c) => c.value === catValue || c.label === catValue || c.key === catValue);
+  if (match) return t(match.key);
+  return catValue;
+}
 
 const EMPTY = { category: "Rent & Facility", amount: "", description: "", expense_date: todayISO() };
 
@@ -132,14 +139,14 @@ export default function Expenses() {
             </div>
 
             <div className="pt-3 border-t border-gray-100 space-y-3">
-              <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">Categories</span>
+              <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">{t("category")}</span>
               {bars.length === 0 && (
                 <p className="text-xs text-gray-400 py-2">{t("no_expenses")}</p>
               )}
               {bars.map((r, i) => (
                 <div key={r.category || i} className="space-y-1">
                   <div className="flex justify-between text-xs font-bold text-gray-900">
-                    <span>{r.category || "—"}</span>
+                    <span>{getCategoryLabel(r.category, t)}</span>
                     <span className="tabnum text-gray-500">{rwf(r.this_month)} RWF</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -182,7 +189,7 @@ export default function Expenses() {
                   </div>
                   <div>
                     <div className="text-xs md:text-sm font-extrabold text-gray-900">
-                      {e.category}
+                      {getCategoryLabel(e.category, t)}
                       {e.description ? ` — ${e.description}` : ""}
                     </div>
                     <div className="text-[11px] font-semibold text-gray-400">{timeAgo(e.expense_date, lang)}</div>
@@ -214,10 +221,10 @@ export default function Expenses() {
             onChange={set("category")}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs md:text-sm font-extrabold text-gray-900 shadow-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 cursor-pointer"
           >
-            <option value="">-- Select Category --</option>
+            <option value="">-- {t("select_category")} --</option>
             {EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+              <option key={cat.key} value={cat.value}>
+                {t(cat.key)}
               </option>
             ))}
           </select>

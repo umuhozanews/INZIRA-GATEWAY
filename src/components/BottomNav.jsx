@@ -34,13 +34,13 @@ const ADMIN_PRIMARY_ITEMS = [
 ];
 
 const BASE_MORE_ITEMS = [
-  { to: "/invoices", label: "Invoices", icon: FileText, desc: "Customer factures & billing" },
-  { to: "/pnl", label: "Profit & Loss", icon: TrendingUp, desc: "Executive financial P&L" },
-  { to: "/books", label: "Financial Books", icon: BookOpen, desc: "Journal, Ledger & Trial balance" },
-  { to: "/reports", label: "Reports & Tax", icon: BarChart3, desc: "Sales, stock & EBM tax reports" },
-  { to: "/suppliers", label: "Suppliers", icon: Users, desc: "Supplier contacts & orders" },
-  { to: "/health-score", label: "Business Health", icon: Activity, desc: "SACCO credit score readiness" },
-  { to: "/settings", label: "Settings", icon: Settings, desc: "Profile & exchange rates" },
+  { to: "/invoices", key: "nav_invoices", label: "Invoices", icon: FileText, descKey: "invoices_desc", desc: "Customer invoices & billing" },
+  { to: "/pnl", key: "nav_pnl", label: "Profit & Loss", icon: TrendingUp, descKey: "pnl_desc", desc: "Executive financial P&L" },
+  { to: "/books", key: "nav_books", label: "Financial Books", icon: BookOpen, descKey: "books_desc", desc: "Journal, Ledger & Trial balance" },
+  { to: "/reports", key: "nav_reports", label: "Reports & Tax", icon: BarChart3, descKey: "reports_desc", desc: "Sales, stock & EBM tax reports" },
+  { to: "/suppliers", key: "nav_suppliers", label: "Suppliers", icon: Users, descKey: "suppliers_desc", desc: "Supplier contacts & orders" },
+  { to: "/health-score", key: "health_score", label: "Business Health", icon: Activity, descKey: "health_desc", desc: "SACCO credit score readiness" },
+  { to: "/settings", key: "nav_settings", label: "Settings", icon: Settings, descKey: "settings_desc", desc: "Profile & exchange rates" },
 ];
 
 const ADMIN_MORE_ITEMS = [
@@ -116,32 +116,37 @@ export default function BottomNav() {
             <div className="flex h-8 w-12 items-center justify-center rounded-full text-gray-400">
               <Grid size={19} strokeWidth={1.8} />
             </div>
-            <span className="text-[10px] font-bold text-gray-400">More</span>
+            <span className="text-[10px] font-bold text-gray-400">{t("more")}</span>
           </div>
         </button>
       </nav>
 
       {/* More Modules Sheet */}
-      <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Platform Modules & Financials">
+      <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title={t("modules_title")}>
         <div className="grid grid-cols-1 gap-2.5 pt-2 pb-6 font-manrope">
-          {moreItems.map(({ to, label, icon: Icon, desc }) => (
-            <button
-              key={to}
-              onClick={() => {
-                setMoreOpen(false);
-                navigate(to);
-              }}
-              className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-gray-200/80 bg-white hover:bg-[#F4FBE4] hover:border-[#D4F06B] hover:shadow-sm active:scale-95 transition cursor-pointer text-left group"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 group-hover:scale-105 transition shadow-sm">
-                <Icon size={18} />
-              </div>
-              <div className="flex-1 truncate">
-                <h4 className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">{label}</h4>
-                <p className="text-[11px] text-gray-500 truncate">{desc}</p>
-              </div>
-            </button>
-          ))}
+          {moreItems.map(({ to, key, label, icon: Icon, descKey, desc }) => {
+            const itemLabel = key ? t(key) : label;
+            const itemDesc = descKey ? t(descKey) : desc;
+
+            return (
+              <button
+                key={to}
+                onClick={() => {
+                  setMoreOpen(false);
+                  navigate(to);
+                }}
+                className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-gray-200/80 bg-white hover:bg-[#F4FBE4] hover:border-[#D4F06B] hover:shadow-sm active:scale-95 transition cursor-pointer text-left group"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 group-hover:scale-105 transition shadow-sm">
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 truncate">
+                  <h4 className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">{itemLabel}</h4>
+                  <p className="text-[11px] text-gray-500 truncate">{itemDesc}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </Sheet>
     </>
