@@ -8,20 +8,23 @@ import {
   ArrowUpRight,
   Printer,
   Download,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
-import api from "../lib/api";
+import api, { errorMessage } from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf, formatDate } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
 import Loading from "../components/Loading";
+import Sheet from "../components/Sheet";
 import { useData } from "../context/DataContext";
 import EbmReceipt from "../components/EbmReceipt";
 
 export default function Invoices() {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { sales } = useData();
+  const { sales, refreshAll } = useData();
 
   const [loading, setLoading] = useState(false);
   const [remoteInvoices, setRemoteInvoices] = useState([]);
@@ -29,6 +32,11 @@ export default function Invoices() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  // Void Invoice with Mandatory Reason State
+  const [voidTarget, setVoidTarget] = useState(null);
+  const [voidReason, setVoidReason] = useState("");
+  const [voiding, setVoiding] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +60,31 @@ export default function Invoices() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleConfirmVoidInvoice = async (e) => {
+    if (e) e.preventDefault();
+    if (!voidTarget) return;
+    if (!voidReason.trim()) {
+      return toast.error("Please enter a cancellation reason.");
+    }
+    setVoiding(true);
+    try {
+      await api.delete(`/invoices/${voidTarget.id}?reason=${encodeURIComponent(voidReason.trim())}`);
+      toast.success(`Invoice ${voidTarget.invoice_number} voided and recorded in audit logs.`);
+      setRemoteInvoices(prev => prev.filter(inv => String(inv.id) !== String(voidTarget.id)));
+      if (selectedInvoice && String(selectedInvoice.id) === String(voidTarget.id)) {
+        setSelectedInvoice(null);
+      }
+      setVoidTarget(null);
+      setVoidReason("");
+      if (refreshAll) refreshAll(true);
+      setTimeout(() => load(), 400);
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to void invoice."));
+    } finally {
+      setVoiding(false);
+    }
+  };
 
   async function handleDownloadPDF(inv) {
     if (!inv) return;
@@ -129,6 +162,16 @@ export default function Invoices() {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => {
+                  setVoidTarget(selectedInvoice);
+                  setVoidReason("");
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-200 bg-red-50 text-xs font-extrabold text-red-700 hover:bg-red-100 transition cursor-pointer"
+                title="Cancel / Void Invoice"
+              >
+                <Trash2 size={14} /> <span>Void Invoice</span>
+              </button>
+              <button
                 onClick={() => handleDownloadPDF(selectedInvoice)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-xs font-extrabold text-white hover:bg-purple-700 transition cursor-pointer shadow-sm"
               >
@@ -148,6 +191,58 @@ export default function Invoices() {
             <EbmReceipt sale={selectedInvoice} shopSettings={shopSettings} />
           </div>
         </div>
+
+        {/* Void Reason Modal Sheet */}
+        <Sheet
+          open={Boolean(voidTarget)}
+          onClose={() => setVoidTarget(null)}
+          title={voidTarget ? `Void Invoice ${voidTarget.invoice_number}` : "Void Invoice"}
+        >
+          {voidTarget && (
+            <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-manrope pb-6">
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-black text-red-800">
+                  <AlertTriangle size={15} />
+                  <span>Mandatory Cancellation Requirement</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore sold items to inventory, and log the reason in the official audit trail.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                  Reason for Voiding Invoice <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={voidReason}
+                  onChange={(e) => setVoidReason(e.target.value)}
+                  placeholder="e.g. Customer returned items, wrong billing amount, order canceled..."
+                  className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 transition shadow-sm"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setVoidTarget(null)}
+                  className="flex-1 py-3 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-extrabold text-gray-700 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={voiding || !voidReason.trim()}
+                  className="flex-1 py-3 rounded-full bg-red-600 hover:bg-red-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {voiding ? "Voiding…" : "Confirm Void (Logged)"}
+                </button>
+              </div>
+            </form>
+          )}
+        </Sheet>
       </div>
     );
   }
@@ -254,19 +349,88 @@ export default function Invoices() {
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="font-manrope text-sm font-black text-gray-900 tabnum">
-                    {rwf(inv.total_amount)}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="font-manrope text-sm font-black text-gray-900 tabnum">
+                      {rwf(inv.total_amount)}
+                    </div>
+                    <span className="text-[11px] font-extrabold text-purple-600 flex items-center justify-end gap-1 group-hover:underline">
+                      View <ArrowUpRight size={13} />
+                    </span>
                   </div>
-                  <span className="text-[11px] font-extrabold text-purple-600 flex items-center justify-end gap-1 group-hover:underline">
-                    View <ArrowUpRight size={13} />
-                  </span>
+
+                  {inv.status !== "voided" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setVoidTarget(inv);
+                        setVoidReason("");
+                      }}
+                      className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      title="Void / Cancel Invoice (Logged)"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Void Reason Modal Sheet */}
+      <Sheet
+        open={Boolean(voidTarget)}
+        onClose={() => setVoidTarget(null)}
+        title={voidTarget ? `Void Invoice ${voidTarget.invoice_number}` : "Void Invoice"}
+      >
+        {voidTarget && (
+          <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-manrope pb-6">
+            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
+              <div className="flex items-center gap-1.5 font-black text-red-800">
+                <AlertTriangle size={15} />
+                <span>Mandatory Cancellation Requirement</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                Voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore sold items to inventory, and log the reason in the official audit trail.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                Reason for Voiding Invoice <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                placeholder="e.g. Customer returned items, wrong billing amount, order canceled..."
+                className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 transition shadow-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setVoidTarget(null)}
+                className="flex-1 py-3 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-extrabold text-gray-700 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={voiding || !voidReason.trim()}
+                className="flex-1 py-3 rounded-full bg-red-600 hover:bg-red-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {voiding ? "Voiding…" : "Confirm Void (Logged)"}
+              </button>
+            </div>
+          </form>
+        )}
+      </Sheet>
     </div>
   );
 }

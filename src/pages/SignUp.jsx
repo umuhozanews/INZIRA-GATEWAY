@@ -101,6 +101,7 @@ export default function SignUp() {
   const [currency, setCurrency] = useState("RWF");
   const [teamSize, setTeamSize] = useState("1 (Just Me)");
   const [needEbm, setNeedEbm] = useState("Yes");
+  const [tinNumber, setTinNumber] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
   useEffect(() => {
@@ -253,6 +254,7 @@ export default function SignUp() {
         businessType,
         teamSize,
         needEbm,
+        tin_number: tinNumber.trim(),
       };
 
       await registerUser(payload);
@@ -609,11 +611,34 @@ export default function SignUp() {
                     className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
                   >
                     <option value="Yes">Yes (RRA EBM v2)</option>
-                    <option value="No">No / Not Yet</option>
+                    <option value="No">No / Standard Receipts</option>
                   </select>
                 </div>
               </div>
             </div>
+
+            {/* Conditional RRA TIN Number Input */}
+            {needEbm === "Yes" && (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5 animate-in fade-in duration-200">
+                <label className="block text-xs font-extrabold text-emerald-950">
+                  RRA Tax Identification Number (TIN) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <FileText size={16} className="absolute left-3.5 text-emerald-600" />
+                  <input
+                    type="text"
+                    required={needEbm === "Yes"}
+                    placeholder="e.g. 102345678 (9-digit TIN)"
+                    value={tinNumber}
+                    onChange={(e) => setTinNumber(e.target.value)}
+                    className="w-full rounded-full border border-emerald-300 bg-white pl-10 pr-4 py-2.5 text-xs font-extrabold text-gray-900 placeholder:text-gray-400 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-400/30 transition"
+                  />
+                </div>
+                <p className="text-[10px] text-emerald-800 font-medium pl-1">
+                  💡 This TIN will automatically be printed on all your customer invoices & official EBM fiscal receipts.
+                </p>
+              </div>
+            )}
 
             {/* Referral Code */}
             <div>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Search, Plus, AlertTriangle, Package, DollarSign } from "lucide-react";
+import { Search, Plus, AlertTriangle, Package, DollarSign, Trash2, ArrowUpRight, Check } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
 import { rwf } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
@@ -17,7 +17,7 @@ function statusOf(item) {
   return "ok";
 }
 
-function StockCard({ item, t }) {
+function StockCard({ item, t, onRestock, onDelete }) {
   const st = statusOf(item);
   const color = st === "out" ? "bg-red-500 text-white" : st === "low" ? "bg-amber-400 text-gray-900" : "bg-[#D4F06B] text-gray-900";
   const th = Number(item.low_stock_threshold) || 5;
@@ -53,8 +53,28 @@ function StockCard({ item, t }) {
               {Number(item.quantity)} {item.unit ? `${item.unit}` : ""}
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden mb-3">
             <div className={`h-full rounded-full transition-all duration-300 ${st === "out" ? "bg-red-500" : st === "low" ? "bg-amber-400" : "bg-[#D4F06B]"}`} style={{ width: `${pct}%` }} />
+          </div>
+
+          {/* Action Row: Quick Restock + Delete Option */}
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => onRestock(item)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gray-100 hover:bg-[#D4F06B] text-gray-900 text-xs font-black transition active:scale-95 cursor-pointer"
+            >
+              <Plus size={13} className="shrink-0" />
+              <span>+ Add Quantity</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(item)}
+              className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition active:scale-95 cursor-pointer"
+              title="Delete Product (Logged)"
+            >
+              <Trash2 size={15} />
+            </button>
           </div>
         </div>
       </div>
@@ -91,7 +111,7 @@ const EMPTY = {
 export default function Stock() {
   const { t } = useLang();
   const [params] = useSearchParams();
-  const { stock, addStockItem } = useData();
+  const { stock, addStockItem, addStockQuantity, deleteStockItem } = useData();
 
   const items = Array.isArray(stock) ? stock : [];
 
@@ -101,6 +121,46 @@ export default function Stock() {
   const [saving, setSaving] = useState(false);
   const [selectedPresetName, setSelectedPresetName] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Quick Restock State
+  const [restockTarget, setRestockTarget] = useState(null);
+  const [restockQty, setRestockQty] = useState("10");
+  const [restocking, setRestocking] = useState(false);
+
+  const handleQuickRestockClick = (item) => {
+    setRestockTarget(item);
+    setRestockQty("10");
+  };
+
+  const handleConfirmRestock = async (e) => {
+    if (e) e.preventDefault();
+    if (!restockTarget) return;
+    const qty = parseInt(restockQty, 10);
+    if (isNaN(qty) || qty <= 0) {
+      return toast.error("Please enter a valid positive quantity to add.");
+    }
+    setRestocking(true);
+    try {
+      await addStockQuantity(restockTarget.id, qty);
+      toast.success(`🎉 Added +${qty} ${restockTarget.unit || "units"} to "${restockTarget.name}"!`);
+      setRestockTarget(null);
+    } catch {
+      toast.error("Failed to update stock quantity.");
+    } finally {
+      setRestocking(false);
+    }
+  };
+
+  const handleDeleteStockClick = async (item) => {
+    if (window.confirm(`Are you sure you want to delete "${item.name}" from inventory?\n\n(This action will be permanently recorded in audit logs).`)) {
+      try {
+        await deleteStockItem(item.id);
+        toast.success(`"${item.name}" removed from stock and recorded in audit logs.`);
+      } catch {
+        toast.error("Failed to delete stock item.");
+      }
+    }
+  };
 
   useEffect(() => {
     if (params.get("new") === "1") setOpen(true);
@@ -383,11 +443,105 @@ export default function Stock() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {visible.map((item) => (
-              <StockCard key={item.id} item={item} t={t} />
+              <StockCard
+                key={item.id}
+                item={item}
+                t={t}
+                onRestock={handleQuickRestockClick}
+                onDelete={handleDeleteStockClick}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* QUICK RESTOCK MODAL SHEET */}
+      <Sheet
+        open={Boolean(restockTarget)}
+        onClose={() => setRestockTarget(null)}
+        title={restockTarget ? `Restock "${restockTarget.name}"` : "Add Stock Quantity"}
+      >
+        {restockTarget && (
+          <form onSubmit={handleConfirmRestock} className="space-y-4 pt-2 font-manrope pb-6">
+            {/* Current Stock Banner */}
+            <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold text-gray-900">{restockTarget.name}</p>
+                <p className="text-[11px] text-gray-500 font-semibold">{restockTarget.category || "General"}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-[10.5px] font-bold text-gray-400 uppercase block">Current in Stock</span>
+                <span className="text-sm font-black text-gray-900 tabnum">
+                  {restockTarget.quantity} {restockTarget.unit || "pcs"}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Preset Buttons (+5, +10, +25, +50, +100) */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-2">Quick Add Amount:</label>
+              <div className="grid grid-cols-5 gap-2">
+                {[5, 10, 25, 50, 100].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setRestockQty(String(preset))}
+                    className={`py-2 px-1 rounded-xl text-xs font-black border transition active:scale-95 cursor-pointer ${
+                      Number(restockQty) === preset
+                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                        : "bg-gray-50/70 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    +{preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Quantity Input */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Quantity to Add ({restockTarget.unit || "units"}) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={restockQty}
+                onChange={(e) => setRestockQty(e.target.value)}
+                placeholder="Enter quantity to add..."
+                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-extrabold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+              />
+            </div>
+
+            {/* New Total Preview */}
+            <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center justify-between">
+              <span>New Total After Adding:</span>
+              <span className="text-sm font-black text-emerald-800 tabnum">
+                {(Number(restockTarget.quantity) || 0) + (Number(restockQty) || 0)} {restockTarget.unit || "pcs"}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setRestockTarget(null)}
+                className="flex-1 py-3.5 px-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-extrabold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={restocking}
+                className="flex-1 py-3.5 px-4 rounded-full bg-[#D4F06B] hover:bg-[#C5E456] text-gray-900 text-xs font-black transition cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+              >
+                {restocking ? "Updating…" : `Confirm +${restockQty || 0} Stock`}
+              </button>
+            </div>
+          </form>
+        )}
+      </Sheet>
 
       {/* ADD / EDIT STOCK ITEM MODAL SHEET */}
       <Sheet open={open} onClose={() => setOpen(false)} title="New product">

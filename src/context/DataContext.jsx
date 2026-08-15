@@ -470,12 +470,33 @@ export function DataProvider({ children }) {
     }
   };
 
+  // Quick Restock / Add Quantity to Existing Stock
+  const addStockQuantity = async (id, addedQuantity, notes = "Quick restock") => {
+    const qty = Number(addedQuantity) || 0;
+    if (qty <= 0) return;
+
+    setStock(prev =>
+      prev.map(item =>
+        String(item.id) === String(id)
+          ? { ...item, quantity: (Number(item.quantity) || 0) + qty }
+          : item
+      )
+    );
+
+    try {
+      await api.post(`/stock/${id}/add-quantity`, { added_quantity: qty, notes });
+      setTimeout(() => refreshAll(true), 400);
+    } catch (err) {
+      console.warn("[DataContext] Async stock add-quantity fallback:", err.message);
+    }
+  };
+
   // Delete Stock Item Action
   const deleteStockItem = async (id) => {
     setStock(prev => prev.filter(item => String(item.id) !== String(id)));
     try {
       await api.delete(`/stock/${id}`);
-      setTimeout(() => refreshAll(true), 1000);
+      setTimeout(() => refreshAll(true), 400);
     } catch (err) {
       console.warn("[DataContext] Async stock delete fallback:", err.message);
     }
@@ -555,8 +576,10 @@ export function DataProvider({ children }) {
         pendingSyncCount,
         recordSale,
         voidSale,
+        deleteSale: voidSale,
         recordDebtPayment,
         addStockItem,
+        addStockQuantity,
         updateStockItem,
         deleteStockItem,
         addExpense,

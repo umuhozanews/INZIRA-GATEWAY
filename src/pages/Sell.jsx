@@ -38,7 +38,7 @@ import EbmReceipt from "../components/EbmReceipt";
 
 export default function Sell() {
   const { t } = useLang();
-  const { stock: products, sales: salesHistory, recordSale, recordDebtPayment } = useData();
+  const { stock: products, sales: salesHistory, recordSale, voidSale, deleteSale, recordDebtPayment } = useData();
 
   const [cats, setCats] = useState([]);
   const [activeCat, setActiveCat] = useState("__all");
@@ -53,6 +53,22 @@ export default function Sell() {
   const [debtQuery, setDebtQuery] = useState("");
   const [debtFilter, setDebtFilter] = useState("all"); // 'all' | 'unpaid' | 'partial'
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+  const handleDeleteSale = async (sale) => {
+    const inv = sale.invoice_number || `REC-${sale.id}`;
+    if (
+      window.confirm(
+        `Are you sure you want to delete / void sale ${inv} (${rwf(sale.total_amount)} RWF)?\n\n- All sold items will be returned to your inventory.\n- This deletion will be permanently recorded in audit logs.`
+      )
+    ) {
+      try {
+        await (deleteSale || voidSale)(sale.id);
+        toast.success(`Sale ${inv} deleted and inventory restored.`);
+      } catch (err) {
+        toast.error("Failed to delete sale.");
+      }
+    }
+  };
 
   // Payment Mode State: "single" | "split"
   const [payMode, setPayMode] = useState("single");
@@ -770,12 +786,21 @@ export default function Sell() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedReceipt(s)}
-                        className="px-3 py-1.5 rounded-xl border border-line bg-paper hover:bg-card text-xs font-bold text-ink transition cursor-pointer flex items-center gap-1"
-                      >
-                        <FileText size={13} /> View
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedReceipt(s)}
+                          className="px-3 py-1.5 rounded-xl border border-line bg-paper hover:bg-card text-xs font-bold text-ink transition cursor-pointer flex items-center gap-1"
+                        >
+                          <FileText size={13} /> View
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSale(s)}
+                          className="p-1.5 rounded-xl border border-line text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          title="Delete / Void Sale (Logged)"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
