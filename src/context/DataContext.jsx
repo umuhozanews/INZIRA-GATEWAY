@@ -134,26 +134,37 @@ export function DataProvider({ children }) {
         api.get("/expenses", { params: { limit: 100 } }),
       ]);
 
-      if (stkRes.status === "fulfilled" && Array.isArray(stkRes.value.data?.data)) {
-        const serverItems = stkRes.value.data.data;
-        setStock(prev => {
-          const serverIds = new Set(serverItems.map(s => s.id));
-          const serverNames = new Set(serverItems.map(s => s.name?.toLowerCase().trim()));
-          // Only keep local-only optimistic items that haven't been saved on server yet
-          const unsavedLocal = prev.filter(p => 
-            typeof p.id === "number" && 
-            p.id > 1000000000000 && 
-            !serverIds.has(p.id) &&
-            !serverNames.has(p.name?.toLowerCase().trim())
-          );
-          const combined = [...serverItems, ...unsavedLocal];
-          const seen = new Set();
-          return combined.filter(item => {
-            if (!item || !item.id || seen.has(item.id)) return false;
-            seen.add(item.id);
-            return true;
+      if (stkRes.status === "fulfilled") {
+        const resData = stkRes.value.data;
+        const serverItems = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData?.items) ? resData.items : Array.isArray(resData) ? resData : null;
+        if (serverItems) {
+          setStock(prev => {
+            const serverMap = new Map();
+            serverItems.forEach(s => {
+              if (s && s.name) serverMap.set(s.name.toLowerCase().trim(), s);
+              if (s && s.id) serverMap.set(String(s.id), s);
+            });
+
+            const combined = [...serverItems];
+            prev.forEach(localItem => {
+              if (!localItem) return;
+              const nameKey = (localItem.name || "").toLowerCase().trim();
+              const idKey = String(localItem.id);
+              if (!serverMap.has(nameKey) && !serverMap.has(idKey)) {
+                combined.push(localItem);
+              }
+            });
+
+            const seen = new Set();
+            return combined.filter(item => {
+              if (!item || !item.id) return false;
+              const key = item.name ? item.name.toLowerCase().trim() : String(item.id);
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
           });
-        });
+        }
       }
 
       if (saleRes.status === "fulfilled" && Array.isArray(saleRes.value.data?.data)) {
@@ -475,17 +486,46 @@ export function DataProvider({ children }) {
     const qty = Number(addedQuantity) || 0;
     if (qty <= 0) return;
 
+    let targetItem = null;
     setStock(prev =>
-      prev.map(item =>
-        String(item.id) === String(id)
-          ? { ...item, quantity: (Number(item.quantity) || 0) + qty }
-          : item
-      )
+      prev.map(item => {
+        if (
+          String(item.id) === String(id) ||
+          (item.name && String(item.name).toLowerCase().trim() === String(id).toLowerCase().trim())
+        ) {
+          targetItem = item;
+          const currentQty = Number(item.quantity) || 0;
+          return { ...item, quantity: currentQty + qty };
+        }
+        return item;
+      })
     );
 
     try {
-      await api.post(`/stock/${id}/add-quantity`, { added_quantity: qty, notes });
-      setTimeout(() => refreshAll(true), 400);
+      const payload = {
+        added_quantity: qty,
+        notes,
+        name: targetItem?.name,
+        category: targetItem?.category,
+        unit: targetItem?.unit,
+        cost_price_rwf: targetItem?.cost_price_rwf,
+        sell_price_rwf: targetItem?.sell_price_rwf,
+      };
+
+      const res = await api.post(`/stock/${encodeURIComponent(id)}/add-quantity`, payload);
+      const serverItem = res?.data?.item || res?.data;
+      if (serverItem && serverItem.id) {
+        setStock(prev =>
+          prev.map(item =>
+            item.id === serverItem.id ||
+            String(item.id) === String(id) ||
+            (item.name && item.name.toLowerCase().trim() === (serverItem.name || "").toLowerCase().trim())
+              ? { ...item, ...serverItem }
+              : item
+          )
+        );
+      }
+      setTimeout(() => refreshAll(true), 300);
     } catch (err) {
       console.warn("[DataContext] Async stock add-quantity fallback:", err.message);
     }
