@@ -137,26 +137,41 @@ export function DataProvider({ children }) {
       if (stkRes.status === "fulfilled") {
         const resData = stkRes.value.data;
         const serverItems = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData?.items) ? resData.items : Array.isArray(resData) ? resData : null;
-        if (serverItems) {
+        if (serverItems && serverItems.length > 0) {
           setStock(prev => {
-            const serverMap = new Map();
-            serverItems.forEach(s => {
-              if (s && s.name) serverMap.set(s.name.toLowerCase().trim(), s);
-              if (s && s.id) serverMap.set(String(s.id), s);
+            const localMap = new Map();
+            prev.forEach(p => {
+              if (p && p.name) localMap.set(p.name.toLowerCase().trim(), p);
+              if (p && p.id) localMap.set(String(p.id), p);
             });
 
-            const combined = [...serverItems];
+            const merged = serverItems.map(serverItem => {
+              const nameKey = (serverItem.name || "").toLowerCase().trim();
+              const idKey = String(serverItem.id);
+              const localMatch = localMap.get(nameKey) || localMap.get(idKey);
+              if (!localMatch) return serverItem;
+
+              return {
+                ...localMatch,
+                ...serverItem,
+                quantity: serverItem.quantity !== undefined ? Number(serverItem.quantity) : Number(localMatch.quantity)
+              };
+            });
+
+            const serverNameKeys = new Set(serverItems.map(s => (s.name || "").toLowerCase().trim()));
+            const serverIdKeys = new Set(serverItems.map(s => String(s.id)));
+
             prev.forEach(localItem => {
               if (!localItem) return;
               const nameKey = (localItem.name || "").toLowerCase().trim();
               const idKey = String(localItem.id);
-              if (!serverMap.has(nameKey) && !serverMap.has(idKey)) {
-                combined.push(localItem);
+              if (!serverNameKeys.has(nameKey) && !serverIdKeys.has(idKey)) {
+                merged.push(localItem);
               }
             });
 
             const seen = new Set();
-            return combined.filter(item => {
+            return merged.filter(item => {
               if (!item || !item.id) return false;
               const key = item.name ? item.name.toLowerCase().trim() : String(item.id);
               if (seen.has(key)) return false;
@@ -496,18 +511,19 @@ export function DataProvider({ children }) {
   };
 
   // Quick Restock / Add Quantity to Existing Stock
-  const addStockQuantity = async (id, addedQuantity, notes = "Quick restock") => {
+  const addStockQuantity = async (id, addedQuantity, notes = "Quick restock", itemData = null) => {
     const qty = Number(addedQuantity) || 0;
     if (qty <= 0) return;
 
-    let targetItem = null;
+    let targetItem = itemData;
+    const targetName = (itemData?.name || "").toLowerCase().trim();
+
     setStock(prev =>
       prev.map(item => {
-        if (
-          String(item.id) === String(id) ||
-          (item.name && String(item.name).toLowerCase().trim() === String(id).toLowerCase().trim())
-        ) {
-          targetItem = item;
+        const matchesId = String(item.id) === String(id);
+        const matchesName = targetName && (item.name || "").toLowerCase().trim() === targetName;
+        if (matchesId || matchesName) {
+          if (!targetItem) targetItem = item;
           const currentQty = Number(item.quantity) || 0;
           return { ...item, quantity: currentQty + qty };
         }
@@ -519,24 +535,25 @@ export function DataProvider({ children }) {
       const payload = {
         added_quantity: qty,
         notes,
-        name: targetItem?.name,
-        category: targetItem?.category,
-        unit: targetItem?.unit,
-        cost_price_rwf: targetItem?.cost_price_rwf,
-        sell_price_rwf: targetItem?.sell_price_rwf,
+        name: targetItem?.name || itemData?.name,
+        category: targetItem?.category || itemData?.category,
+        unit: targetItem?.unit || itemData?.unit,
+        cost_price_rwf: targetItem?.cost_price_rwf || itemData?.cost_price_rwf,
+        sell_price_rwf: targetItem?.sell_price_rwf || itemData?.sell_price_rwf,
       };
 
       const res = await api.post(`/stock/${encodeURIComponent(id)}/add-quantity`, payload);
       const serverItem = res?.data?.item || res?.data;
       if (serverItem && serverItem.id) {
         setStock(prev =>
-          prev.map(item =>
-            item.id === serverItem.id ||
-            String(item.id) === String(id) ||
-            (item.name && item.name.toLowerCase().trim() === (serverItem.name || "").toLowerCase().trim())
-              ? { ...item, ...serverItem }
-              : item
-          )
+          prev.map(item => {
+            const matchesId = String(item.id) === String(serverItem.id) || String(item.id) === String(id);
+            const matchesName = (item.name || "").toLowerCase().trim() === (serverItem.name || targetName || "").toLowerCase().trim();
+            if (matchesId || matchesName) {
+              return { ...item, ...serverItem, quantity: Number(serverItem.quantity) };
+            }
+            return item;
+          })
         );
       }
       setTimeout(() => refreshAll(true), 300);
