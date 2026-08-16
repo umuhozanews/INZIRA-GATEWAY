@@ -231,21 +231,43 @@ export function DataProvider({ children }) {
         }
       }
 
-      if (saleRes.status === "fulfilled" && Array.isArray(saleRes.value.data?.data)) {
-        const serverSales = saleRes.value.data.data;
+      // 2. Sales synchronization (Permanent Non-Destructive Merge)
+      const rawSaleList = saleRes.status === "fulfilled"
+        ? (Array.isArray(saleRes.value.data?.data)
+            ? saleRes.value.data.data
+            : Array.isArray(saleRes.value.data?.sales)
+            ? saleRes.value.data.sales
+            : Array.isArray(saleRes.value.data)
+            ? saleRes.value.data
+            : null)
+        : null;
+
+      if (rawSaleList) {
         setSales(prev => {
-          const serverIds = new Set(serverSales.map(s => s.id));
-          const unsavedLocal = prev.filter(s => typeof s.id === "number" && s.id > 1000000000000 && !serverIds.has(s.id));
-          const combined = [...serverSales, ...unsavedLocal];
+          const serverIds = new Set(rawSaleList.map(s => String(s.id)));
+          const serverInvNums = new Set(rawSaleList.map(s => s.invoice_number).filter(Boolean));
+
+          // Retain all existing local sales that are not yet in server list
+          const localOnly = prev.filter(localSale => {
+            if (!localSale) return false;
+            const isIdMatch = localSale.id && serverIds.has(String(localSale.id));
+            const isInvMatch = localSale.invoice_number && serverInvNums.has(localSale.invoice_number);
+            return !isIdMatch && !isInvMatch;
+          });
+
+          const combined = [...rawSaleList, ...localOnly];
           const seen = new Set();
           return combined.filter(s => {
-            if (!s || !s.id || seen.has(s.id)) return false;
-            seen.add(s.id);
+            if (!s) return false;
+            const key = s.invoice_number || String(s.id);
+            if (seen.has(key)) return false;
+            seen.add(key);
             return true;
           });
         });
       }
 
+      // 3. Expenses synchronization (Permanent Non-Destructive Merge)
       const rawExpList = expRes.status === "fulfilled"
         ? (Array.isArray(expRes.value.data?.data)
             ? expRes.value.data.data
@@ -262,24 +284,27 @@ export function DataProvider({ children }) {
           amount_rwf: Number(e.amount_rwf || e.amount) || 0,
           amount: Number(e.amount || e.amount_rwf) || 0,
         }));
+
         setExpenses(prev => {
           const serverIds = new Set(serverExpenses.map(e => String(e.id)));
-          const unsavedLocal = prev.filter(e => {
-            const isLocal = typeof e.id === "number" && e.id > 1000000000000;
-            if (!isLocal || serverIds.has(String(e.id))) return false;
-            // Prevent duplicate double entry if server already has this exact expense
-            const isAlreadyOnServer = serverExpenses.some(se => 
-              se.category === e.category && 
-              Number(se.amount || se.amount_rwf) === Number(e.amount || e.amount_rwf) &&
-              String(se.expense_date || se.created_at).slice(0, 10) === String(e.expense_date || e.created_at).slice(0, 10)
+          const localOnly = prev.filter(localExp => {
+            if (!localExp) return false;
+            const isIdMatch = localExp.id && serverIds.has(String(localExp.id));
+            const isDuplicate = serverExpenses.some(se =>
+              se.category === localExp.category &&
+              Number(se.amount || se.amount_rwf) === Number(localExp.amount || localExp.amount_rwf) &&
+              String(se.expense_date || se.created_at).slice(0, 10) === String(localExp.expense_date || localExp.created_at).slice(0, 10)
             );
-            return !isAlreadyOnServer;
+            return !isIdMatch && !isDuplicate;
           });
-          const combined = [...serverExpenses, ...unsavedLocal];
+
+          const combined = [...serverExpenses, ...localOnly];
           const seen = new Set();
           return combined.filter(e => {
-            if (!e || !e.id || seen.has(String(e.id))) return false;
-            seen.add(String(e.id));
+            if (!e) return false;
+            const key = String(e.id || `${e.category}_${e.amount}_${e.expense_date}`);
+            if (seen.has(key)) return false;
+            seen.add(key);
             return true;
           });
         });
@@ -410,7 +435,7 @@ export function DataProvider({ children }) {
 
     try {
       const idempotencyKey = `sale_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      await api.post(
+      const res = await api.post(
         "/sales",
         {
           items,
@@ -427,6 +452,12 @@ export function DataProvider({ children }) {
           headers: { "Idempotency-Key": idempotencyKey },
         }
       );
+      const serverSale = res?.data?.data || res?.data?.sale || res?.data;
+      if (serverSale && serverSale.id) {
+        setSales(prev =>
+          prev.map(s => (s.id === timestamp ? { ...newSale, ...serverSale } : s))
+        );
+      }
       setTimeout(() => refreshAll(true), 600);
     } catch (err) {
       console.warn("[DataContext] Async sale post fallback:", err.message);
