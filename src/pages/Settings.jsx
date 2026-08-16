@@ -21,17 +21,20 @@ import {
   Activity,
   Eye,
   EyeOff,
-  Sparkles,
   RefreshCw,
   Power,
   ShoppingCart,
   Package,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Palette,
+  Sun,
+  Moon
 } from "lucide-react";
 import api, { errorMessage } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
+import { useTheme } from "../context/ThemeContext";
 import { toast } from "react-hot-toast";
 import { rwf, formatDate, clockTime } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
@@ -65,6 +68,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
   const { t, lang, setLang } = useLang();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("business");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -338,23 +342,23 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
+    <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <ScreenHeader title={t("nav_settings")} />
 
       <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
 
       {/* Creator / Super Admin Management Access Banner */}
       {isAdmin && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4.5 rounded-[28px] border border-purple-900/20 bg-gradient-to-r from-gray-900 via-purple-950 to-gray-900 text-white shadow-md">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-5 rounded-2xl border border-line bg-card text-ink shadow-card">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md text-amber-300">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-orange-sm">
               <ShieldCheck size={22} />
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
+              <h3 className="text-sm font-heading font-black text-ink flex items-center gap-1.5">
                 Creator & Admin Management Portal 👑
               </h3>
-              <p className="text-[11px] text-purple-200">
+              <p className="text-xs text-muted font-body">
                 Inspect, manage, activate/suspend and monitor all business accounts registered on INZIRA
               </p>
             </div>
@@ -362,7 +366,7 @@ export default function Settings() {
 
           <button
             onClick={() => navigate("/admin")}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#D4F06B] text-gray-900 text-xs font-black hover:bg-[#C5E456] transition cursor-pointer shadow-sm shrink-0"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-heading font-black hover:bg-primary-hover transition active:scale-95 cursor-pointer shadow-orange-sm shrink-0"
           >
             Open Creator Admin Panel →
           </button>
@@ -370,31 +374,111 @@ export default function Settings() {
       )}
 
         {/* Settings Category Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm overflow-x-auto">
+        <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-xl border border-line shadow-sm overflow-x-auto font-heading">
           {[
-            { id: "business", label: "Business Info", icon: Store, sub: "Shop name, location, sector" },
-            { id: "team", label: "Team & Workers", icon: Users, sub: "Add cashiers, managers, accountants" },
-            { id: "roles", label: "Roles & Access", icon: ShieldCheck, sub: "View system role permissions" },
-            { id: "profile", label: "User Profile", icon: User, sub: "Account details & password" },
-            { id: "consent", label: "Data & Consent", icon: Database, sub: "Control how your data is used" },
+            { id: "business", label: "Business Info", icon: Store },
+            { id: "theme", label: "Appearance & Theme", icon: Palette },
+            { id: "team", label: "Team & Workers", icon: Users },
+            { id: "roles", label: "Roles & Access", icon: ShieldCheck },
+            { id: "profile", label: "User Profile", icon: User },
+            { id: "consent", label: "Data & Consent", icon: Database },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-[#D4F06B] text-gray-900 shadow-sm font-extrabold"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
-                <Icon size={16} />
+                <Icon size={15} strokeWidth={2.2} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
+
+        {/* Tab: Appearance & Theme */}
+        {activeTab === "theme" && (
+          <div className="rounded-2xl border border-line bg-card p-6 shadow-card space-y-6 font-body">
+            <div className="flex items-center gap-3 border-b border-line pb-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Palette size={22} />
+              </div>
+              <div>
+                <h3 className="font-heading text-base font-black text-ink tracking-tight">Appearance & Theme</h3>
+                <p className="text-xs text-muted">Customize your POS interface theme. Dark mode is optimized for high-efficiency mobile POS environments.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-heading">
+              {/* Dark Mode Card */}
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`flex flex-col items-start p-5 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+                  theme === "dark"
+                    ? "border-primary ring-2 ring-primary/20 bg-card-hover shadow-orange-sm"
+                    : "border-line bg-card hover:border-primary/40 text-muted"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-charcoal-800 border border-charcoal-700 flex items-center justify-center text-amber-400">
+                      <Moon size={18} />
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-ink block">Dark Mode</span>
+                      <span className="text-[10px] text-primary font-extrabold uppercase tracking-wider">Primary / Default</span>
+                    </div>
+                  </div>
+                  {theme === "dark" && (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-orange-sm">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted font-body">
+                  High-contrast deep charcoal backgrounds with vibrant orange accents for reduced eye strain and fast mobile POS workflows.
+                </p>
+              </button>
+
+              {/* Light Mode Card */}
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`flex flex-col items-start p-5 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+                  theme === "light"
+                    ? "border-primary ring-2 ring-primary/20 bg-card-hover shadow-md text-ink"
+                    : "border-line bg-card hover:border-primary/40 text-muted"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-amber-500">
+                      <Sun size={18} />
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-ink block">Light Mode</span>
+                      <span className="text-[10px] text-muted font-bold uppercase tracking-wider">Secondary</span>
+                    </div>
+                  </div>
+                  {theme === "light" && (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-orange-sm">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted font-body">
+                  Crisp slate-white backgrounds with high contrast for bright outdoor environments and clear daylight readability.
+                </p>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Business Info */}
         {activeTab === "business" && (

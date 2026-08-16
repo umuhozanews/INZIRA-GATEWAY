@@ -19,58 +19,68 @@ function statusOf(item) {
 
 function StockCard({ item, t, onRestock, onDelete }) {
   const st = statusOf(item);
-  const color = st === "out" ? "bg-red-500 text-white" : st === "low" ? "bg-amber-400 text-gray-900" : "bg-[#D4F06B] text-gray-900";
+  const color =
+    st === "out"
+      ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+      : st === "low"
+      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+      : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
   const th = Number(item.low_stock_threshold) || 5;
   const pct = Math.max(6, Math.min(100, (Number(item.quantity) / (th * 3)) * 100));
 
   return (
-    <div className="flex flex-col justify-between rounded-[28px] border border-gray-200/80 bg-white overflow-hidden shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:border-gray-400 hover:shadow-md transition duration-200 group font-manrope">
+    <div className="flex flex-col justify-between rounded-2xl border border-line bg-card overflow-hidden shadow-card hover:border-primary/40 hover:bg-card-hover/40 transition duration-150 group font-body">
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-extrabold text-gray-900 truncate group-hover:text-purple-600 transition">{item.name}</h3>
-            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase shrink-0 shadow-sm ${color}`}>
+            <h3 className="text-sm font-heading font-extrabold text-ink truncate group-hover:text-primary transition">{item.name}</h3>
+            <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-heading font-extrabold uppercase shrink-0 ${color}`}>
               {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
             </span>
           </div>
 
           {item.category && (
-            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-extrabold uppercase tracking-wider">
+            <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-card-hover border border-line text-muted text-[9px] font-heading font-bold uppercase tracking-wider">
               {item.category}
             </span>
           )}
 
           <div className="flex items-baseline justify-between mt-2.5 text-xs">
-            <span className="text-gray-400 font-semibold">{t("sell_price")}:</span>
-            <span className="font-black tabnum text-gray-900">{rwf(item.sell_price_rwf)} RWF</span>
+            <span className="text-muted font-medium">{t("sell_price")}:</span>
+            <span className="font-heading font-black tabnum text-ink">{rwf(item.sell_price_rwf)} RWF</span>
           </div>
         </div>
 
-        <div className="pt-3 border-t border-gray-100">
+        <div className="pt-3 border-t border-line">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-gray-400">{t("quantity")}:</span>
-            <span className="font-black tabnum text-gray-900">
+            <span className="font-medium text-muted">{t("quantity")}:</span>
+            <span className="font-heading font-black tabnum text-ink">
               {Number(item.quantity)} {item.unit ? `${item.unit}` : ""}
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden mb-3">
-            <div className={`h-full rounded-full transition-all duration-300 ${st === "out" ? "bg-red-500" : st === "low" ? "bg-amber-400" : "bg-[#D4F06B]"}`} style={{ width: `${pct}%` }} />
+          <div className="h-1.5 w-full rounded-full bg-card-hover border border-line overflow-hidden mb-3">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                st === "out" ? "bg-rose-500" : st === "low" ? "bg-amber-400" : "bg-primary"
+              }`}
+              style={{ width: `${pct}%` }}
+            />
           </div>
 
           {/* Action Row: Quick Restock + Delete Option */}
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-line">
             <button
               type="button"
               onClick={() => onRestock(item)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-sm"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-heading font-bold transition active:scale-95 cursor-pointer shadow-orange-sm"
             >
-              <Plus size={13} className="shrink-0 text-[#D4F06B]" />
+              <Plus size={14} strokeWidth={2.5} className="shrink-0" />
               <span>Restock (+Qty)</span>
             </button>
             <button
               type="button"
               onClick={() => onDelete(item)}
-              className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition active:scale-95 cursor-pointer"
+              className="p-2 rounded-xl text-muted hover:text-rose-500 hover:bg-rose-500/10 transition active:scale-95 cursor-pointer"
               title="Delete Product (Logged)"
             >
               <Trash2 size={15} />
@@ -321,7 +331,7 @@ export default function Stock() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto flex h-full flex-col font-manrope pb-24 md:pb-8">
+    <div className="p-4 md:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto flex h-full flex-col font-body pb-24 md:pb-8">
       <ScreenHeader
         title={t("my_stock")}
         right={
@@ -332,9 +342,9 @@ export default function Stock() {
                 setSelectedPresetName("");
                 setOpen(true);
               }}
-              className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition active:scale-95 cursor-pointer"
             >
-              <Plus size={16} /> <span>{t("plus_add_stock_item")}</span>
+              <Plus size={16} strokeWidth={2.5} /> <span>{t("plus_add_stock_item")}</span>
             </button>
           </div>
         }
@@ -342,33 +352,33 @@ export default function Stock() {
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-900 shrink-0 shadow-sm">
+        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-card-hover border border-line text-primary shrink-0">
             <Package size={20} />
           </div>
           <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("all_products_upper")}</div>
-            <div className="text-lg font-black tabnum text-gray-900">{items.length}</div>
+            <div className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">{t("all_products_upper")}</div>
+            <div className="text-lg font-heading font-black tabnum text-ink">{items.length}</div>
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-800 shrink-0">
+        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
             <AlertTriangle size={20} />
           </div>
           <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("running_low")}</div>
-            <div className="text-lg font-black tabnum text-gray-900">{lowCount}</div>
+            <div className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">{t("running_low")}</div>
+            <div className="text-lg font-heading font-black tabnum text-ink">{lowCount}</div>
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 shrink-0">
+        <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0">
             <DollarSign size={20} />
           </div>
           <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t("total_stock_value_upper")}</div>
-            <div className="text-lg font-black tabnum text-emerald-600">{rwf(totalValue)} RWF</div>
+            <div className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">{t("total_stock_value_upper")}</div>
+            <div className="text-lg font-heading font-black tabnum text-ink">{rwf(totalValue)} RWF</div>
           </div>
         </div>
       </div>
@@ -376,10 +386,10 @@ export default function Stock() {
       {/* Search Bar */}
       {items.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white px-4 py-3 shadow-sm">
-            <Search size={16} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-2.5 rounded-xl border border-line bg-card px-4 py-3 shadow-sm focus-within:border-primary/50 transition">
+            <Search size={16} className="text-muted shrink-0" />
             <input
-              className="flex-1 bg-transparent text-xs md:text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+              className="flex-1 bg-transparent text-xs md:text-sm font-semibold text-ink outline-none placeholder:text-muted"
               placeholder={t("search_stock")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -389,8 +399,8 @@ export default function Stock() {
       )}
 
       {lowCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-full bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-900">
-          <AlertTriangle size={16} className="text-red-500 shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 text-xs font-heading font-bold text-amber-400">
+          <AlertTriangle size={16} className="shrink-0" />
           <span>
             {lowCount} {t("running_low")}
           </span>
@@ -401,24 +411,24 @@ export default function Stock() {
       <div className="flex-1 overflow-y-auto">
         {visible.length === 0 ? (
           <div className="mt-4 space-y-6">
-            <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-xl mx-auto">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-50 text-purple-600 border border-purple-100 shadow-sm">
+            <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 rounded-2xl border border-dashed border-line bg-card shadow-card space-y-4 max-w-xl mx-auto">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-orange-sm">
                 <Package size={30} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-gray-900">{t("start_inventory_stock")}</h3>
-                <p className="mt-1 text-xs text-gray-500 font-medium leading-relaxed max-w-sm mx-auto">
+                <h3 className="text-lg font-heading font-black text-ink tracking-tight">{t("start_inventory_stock")}</h3>
+                <p className="mt-1 text-xs text-muted font-medium leading-relaxed max-w-sm mx-auto">
                   {t("choose_standard_catalog")}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2 justify-center pt-2">
+              <div className="flex flex-wrap gap-2 justify-center pt-2 font-heading">
                 <button
                   onClick={handleAddAllPresets}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#D4F06B] px-5 py-2.5 text-xs font-black text-gray-900 hover:bg-[#C5E456] active:scale-95 transition shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-black text-white hover:bg-primary-hover active:scale-95 transition shadow-orange-sm cursor-pointer"
                 >
-                  <Plus size={15} />
+                  <Plus size={15} strokeWidth={2.5} />
                   <span>+ Quick-Add Standard Starter Pack</span>
                 </button>
                 <button
@@ -427,9 +437,9 @@ export default function Stock() {
                     setSelectedPresetName("");
                     setOpen(true);
                   }}
-                  className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-xs font-black text-white hover:bg-gray-800 active:scale-95 transition shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-card-hover border border-line px-5 py-2.5 text-xs font-bold text-ink hover:border-primary/40 active:scale-95 transition cursor-pointer"
                 >
-                  <Plus size={15} />
+                  <Plus size={15} strokeWidth={2.2} />
                   <span>+ Create Custom Item</span>
                 </button>
               </div>
@@ -438,28 +448,30 @@ export default function Stock() {
             {/* Starter Catalog Grid */}
             <div className="space-y-3 max-w-5xl mx-auto">
               <div className="flex items-center justify-between px-1">
-                <h4 className="text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+                <h4 className="text-xs font-heading font-extrabold text-muted uppercase tracking-wider">
                   Pick & Add Popular SME Products
                 </h4>
-                <span className="text-[11px] font-semibold text-purple-600">Click + to add instantly</span>
+                <span className="text-[11px] font-heading font-bold text-primary">Click + to add instantly</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {PRESET_PRODUCTS.map((preset, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-gray-200/90 bg-white shadow-sm hover:border-purple-400 transition"
+                    className="flex items-center justify-between p-3.5 rounded-2xl border border-line bg-card shadow-card hover:border-primary/40 transition"
                   >
-                    <div>
-                      <div className="text-xs font-black text-gray-900">{preset.name}</div>
-                      <div className="text-[11px] text-gray-500 font-medium">
-                        {preset.category} • {rwf(preset.sell_price_rwf)} RWF
+                    <div className="truncate pr-2">
+                      <div className="text-xs font-heading font-bold text-ink truncate">{preset.name}</div>
+                      <div className="text-[11px] text-muted font-heading tabnum">
+                        {rwf(preset.sell_price_rwf)} RWF · {preset.category}
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleQuickAddPreset(preset)}
-                      className="px-3 py-1.5 rounded-full bg-gray-100 hover:bg-[#D4F06B] text-gray-900 text-xs font-black transition cursor-pointer shrink-0"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-orange-sm transition shrink-0 cursor-pointer"
+                      title="Add to Stock"
                     >
-                      + Add
+                      <Plus size={16} strokeWidth={2.5} />
                     </button>
                   </div>
                 ))}
@@ -467,14 +479,17 @@ export default function Stock() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
             {visible.map((item) => (
               <StockCard
                 key={item.id}
                 item={item}
                 t={t}
-                onRestock={handleQuickRestockClick}
-                onDelete={handleDeleteStockClick}
+                onRestock={(it) => {
+                  setRestockTarget(it);
+                  setRestockQty("10");
+                }}
+                onDelete={(it) => setDeleteTarget(it)}
               />
             ))}
           </div>
@@ -482,22 +497,16 @@ export default function Stock() {
       </div>
 
       {/* QUICK RESTOCK MODAL SHEET */}
-      <Sheet
-        open={Boolean(restockTarget)}
-        onClose={() => setRestockTarget(null)}
-        title={restockTarget ? `Restock "${restockTarget.name}"` : "Add Stock Quantity"}
-      >
+      <Sheet open={!!restockTarget} onClose={() => setRestockTarget(null)} title={restockTarget ? `Restock "${restockTarget.name}"` : "Restock"}>
         {restockTarget && (
-          <form onSubmit={handleConfirmRestock} className="space-y-4 pt-2 font-manrope pb-6">
-            {/* Current Stock Banner */}
-            <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 flex items-center justify-between">
+          <form onSubmit={handleConfirmRestock} className="space-y-4 pt-2 pb-6 font-body">
+            {/* Current Stock Indicator */}
+            <div className="p-4 rounded-2xl border border-line bg-card-hover/50 flex items-center justify-between">
               <div>
-                <p className="text-xs font-extrabold text-gray-900">{restockTarget.name}</p>
-                <p className="text-[11px] text-gray-500 font-semibold">{restockTarget.category || "General"}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10.5px] font-bold text-gray-400 uppercase block">Current in Stock</span>
-                <span className="text-sm font-black text-gray-900 tabnum">
+                <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider block">
+                  Current in Stock
+                </span>
+                <span className="text-sm font-heading font-black text-ink tabnum">
                   {restockTarget.quantity} {restockTarget.unit || "pcs"}
                 </span>
               </div>
@@ -505,8 +514,8 @@ export default function Stock() {
 
             {/* Quick Preset Buttons (+5, +10, +20, +50, +100, +500) */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2">Quick Add Amount:</label>
-              <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-2">Quick Add Amount:</label>
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-2 font-heading">
                 {[5, 10, 20, 50, 100, 500].map((preset) => (
                   <button
                     key={preset}
@@ -514,8 +523,8 @@ export default function Stock() {
                     onClick={() => setRestockQty(String(preset))}
                     className={`py-2 px-1 rounded-xl text-xs font-black border transition active:scale-95 cursor-pointer ${
                       Number(restockQty) === preset
-                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                        : "bg-gray-50/70 text-gray-700 border-gray-200 hover:bg-gray-100"
+                        ? "bg-primary text-white border-primary shadow-orange-sm"
+                        : "bg-card text-muted border-line hover:text-ink hover:bg-card-hover"
                     }`}
                   >
                     +{preset}
@@ -526,8 +535,8 @@ export default function Stock() {
 
             {/* Custom Quantity Input */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">
-                Quantity to Add ({restockTarget.unit || "units"}) <span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">
+                Quantity to Add ({restockTarget.unit || "units"}) <span className="text-primary">*</span>
               </label>
               <input
                 type="number"
@@ -536,31 +545,31 @@ export default function Stock() {
                 value={restockQty}
                 onChange={(e) => setRestockQty(e.target.value)}
                 placeholder="Enter quantity to add..."
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-extrabold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm"
               />
             </div>
 
             {/* New Total Preview */}
-            <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center justify-between">
-              <span>New Total After Adding:</span>
-              <span className="text-sm font-black text-emerald-800 tabnum">
+            <div className="p-3.5 rounded-xl bg-card-hover border border-line text-xs font-heading font-bold text-ink flex items-center justify-between">
+              <span className="text-muted">New Total After Adding:</span>
+              <span className="text-sm font-black text-ink tabnum">
                 {(Number(restockTarget.quantity) || 0) + (Number(restockQty) || 0)} {restockTarget.unit || "pcs"}
               </span>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex items-center gap-3">
+            <div className="pt-2 flex items-center gap-3 font-heading">
               <button
                 type="button"
                 onClick={() => setRestockTarget(null)}
-                className="flex-1 py-3.5 px-4 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-extrabold transition cursor-pointer"
+                className="flex-1 py-3 px-4 rounded-xl bg-card border border-line hover:bg-card-hover text-muted hover:text-ink text-xs font-bold transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={restocking}
-                className="flex-1 py-3.5 px-4 rounded-full bg-[#D4F06B] hover:bg-[#C5E456] text-gray-900 text-xs font-black transition cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                className="flex-1 py-3 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm active:scale-95 disabled:opacity-50"
               >
                 {restocking ? "Updating…" : `Confirm +${restockQty || 0} Stock`}
               </button>
@@ -571,24 +580,24 @@ export default function Stock() {
 
       {/* ADD / EDIT STOCK ITEM MODAL SHEET */}
       <Sheet open={open} onClose={() => setOpen(false)} title="New product">
-        <div className="space-y-4 pt-2 font-manrope pb-6">
+        <div className="space-y-4 pt-2 font-body pb-6">
           {/* Product Name (Text Input) */}
           <div>
-            <label className="block text-[13px] font-bold text-gray-700 mb-1">
-              Product Name <span className="text-red-500">*</span>
+            <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">
+              Product Name <span className="text-primary">*</span>
             </label>
             <input
               type="text"
               value={form.name}
               onChange={set("name")}
               placeholder="Write product name (e.g. Amata, Sugar 1kg)..."
-              className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm placeholder:text-gray-400"
+              className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm placeholder:text-muted"
             />
             {matchingExisting && (
-              <div className="mt-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+              <div className="mt-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3 animate-fadeIn">
                 <div>
-                  <p className="text-xs font-black text-amber-900">"{matchingExisting.name}" is already in stock!</p>
-                  <p className="text-[11px] text-amber-700 font-medium">
+                  <p className="text-xs font-heading font-black text-amber-400">"{matchingExisting.name}" is already in stock!</p>
+                  <p className="text-[11px] text-muted font-heading tabnum">
                     Current: {matchingExisting.quantity} {matchingExisting.unit || "units"}
                   </p>
                 </div>
@@ -601,7 +610,7 @@ export default function Stock() {
                     setRestockTarget(itemToRestock);
                     setRestockQty(String(enteredQty));
                   }}
-                  className="px-3.5 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black transition cursor-pointer shrink-0 shadow-sm"
+                  className="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-heading font-black transition cursor-pointer shrink-0 shadow-orange-sm"
                 >
                   Restock Item →
                 </button>
@@ -612,11 +621,11 @@ export default function Stock() {
           <div className="grid grid-cols-2 gap-3">
             {/* Category Dropdown */}
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Category</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Category</label>
               <select
                 value={form.category}
                 onChange={set("category")}
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-3.5 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm cursor-pointer appearance-none"
+                className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-xs font-heading font-semibold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm cursor-pointer"
               >
                 <option value="">Select Category...</option>
                 <option value="Groceries">Groceries</option>
@@ -636,11 +645,11 @@ export default function Stock() {
 
             {/* Unit Dropdown */}
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Unit of Measure</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Unit of Measure</label>
               <select
                 value={form.unit}
                 onChange={set("unit")}
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-3.5 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm cursor-pointer appearance-none"
+                className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-xs font-heading font-semibold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm cursor-pointer"
               >
                 <option value="pcs">Pieces (pcs)</option>
                 <option value="kg">Kilograms (kg)</option>
@@ -664,56 +673,56 @@ export default function Stock() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Initial Quantity</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Initial Quantity</label>
               <input
                 type="number"
                 value={form.quantity}
                 onChange={set("quantity")}
                 placeholder="0"
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm"
               />
             </div>
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Alert me when below</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Alert me when below</label>
               <input
                 type="number"
                 value={form.low_stock_threshold}
                 onChange={set("low_stock_threshold")}
                 placeholder="5"
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Cost price (RWF)</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Cost price (RWF)</label>
               <input
                 type="number"
                 value={form.cost_price_rwf}
                 onChange={set("cost_price_rwf")}
                 placeholder="0"
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm"
               />
             </div>
             <div>
-              <label className="block text-[13px] font-bold text-gray-700 mb-1">Sell price (RWF)</label>
+              <label className="block text-xs font-heading font-bold text-muted uppercase tracking-wider mb-1">Sell price (RWF)</label>
               <input
                 type="number"
                 value={form.sell_price_rwf}
                 onChange={set("sell_price_rwf")}
                 placeholder="0"
-                className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-3 flex items-center gap-3">
+          <div className="pt-3 flex items-center gap-3 font-heading">
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex-1 py-3.5 px-5 rounded-full bg-[#D4F06B]/40 hover:bg-[#D4F06B]/60 text-gray-900 text-sm font-extrabold transition cursor-pointer border border-[#D4F06B]"
+              className="flex-1 py-3 px-5 rounded-xl bg-card border border-line hover:bg-card-hover text-muted hover:text-ink text-xs font-bold transition cursor-pointer"
             >
               Cancel
             </button>
@@ -721,9 +730,9 @@ export default function Stock() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 py-3.5 px-5 rounded-full bg-[#D4F06B] hover:bg-[#C5E456] text-gray-900 text-sm font-black transition cursor-pointer shadow-sm active:scale-95"
+              className="flex-1 py-3 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm active:scale-95"
             >
-              {saving ? "Saving…" : "Save Changes"}
+              {saving ? "Saving…" : "Save Product"}
             </button>
           </div>
         </div>
