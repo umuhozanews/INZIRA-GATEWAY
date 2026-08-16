@@ -30,6 +30,24 @@ export function checkIsAdmin(user) {
   );
 }
 
+export function checkIsInstitution(user) {
+  if (!user) return false;
+  const role = String(user.role || "").toLowerCase();
+  const email = String(user.email || "").toLowerCase();
+  return (
+    role === "financial_institution" ||
+    role === "institution" ||
+    role === "sacco" ||
+    role === "sacco_officer" ||
+    role === "lender" ||
+    role === "bank" ||
+    email.includes("sacco") ||
+    email.includes("bank") ||
+    email.includes("lender") ||
+    email.includes("institution")
+  );
+}
+
 // Default Master Accounts List for Creator / Admin
 export const DEFAULT_ACCOUNTS = [
   {

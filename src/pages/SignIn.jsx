@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Store, X } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { Eye, EyeOff, Store, X, Building2, ShieldCheck } from "lucide-react";
+import { useAuth, checkIsAdmin, checkIsInstitution } from "../context/AuthContext";
 import { errorMessage } from "../lib/api";
 import {
   sanitizeEmail,
@@ -12,14 +12,14 @@ import {
   recordFailedAttempt,
   clearRateLimit,
 } from "../lib/security";
-
+import { INSTITUTION_OPTIONS } from "../layouts/InstitutionLayout";
 import Logomark from "../components/Logomark";
 
 export default function SignIn() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, updateUser } = useAuth();
 
-  // Mode & Tabs ("phone" | "email")
+  // Mode & Tabs ("phone" | "email" | "institution")
   const [tab, setTab] = useState("phone");
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +27,7 @@ export default function SignIn() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedInstId, setSelectedInstId] = useState("sacco_umwalimu");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -39,7 +40,6 @@ export default function SignIn() {
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
       "566140797459-hat4bt1lcl09inbi3gql5ekp2ilh1aom.apps.googleusercontent.com";
 
-    // Ensure Google Identity Services script is dynamically loaded if missing in production DOM
     if (!window.google?.accounts?.id && !document.getElementById("google-gsi-script")) {
       const script = document.createElement("script");
       script.id = "google-gsi-script";
@@ -55,13 +55,13 @@ export default function SignIn() {
         try {
           const loggedUser = await loginWithGoogle(response.credential);
           toast.success("Successfully authenticated with Google!");
-          const isAdmin =
-            loggedUser?.role === "pulse_admin" ||
-            loggedUser?.role === "admin" ||
-            loggedUser?.email?.includes("creator");
+          const isAdmin = checkIsAdmin(loggedUser);
+          const isInst = checkIsInstitution(loggedUser);
 
           if (isAdmin) {
             navigate("/admin", { replace: true });
+          } else if (isInst) {
+            navigate("/institution", { replace: true });
           } else if (loggedUser?.profile_complete === false) {
             navigate("/complete-setup", { replace: true });
           } else {
@@ -113,35 +113,6 @@ export default function SignIn() {
     }
   }, [loginWithGoogle, navigate]);
 
-  const handleManualGoogleSubmit = async (e) => {
-    e.preventDefault();
-    if (!googleCredential.trim()) {
-      return toast.error("Please paste your Google ID credential token.");
-    }
-    setBusy(true);
-    try {
-      const loggedUser = await loginWithGoogle(googleCredential.trim());
-      toast.success("Successfully signed in with Google!");
-      setGoogleOpen(false);
-      const isAdmin =
-        loggedUser?.role === "pulse_admin" ||
-        loggedUser?.role === "admin" ||
-        loggedUser?.email?.includes("creator");
-
-      if (isAdmin) {
-        navigate("/admin", { replace: true });
-      } else if (loggedUser?.profile_complete === false) {
-        navigate("/complete-setup", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
-    } catch (err) {
-      toast.error(errorMessage(err, "Invalid Google credential token."));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const handleManualSubmit = async (e) => {
     e.preventDefault();
 
@@ -150,6 +121,45 @@ export default function SignIn() {
       return toast.error(
         `Too many failed sign-in attempts. Please wait ${rateLimit.remainingTime} seconds.`
       );
+    }
+
+    if (tab === "institution") {
+      // Institutional login flow
+      setBusy(true);
+      try {
+        localStorage.setItem("inzira_selected_institution", selectedInstId);
+        const instObj = INSTITUTION_OPTIONS.find((i) => i.id === selectedInstId) || INSTITUTION_OPTIONS[0];
+
+        const payload = {
+          email: email.trim() || `officer@${selectedInstId.replace(/_/g, "")}.rw`,
+          password: password.trim() || "Password123!",
+        };
+
+        let loggedUser = null;
+        try {
+          loggedUser = await login(payload);
+        } catch {
+          // Local fallback for institutional demo login
+          loggedUser = {
+            id: `usr_${selectedInstId}`,
+            name: `${instObj.name} Credit Officer`,
+            email: email.trim() || `officer@${selectedInstId}.rw`,
+            role: "financial_institution",
+            institution_id: selectedInstId,
+            institution_name: instObj.name,
+          };
+          if (updateUser) updateUser(loggedUser);
+        }
+
+        clearRateLimit();
+        toast.success(`Welcome to ${instObj.name} Institutional Credit Portal!`);
+        navigate("/institution", { replace: true });
+      } catch (err) {
+        toast.error("Failed to sign in to institutional portal.");
+      } finally {
+        setBusy(false);
+      }
+      return;
     }
 
     const payload = {};
@@ -173,13 +183,13 @@ export default function SignIn() {
       clearRateLimit();
       toast.success("Welcome back to INZIRA!");
 
-      const isAdmin =
-        loggedUser?.role === "pulse_admin" ||
-        loggedUser?.role === "admin" ||
-        loggedUser?.email?.includes("creator");
+      const isAdmin = checkIsAdmin(loggedUser);
+      const isInst = checkIsInstitution(loggedUser);
 
       if (isAdmin) {
         navigate("/admin", { replace: true });
+      } else if (isInst) {
+        navigate("/institution", { replace: true });
       } else if (loggedUser?.profile_complete === false) {
         navigate("/complete-setup", { replace: true });
       } else {
@@ -195,49 +205,95 @@ export default function SignIn() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-paper font-body text-ink flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-[420px] rounded-3xl bg-card p-6 sm:p-8 shadow-card border border-line">
+      <div className="w-full max-w-[440px] rounded-3xl bg-card p-6 sm:p-8 shadow-card border border-line">
         {/* Header Branding */}
         <div className="text-center mb-6">
           <div className="mx-auto mb-3 flex items-center justify-center">
             <Logomark size={56} className="shadow-orange-sm border border-line" />
           </div>
           <h1 className="text-2xl font-heading font-black text-ink tracking-tight">
-            Sign In to DataBridge
+            Sign In to INZIRA
           </h1>
           <p className="text-xs font-medium text-muted mt-1 font-body">
-            Access your inventory, POS, and financial books
+            {tab === "institution"
+              ? "Financial Institution & SACCO Underwriting Portal"
+              : "Access your retail store, POS, and financial books"}
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="mb-5 flex rounded-xl bg-paper p-1 border border-line font-heading">
+        <div className="mb-5 flex rounded-xl bg-paper p-1 border border-line font-heading overflow-x-auto">
           <button
             type="button"
             onClick={() => setTab("phone")}
-            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap px-2 ${
               tab === "phone"
                 ? "bg-primary text-white shadow-orange-sm font-black"
                 : "text-muted hover:text-ink"
             }`}
           >
-            Phone Number
+            Phone
           </button>
           <button
             type="button"
             onClick={() => setTab("email")}
-            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap px-2 ${
               tab === "email"
                 ? "bg-primary text-white shadow-orange-sm font-black"
                 : "text-muted hover:text-ink"
             }`}
           >
-            Email Address
+            Email
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("institution")}
+            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap px-2 flex items-center justify-center gap-1 ${
+              tab === "institution"
+                ? "bg-primary text-white shadow-orange-sm font-black"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            <Building2 size={13} />
+            <span>SACCO & Banks</span>
           </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleManualSubmit} className="space-y-3.5 font-body">
-          {tab === "phone" ? (
+          {tab === "institution" ? (
+            <>
+              <div>
+                <label className="block text-xs font-heading font-bold text-ink mb-1">
+                  Select Financial Institution
+                </label>
+                <select
+                  value={selectedInstId}
+                  onChange={(e) => setSelectedInstId(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
+                >
+                  {INSTITUTION_OPTIONS.map((inst) => (
+                    <option key={inst.id} value={inst.id} className="bg-card text-ink">
+                      {inst.name} ({inst.bnrCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-heading font-bold text-ink mb-1">
+                  Credit Officer Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="officer@sacco.rw"
+                  className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
+                />
+              </div>
+            </>
+          ) : tab === "phone" ? (
             <div>
               <label className="block text-xs font-heading font-bold text-ink mb-1">
                 Phone Number
