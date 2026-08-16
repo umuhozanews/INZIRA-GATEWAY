@@ -594,7 +594,7 @@ export default function Suppliers() {
               </div>
             </div>
             <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{rwf(totalOwedToUs)} RWF</div>
-            <span className="text-[10.5px] font-medium text-muted block mt-0.5">{debtInvoices.length} unpaid invoices</span>
+            <span className="text-[10.5px] font-medium text-muted block mt-0.5">{receivables.length} unpaid invoices</span>
           </div>
 
           {/* Card 3: Payables (Owed to Suppliers) */}
@@ -641,7 +641,7 @@ export default function Suppliers() {
               { id: "orders", label: "Supplier Orders", count: orders.length },
               { id: "payables", label: "Suppliers & Payables", count: suppliers.length },
               { id: "customers", label: "Customers", count: allCustomers.length },
-              { id: "owed", label: "Customer Debts", count: debtInvoices.length },
+              { id: "owed", label: "Customer Debts", count: receivables.length },
             ].map((tab) => (
               <button
                 key={tab.id}
