@@ -170,13 +170,16 @@ export function computeHealthScoreFromData({
   });
 
   // Account Tenure (Days on INZIRA)
-  let tenureDays = 30; // default 30 days
+  let tenureDays = 30;
   if (user?.createdAt || user?.created_at) {
     const created = new Date(user.createdAt || user.created_at);
-    tenureDays = Math.max(1, Math.floor((now - created) / msDay));
+    if (!isNaN(created.getTime())) {
+      tenureDays = Math.max(1, Math.floor((now.getTime() - created.getTime()) / msDay));
+    }
   } else if (sales.length > 0) {
     tenureDays = Math.max(7, sales.length * 2);
   }
+  if (isNaN(tenureDays) || tenureDays < 1) tenureDays = 30;
 
   // ─── 2. SEVEN PILLAR MATHEMATICAL SCORING ───
 
