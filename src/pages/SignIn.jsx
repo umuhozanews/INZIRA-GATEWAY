@@ -269,8 +269,14 @@ export default function SignIn() {
                 </label>
                 <select
                   value={selectedInstId}
-                  onChange={(e) => setSelectedInstId(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setSelectedInstId(newId);
+                    if (!email || email.includes("@")) {
+                      setEmail(`officer@${newId.replace(/_/g, "")}.rw`);
+                    }
+                  }}
+                  className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer font-heading"
                 >
                   {INSTITUTION_OPTIONS.map((inst) => (
                     <option key={inst.id} value={inst.id} className="bg-card text-ink">
@@ -281,14 +287,19 @@ export default function SignIn() {
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-bold text-ink mb-1">
-                  Credit Officer Email
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-heading font-bold text-ink">
+                    Credit Officer Email
+                  </label>
+                  <span className="text-[10px] text-muted">
+                    Auto-configured
+                  </span>
+                </div>
                 <input
                   type="email"
-                  value={email}
+                  value={email || `officer@${selectedInstId.replace(/_/g, "")}.rw`}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="officer@sacco.rw"
+                  placeholder={`officer@${selectedInstId.replace(/_/g, "")}.rw`}
                   className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                 />
               </div>
