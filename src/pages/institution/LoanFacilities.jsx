@@ -3,22 +3,13 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import {
   BadgeDollarSign,
   Search,
-  Filter,
-  TrendingUp,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  Building2,
-  Users,
-  ArrowUpRight,
-  MessageSquare,
-  DollarSign,
-  Download,
   Plus,
-  RefreshCw
+  ArrowUpRight
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { rwf, rwfCompact, formatDate } from "../../lib/format";
+import { rwf, rwfCompact } from "../../lib/format";
 import Sheet from "../../components/Sheet";
 
 export default function LoanFacilities() {
@@ -34,38 +25,18 @@ export default function LoanFacilities() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'active' | 'settled'
+  const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Repayment Modal
   const [repayModalLoan, setRepayModalLoan] = useState(null);
   const [repayAmount, setRepayAmount] = useState("");
-  const [repayMethod, setRepayMethod] = useState("momo");
 
-  // Sync to localStorage
   useEffect(() => {
     try {
       localStorage.setItem("inzira_institutional_loans", JSON.stringify(loans));
     } catch (e) {
       console.error(e);
     }
-  }, [loans]);
-
-  // Compute Portfolio KPIs strictly from real loan facilities
-  const stats = useMemo(() => {
-    const totalPrincipal = loans.reduce((sum, l) => sum + (Number(l.principal) || 0), 0);
-    const totalRepaid = loans.reduce((sum, l) => sum + (Number(l.repaid_amount) || 0), 0);
-    const totalOutstanding = loans.filter(l => l.status === "active").reduce((sum, l) => sum + (Number(l.balance) || 0), 0);
-    const activeCount = loans.filter(l => l.status === "active").length;
-    const settledCount = loans.filter(l => l.status === "settled").length;
-
-    return {
-      totalPrincipal,
-      totalRepaid,
-      totalOutstanding,
-      activeCount,
-      settledCount,
-    };
   }, [loans]);
 
   const filteredLoans = useMemo(() => {
@@ -81,7 +52,7 @@ export default function LoanFacilities() {
     e.preventDefault();
     if (!repayModalLoan) return;
     const amt = Number(repayAmount);
-    if (isNaN(amt) || amt <= 0) return toast.error("Please enter a valid repayment amount.");
+    if (isNaN(amt) || amt <= 0) return toast.error("Enter valid repayment amount.");
 
     setLoans((prev) =>
       prev.map((l) => {
@@ -100,239 +71,138 @@ export default function LoanFacilities() {
       })
     );
 
-    toast.success(`Recorded repayment of ${rwf(amt)} RWF for ${repayModalLoan.id}!`);
+    toast.success(`Repayment of ${rwf(amt)} RWF recorded!`);
     setRepayModalLoan(null);
     setRepayAmount("");
   };
 
-  const handleSendReminder = (l) => {
-    toast.success(`WhatsApp reminder sent to ${l.borrower_name} (${l.shop_name}) for due balance of ${rwf(l.balance)} RWF!`);
-  };
-
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 font-body text-ink">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 space-y-4 font-body text-ink">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between font-heading">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-heading font-black text-ink tracking-tight">
-              Active Loan Facilities & Repayments
-            </h1>
-            <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-heading font-black text-primary">
-              {loans.length} facilities
-            </span>
-          </div>
-          <p className="text-xs text-muted mt-1">
-            Track active credit facilities, instalment collections, and repayments for {activeInstitution?.name || "Institution"}.
+          <h1 className="text-xl font-black text-ink tracking-tight">
+            Loan Facilities
+          </h1>
+          <p className="text-xs text-muted">
+            {loans.filter(l => l.status === "active").length} Active Credit Lines
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 font-heading">
-          <button
-            onClick={() => navigate("/institution/borrowers")}
-            className="btn-kinetic flex items-center gap-2 px-4 py-2.5 text-xs font-black cursor-pointer"
-          >
-            <Plus size={15} />
-            <span>New Facility</span>
-          </button>
-          <button
-            onClick={() => toast.success("Exporting Loan Ledger CSV...")}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer"
-          >
-            <Download size={15} className="text-primary" />
-            <span>Export Ledger</span>
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/institution/borrowers")}
+          className="btn-kinetic flex items-center gap-1.5 px-3 py-2 text-xs font-black cursor-pointer"
+        >
+          <Plus size={14} />
+          <span>New Facility</span>
+        </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 font-heading">
-        <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Total Capital Deployed</span>
-          <div className="mt-1 text-2xl font-black text-ink tabnum">{rwfCompact(stats.totalPrincipal)} RWF</div>
-          <span className="text-[10.5px] text-muted font-medium block mt-0.5">{loans.length} facilities</span>
-        </div>
-
-        <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Total Repaid Collections</span>
-          <div className="mt-1 text-2xl font-black text-primary tabnum">{rwfCompact(stats.totalRepaid)} RWF</div>
-          <span className="text-[10.5px] text-primary font-bold block mt-0.5">Real collections</span>
-        </div>
-
-        <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Outstanding Balance</span>
-          <div className="mt-1 text-2xl font-black text-ink tabnum">{rwfCompact(stats.totalOutstanding)} RWF</div>
-          <span className="text-[10.5px] text-muted font-medium block mt-0.5">{stats.activeCount} active facilities</span>
-        </div>
-
-        <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Settled Facilities</span>
-          <div className="mt-1 text-2xl font-black text-primary tabnum">{stats.settledCount} Settled</div>
-          <span className="text-[10.5px] text-primary font-bold block mt-0.5">Paid in full</span>
-        </div>
-      </div>
-
-      {/* Search & Tabs Strip */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3.5 rounded-2xl border border-line shadow-card font-heading">
-        <div className="flex items-center gap-1.5 bg-paper p-1 rounded-xl border border-line text-xs font-bold overflow-x-auto w-full sm:w-auto">
-          {[
-            { id: "all", label: "All Facilities", count: loans.length },
-            { id: "active", label: "Active Loans", count: stats.activeCount },
-            { id: "settled", label: "Settled / Paid", count: stats.settledCount },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-primary text-white shadow-orange-sm font-black"
-                  : "text-muted hover:text-ink hover:bg-card-hover"
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span className="ml-1.5 opacity-80">({tab.count})</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-72">
+      {/* Search & Filter Tabs */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 font-heading">
+        <div className="relative flex-1 w-full">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search facility ID or merchant..."
-            className="w-full bg-paper border border-line rounded-xl pl-8 pr-3 py-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:border-primary font-body"
+            placeholder="Search facility or shop..."
+            className="w-full rounded-xl border border-line bg-card py-2 pl-9 pr-3 text-xs text-ink placeholder:text-muted focus:border-primary focus:outline-none font-body"
           />
         </div>
-      </div>
 
-      {/* Facilities Table */}
-      <div className="rounded-2xl border border-line bg-card shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-body">
-            <thead className="border-b border-line bg-card-hover text-[11px] font-heading font-black text-muted uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-4">Facility ID</th>
-                <th className="py-3.5 px-4">Borrower & Shop</th>
-                <th className="py-3.5 px-4">Product</th>
-                <th className="py-3.5 px-4 text-right">Principal</th>
-                <th className="py-3.5 px-4 text-right">Repaid</th>
-                <th className="py-3.5 px-4 text-right">Balance</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {filteredLoans.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted font-medium">
-                    <BadgeDollarSign size={32} className="mx-auto text-muted mb-2 opacity-50" />
-                    <p className="font-heading font-bold text-ink text-sm">No Active Loan Facilities</p>
-                    <p className="text-xs mt-1">Disburse loan facilities to SME borrowers from the underwriting queue to track repayments here.</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredLoans.map((l) => {
-                  const isSettled = l.status === "settled";
-                  return (
-                    <tr key={l.id} className="hover:bg-card-hover transition">
-                      <td className="py-3.5 px-4 font-mono text-xs font-bold text-ink">
-                        {l.id}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="font-heading font-black text-ink block text-xs">
-                          {l.shop_name}
-                        </span>
-                        <span className="text-[11px] text-muted">{l.borrower_name}</span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-ink block">{l.product}</span>
-                        <span className="text-[10px] text-muted">{l.term_months} mos @ {l.interest_rate}</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-black text-ink tabnum">{rwf(l.principal)}</span>
-                        <span className="text-[10px] text-muted block">RWF</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-bold text-primary tabnum">{rwf(l.repaid_amount)}</span>
-                        <span className="text-[10px] text-muted block">RWF</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-black text-ink tabnum">{rwf(l.balance)}</span>
-                        <span className="text-[10px] text-muted block">RWF due</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-heading">
-                        {isSettled ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                            <CheckCircle2 size={11} /> Settled
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-white bg-primary px-2 py-0.5 rounded shadow-orange-sm">
-                            <Clock size={11} /> Active
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-heading">
-                        <div className="flex items-center justify-end gap-2">
-                          {!isSettled && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setRepayModalLoan(l);
-                                  setRepayAmount(String(l.monthly_instalment || Math.min(l.balance, 500000)));
-                                }}
-                                className="px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-[11px] font-black transition cursor-pointer shadow-orange-sm active:scale-95"
-                                title="Record Repayment"
-                              >
-                                Repay
-                              </button>
-                              <button
-                                onClick={() => handleSendReminder(l)}
-                                className="p-1.5 rounded-lg bg-card-hover border border-line text-muted hover:text-primary transition cursor-pointer"
-                                title="Send WhatsApp Reminder"
-                              >
-                                <MessageSquare size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-1 bg-card p-1 rounded-xl border border-line text-xs font-bold w-full sm:w-auto">
+          {["all", "active", "settled"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg capitalize transition cursor-pointer ${
+                activeTab === tab
+                  ? "bg-primary text-white shadow-orange-sm font-black"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Record Repayment Modal Sheet */}
+      {/* Facilities Cards (Mobile-first) */}
+      <div className="space-y-3">
+        {filteredLoans.length === 0 ? (
+          <div className="p-10 text-center rounded-2xl border border-line bg-card text-muted text-xs font-medium">
+            No loan facilities found. Disburse from borrower directory to track here.
+          </div>
+        ) : (
+          filteredLoans.map((l) => {
+            const isSettled = l.status === "settled";
+            return (
+              <div
+                key={l.id}
+                className="p-4 rounded-2xl border border-line bg-card shadow-card space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 font-heading">
+                      <span className="font-mono text-[10.5px] font-bold text-muted">{l.id}</span>
+                      <span className={`text-[9.5px] font-black px-1.5 py-0.2 rounded uppercase ${
+                        isSettled ? "bg-primary/10 text-primary border border-primary/20" : "bg-primary text-white"
+                      }`}>
+                        {isSettled ? "Settled" : "Active"}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-heading font-black text-ink mt-0.5">
+                      {l.shop_name}
+                    </h3>
+                    <p className="text-[11px] text-muted">{l.borrower_name} &bull; {l.product}</p>
+                  </div>
+
+                  <div className="text-right font-heading">
+                    <span className="text-sm font-black text-ink tabnum block">{rwf(l.principal)} RWF</span>
+                    <span className="text-[10px] text-muted block">{l.term_months}M @ {l.interest_rate}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-line flex items-center justify-between font-heading">
+                  <div className="text-xs">
+                    <span className="text-muted block text-[10px]">Due Balance:</span>
+                    <span className="font-black text-primary tabnum">{rwf(l.balance)} RWF</span>
+                  </div>
+
+                  {!isSettled && (
+                    <button
+                      onClick={() => {
+                        setRepayModalLoan(l);
+                        setRepayAmount(String(l.monthly_instalment || Math.min(l.balance, 500000)));
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm active:scale-95"
+                    >
+                      Record Repay
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Repayment Modal */}
       <Sheet
         open={Boolean(repayModalLoan)}
         onClose={() => setRepayModalLoan(null)}
-        title={repayModalLoan ? `Record Loan Repayment: ${repayModalLoan.id}` : "Loan Repayment"}
+        title={repayModalLoan ? `Repayment: ${repayModalLoan.id}` : "Loan Repayment"}
       >
         {repayModalLoan && (
           <form onSubmit={handleRecordRepayment} className="space-y-4 pt-2 font-body pb-6 text-ink">
-            <div className="p-4 rounded-2xl bg-card-hover border border-line font-heading space-y-1">
-              <span className="text-[10.5px] font-bold text-muted uppercase block">Borrower</span>
-              <h4 className="text-sm font-black text-ink">{repayModalLoan.shop_name} ({repayModalLoan.borrower_name})</h4>
-              <div className="flex items-center justify-between text-xs pt-2 border-t border-line">
-                <span className="text-muted">Outstanding Balance:</span>
-                <span className="font-black text-primary tabnum">{rwf(repayModalLoan.balance)} RWF</span>
-              </div>
+            <div className="p-3.5 rounded-xl bg-card-hover border border-line font-heading">
+              <span className="text-xs font-bold text-muted block">{repayModalLoan.shop_name}</span>
+              <span className="text-sm font-black text-primary tabnum block mt-0.5">Balance: {rwf(repayModalLoan.balance)} RWF</span>
             </div>
 
             <div className="space-y-1 font-heading">
-              <label className="text-xs font-bold text-muted uppercase">Repayment Amount (RWF)</label>
+              <label className="text-xs font-bold text-muted uppercase">Amount (RWF)</label>
               <input
                 type="number"
                 min="1000"
@@ -344,34 +214,12 @@ export default function LoanFacilities() {
               />
             </div>
 
-            <div className="space-y-1 font-heading">
-              <label className="text-xs font-bold text-muted uppercase">Payment Channel</label>
-              <div className="grid grid-cols-3 gap-2">
-                {["momo", "bank", "cash"].map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setRepayMethod(method)}
-                    className={`py-2 text-xs font-black rounded-xl border uppercase transition cursor-pointer ${
-                      repayMethod === method
-                        ? "bg-primary text-white border-primary shadow-orange-sm"
-                        : "bg-paper border-line text-muted hover:text-ink hover:bg-card-hover"
-                    }`}
-                  >
-                    {method === "momo" ? "MTN MoMo" : method === "bank" ? "Bank Wire" : "Cash / Till"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-3 font-heading">
-              <button
-                type="submit"
-                className="btn-kinetic w-full py-3 text-xs font-black cursor-pointer shadow-orange-sm"
-              >
-                Confirm Repayment of {rwf(repayAmount || 0)} RWF
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="btn-kinetic w-full py-3 text-xs font-black cursor-pointer shadow-orange-sm font-heading"
+            >
+              Confirm Repayment
+            </button>
           </form>
         )}
       </Sheet>
