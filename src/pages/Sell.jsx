@@ -23,6 +23,7 @@ import {
   UserCheck,
   CreditCard,
   User,
+  UserPlus,
   DollarSign,
   ArrowRight
 } from "lucide-react";
@@ -81,6 +82,8 @@ export default function Sell() {
   // Customer & Debt Details
   const [customer, setCustomer] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [saveAsNewCustomer, setSaveAsNewCustomer] = useState(true);
+  const [dbCustomers, setDbCustomers] = useState([]);
   const [dueDate, setDueDate] = useState(() => {
     return new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
   });
@@ -95,8 +98,15 @@ export default function Sell() {
 
   const load = useCallback(async () => {
     try {
-      const catRes = await api.get("/stock/categories");
-      if (catRes?.data) setCats(catRes.data);
+      const [catRes, custRes] = await Promise.allSettled([
+        api.get("/stock/categories"),
+        api.get("/customers?limit=100"),
+      ]);
+      if (catRes.status === "fulfilled" && catRes.value?.data) setCats(catRes.value.data);
+      if (custRes.status === "fulfilled") {
+        const cData = custRes.value.data?.data || custRes.value.data;
+        if (Array.isArray(cData)) setDbCustomers(cData);
+      }
     } catch (e) {
       /* network fallback */
     }
@@ -178,13 +188,22 @@ export default function Sell() {
   // Existing customer names suggestion list
   const existingCustomers = useMemo(() => {
     const names = new Set();
+    dbCustomers.forEach((c) => {
+      if (c && c.name) names.add(c.name.trim());
+    });
     safeHistory.forEach((s) => {
       if (s.customer_name && s.customer_name !== "Walk-in Customer") {
         names.add(s.customer_name.trim());
       }
     });
     return Array.from(names);
-  }, [safeHistory]);
+  }, [dbCustomers, safeHistory]);
+
+  const isNewCustomer = useMemo(() => {
+    const trimmed = customer.trim().toLowerCase();
+    if (!trimmed || trimmed === "walk-in customer") return false;
+    return !existingCustomers.some((name) => name.toLowerCase() === trimmed);
+  }, [customer, existingCustomers]);
 
   const addToCart = (item) => {
     setCart((c) => {
@@ -294,6 +313,20 @@ export default function Sell() {
       const amountPaidUpfront = payMode === "split"
         ? splitTotalPaid
         : (method === "credit" ? 0 : totalAmount);
+
+      if (isNewCustomer && saveAsNewCustomer && customer.trim()) {
+        try {
+          const newCustRes = await api.post("/customers", {
+            name: customer.trim(),
+            phone: customerPhone.trim() || null,
+          });
+          if (newCustRes.data) {
+            setDbCustomers((prev) => [...prev, newCustRes.data]);
+          }
+        } catch (e) {
+          console.warn("Auto customer save:", e.message);
+        }
+      }
 
       await recordSale({
         items,
@@ -1032,6 +1065,39 @@ export default function Sell() {
                     <option key={idx} value={c} />
                   ))}
                 </datalist>
+
+                {isNewCustomer && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-primary/30 bg-primary-xlt/40 text-xs animate-fadeIn">
+                    <div className="flex items-center gap-1.5 font-bold text-ink">
+                      <UserPlus size={14} className="text-primary shrink-0" />
+                      <span>Save as new customer?</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setSaveAsNewCustomer(true)}
+                        className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
+                          saveAsNewCustomer
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-paper text-muted border border-line hover:text-ink"
+                        }`}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSaveAsNewCustomer(false)}
+                        className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
+                          !saveAsNewCustomer
+                            ? "bg-gray-800 text-white shadow-sm"
+                            : "bg-paper text-muted border border-line hover:text-ink"
+                        }`}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {(method === "credit" || (payMode === "split" && splitRemainingDebt > 0)) && (
                   <div className="space-y-2 p-3 rounded-2xl border border-amber-300 bg-amber-50/60">

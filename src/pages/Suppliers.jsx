@@ -370,9 +370,11 @@ export default function Suppliers() {
 
     setPoSaving(true);
     try {
+      const selectedSup = suppliers.find((s) => String(s.id) === String(poSupplierId));
       const payload = {
         supplier_id: poSupplierId,
-        order_date: poOrderDate,
+        supplier_name: selectedSup?.name || "Supplier",
+        order_date: poOrderDate || new Date().toISOString().split("T")[0],
         arrival_date: poArrivalDate || null,
         notes: poNotes.trim() || null,
         status: poStatus,
@@ -388,14 +390,15 @@ export default function Suppliers() {
       const createdOrder = res.data;
       toast.success(`Purchase Order PO-${createdOrder.id} created!`);
 
-      // Reset form
+      // Reset form & update state
       setCreatePoOpen(false);
       setPoNotes("");
       setPoItems([{ stock_item_id: "", item_name: "", quantity: 10, unit_cost_rwf: 0 }]);
+      setOrders((prev) => [createdOrder, ...prev.filter(o => o.id !== createdOrder.id)]);
       fetchOrders();
 
       // Offer instant WhatsApp dispatch
-      const sup = suppliers.find((s) => String(s.id) === String(poSupplierId));
+      const sup = selectedSup || suppliers.find((s) => String(s.id) === String(poSupplierId));
       if (sup && sup.phone && confirm(`Would you like to send this Purchase Order to ${sup.name} on WhatsApp now?`)) {
         handleSendToWhatsApp({
           ...createdOrder,
