@@ -69,7 +69,63 @@ export default function Dashboard() {
     load();
   }, [load]);
 
+  // Unified live activity feed merging sales, expenses, and remote server events
+  const combinedActivities = useMemo(() => {
+    const list = [];
+
+    // 1. Live recorded sales
+    (sales || []).forEach((s) => {
+      const invLabel = s.invoice_number || `Sale #${String(s.id).slice(-4)}`;
+      const custLabel = s.customer_name && s.customer_name !== "Walk-in Customer" ? ` · ${s.customer_name}` : "";
+      list.push({
+        id: `sale_${s.id}`,
+        type: "sale",
+        label: `${invLabel}${custLabel}`,
+        time: clockTime(s.created_at),
+        amountStr: `+${rwf(s.total_amount)} RWF`,
+        created_at: s.created_at || new Date().toISOString(),
+        to: "/invoices",
+      });
+    });
+
+    // 2. Live recorded expenses
+    (expenses || []).forEach((e) => {
+      list.push({
+        id: `exp_${e.id}`,
+        type: "expense",
+        label: `Expense: ${e.category || "General"}`,
+        time: clockTime(e.expense_date || e.created_at),
+        amountStr: `-${rwf(e.amount_rwf || e.amount)} RWF`,
+        created_at: e.expense_date || e.created_at || new Date().toISOString(),
+        to: "/expenses",
+      });
+    });
+
+    // 3. Remote events not covered
+    (activities || []).forEach((act) => {
+      const isSale = act.entity_type === "sales" || act.action?.includes("SALE");
+      const isExp = act.entity_type === "expenses" || act.action?.includes("EXPENSE");
+      if (!isSale && !isExp) {
+        list.push({
+          id: `act_${act.id}`,
+          type: "system",
+          label: act.action?.replace(/_/g, " ") || "Activity",
+          time: clockTime(act.created_at),
+          amountStr: null,
+          created_at: act.created_at,
+          to: "/stock",
+        });
+      }
+    });
+
+    return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+  }, [sales, expenses, activities]);
+
   const handleActivityClick = (act) => {
+    if (act.to) {
+      navigate(act.to);
+      return;
+    }
     const type = act.entity_type || (
       act.action?.includes("SALE") ? "sales" :
       act.action?.includes("EXPENSE") ? "expenses" :
@@ -262,35 +318,15 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              {(!activities || activities.length === 0) && (!recent || recent.length === 0) ? (
+              {!combinedActivities || combinedActivities.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-line p-6 text-center text-xs text-muted font-medium">
                   No activity recorded yet. Tap <span className="text-primary font-bold">Record Sale</span> to start.
                 </div>
-              ) : activities && activities.length > 0 ? (
-                activities.slice(0, 6).map((act) => {
-                  const isSale = act.entity_type === "sales" || act.action?.includes("SALE");
-                  const isExp = act.entity_type === "expenses" || act.action?.includes("EXPENSE");
-                  const isStock = act.entity_type === "stock_items" || act.action?.includes("STOCK");
-                  const isInv = act.entity_type === "invoices" || act.action?.includes("INVOICE");
-
-                  let label = act.action?.replace(/_/g, " ") || "Activity";
-                  let amountStr = null;
-
-                  if (isSale) {
-                    label = act.details?.invoice_number || (act.details?.total_amount ? `Sale ${rwf(act.details.total_amount)} RWF` : "Sale Processed");
-                    if (act.details?.total_amount) {
-                      amountStr = `+${rwf(act.details.total_amount)} RWF`;
-                    }
-                  } else if (isExp) {
-                    label = act.details?.category || act.details?.description || "Expense Logged";
-                    if (act.details?.amount) {
-                      amountStr = `-${rwf(act.details.amount)} RWF`;
-                    }
-                  } else if (isStock) {
-                    label = act.details?.name || act.details?.item_name ? `Stock: ${act.details.name || act.details.item_name}` : "Stock Adjusted";
-                  } else if (isInv) {
-                    label = act.details?.invoice_number ? `Invoice: ${act.details.invoice_number}` : "Invoice Generated";
-                  }
+              ) : (
+                combinedActivities.map((act) => {
+                  const isSale = act.type === "sale";
+                  const isExp = act.type === "expense";
+                  const isStock = act.type === "stock";
 
                   return (
                     <button
@@ -315,23 +351,18 @@ export default function Dashboard() {
 
                         <div className="min-w-0 flex-1 pr-2">
                           <div className="text-xs font-heading font-bold text-ink group-hover:text-primary transition truncate capitalize">
-                            {label}
+                            {act.label}
                           </div>
                           <div className="text-[10px] font-semibold text-muted flex items-center gap-1.5 mt-0.5">
-                            <span>{clockTime(act.created_at)}</span>
-                            {act.user_name && (
-                              <span className="text-muted font-bold truncate">
-                                &bull; {act.user_name}
-                              </span>
-                            )}
+                            <span>{act.time}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {amountStr && (
+                        {act.amountStr && (
                           <span className="text-xs font-heading font-black tabnum text-ink">
-                            {amountStr}
+                            {act.amountStr}
                           </span>
                         )}
                         <ChevronRight size={14} className="text-muted group-hover:text-primary transition group-hover:translate-x-0.5" />
@@ -339,33 +370,6 @@ export default function Dashboard() {
                     </button>
                   );
                 })
-              ) : (
-                recent.map((sale) => (
-                  <button
-                    key={sale.id}
-                    onClick={() => navigate("/invoices")}
-                    className="w-full flex items-center justify-between rounded-xl border border-line bg-card-hover/60 p-2.5 text-left hover:border-primary/40 hover:bg-card-hover transition cursor-pointer active:scale-[0.98] group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                        <ShoppingCart size={14} />
-                      </div>
-                      <div>
-                        <div className="text-xs font-heading font-bold text-ink group-hover:text-primary transition">
-                          {sale.customer_name || t("record_sale")}
-                          {sale.items_count ? ` · ${sale.items_count} ${t("items")}` : ""}
-                        </div>
-                        <div className="text-[10px] font-semibold text-muted">{clockTime(sale.created_at)}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-heading font-black tabnum text-ink">
-                        {rwf(sale.total_amount)} RWF
-                      </span>
-                      <ChevronRight size={14} className="text-muted group-hover:text-primary transition" />
-                    </div>
-                  </button>
-                ))
               )}
             </div>
           </div>
