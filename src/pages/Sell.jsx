@@ -401,38 +401,38 @@ export default function Sell() {
 
         {/* View Mode Toggle: Record Sale vs Customer Debts vs Today's History */}
         <div className="px-4 md:px-0">
-          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white border border-gray-200/80 shadow-sm overflow-x-auto">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-card border border-line shadow-sm overflow-x-auto font-heading">
             <button
               onClick={() => setViewMode("sell")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3.5 rounded-lg text-xs font-extrabold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 viewMode === "sell"
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-primary text-white shadow-orange-sm font-black"
+                  : "text-muted hover:text-ink hover:bg-card-hover"
               }`}
             >
-              <ShoppingCart size={15} /> {t("record_sale")}
+              <ShoppingCart size={15} strokeWidth={2.2} /> {t("record_sale")}
             </button>
 
             <button
               onClick={() => setViewMode("debts")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3.5 rounded-lg text-xs font-extrabold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 viewMode === "debts"
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-primary text-white shadow-orange-sm font-black"
+                  : "text-muted hover:text-ink hover:bg-card-hover"
               }`}
             >
-              <Clock size={15} /> {t("customer_debts")} ({debtSales.length})
+              <Clock size={15} strokeWidth={2.2} /> {t("customer_debts")} ({debtSales.length})
             </button>
 
             <button
               onClick={() => setViewMode("history")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-extrabold transition cursor-pointer whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3.5 rounded-lg text-xs font-extrabold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                 viewMode === "history"
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-primary text-white shadow-orange-sm font-black"
+                  : "text-muted hover:text-ink hover:bg-card-hover"
               }`}
             >
-              <History size={15} /> {t("sales_history")} ({salesHistory.length})
+              <History size={15} strokeWidth={2.2} /> {t("sales_history")} ({salesHistory.length})
             </button>
           </div>
         </div>
@@ -441,11 +441,11 @@ export default function Sell() {
         {viewMode === "sell" && (
           <>
             {/* Search & Custom Text Item Button */}
-            <div className="px-4 md:px-0 flex items-center gap-2 font-manrope">
-              <div className="flex flex-1 items-center gap-2.5 rounded-full border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
-                <Search size={16} className="text-gray-400 shrink-0" />
+            <div className="px-4 md:px-0 flex items-center gap-2 font-body">
+              <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-line bg-card px-3.5 py-2.5 shadow-sm focus-within:border-primary/50 transition">
+                <Search size={16} className="text-muted shrink-0" />
                 <input
-                  className="flex-1 bg-transparent text-xs md:text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+                  className="flex-1 bg-transparent text-xs md:text-sm font-semibold text-ink outline-none placeholder:text-muted"
                   placeholder={t("search")}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -454,15 +454,15 @@ export default function Sell() {
             </div>
 
             {/* Category chips */}
-            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:px-0 font-manrope">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:px-0 font-heading">
               {[{ value: "__all", label: t("byose") }, ...cats.map((c) => ({ value: c, label: c }))].map((c) => (
                 <button
                   key={c.value}
                   onClick={() => setActiveCat(c.value)}
-                  className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-extrabold transition ${
+                  className={`whitespace-nowrap rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-all duration-150 cursor-pointer ${
                     activeCat === c.value
-                      ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
+                      ? "border-primary bg-primary text-white shadow-orange-sm font-extrabold"
+                      : "border-line bg-card text-muted hover:text-ink hover:bg-card-hover"
                   }`}
                 >
                   {c.label}
@@ -471,11 +471,11 @@ export default function Sell() {
             </div>
 
             {/* Product grid */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6 font-manrope">
+            <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6 font-body">
               {visibleProducts.length === 0 ? (
-                <div className="mt-12 text-center text-xs md:text-sm text-gray-400 space-y-2 font-semibold">
+                <div className="mt-12 text-center text-xs md:text-sm text-muted space-y-2 font-medium">
                   <p>{t("no_products_found")}</p>
-                  <p className="text-[11px] text-gray-400">All sales must be selected directly from available stock inventory.</p>
+                  <p className="text-[11px] text-muted">All sales must be selected directly from available stock inventory.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -484,43 +484,46 @@ export default function Sell() {
                     return (
                       <div
                         key={p.id}
-                        className={`group flex flex-col justify-between overflow-hidden rounded-[24px] border bg-white transition duration-150 ${
-                          inCart > 0 ? "border-gray-900 shadow-md ring-1 ring-gray-900/10" : "border-gray-200 hover:border-gray-400"
+                        className={`group flex flex-col justify-between overflow-hidden rounded-2xl border bg-card transition-all duration-150 ${
+                          inCart > 0
+                            ? "border-primary ring-2 ring-primary/20 shadow-orange-sm"
+                            : "border-line hover:border-primary/40 hover:bg-card-hover/40"
                         }`}
                       >
-                        <button onClick={() => addToCart(p)} className="block w-full text-left flex-1">
+                        <button onClick={() => addToCart(p)} className="block w-full text-left flex-1 cursor-pointer">
                           <div className="p-3.5">
                             <div className="flex items-start justify-between gap-1">
-                              <div className="line-clamp-2 text-xs md:text-sm font-extrabold text-gray-900 group-hover:text-purple-600 transition">
+                              <div className="line-clamp-2 text-xs md:text-sm font-heading font-extrabold text-ink group-hover:text-primary transition">
                                 {p.name}
                               </div>
                               {inCart > 0 && (
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-black text-white shrink-0 shadow-sm">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-primary text-[10px] font-heading font-black text-white shrink-0 shadow-orange-sm">
                                   {inCart}
                                 </span>
                               )}
                             </div>
 
                             {p.category && (
-                              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[9px] font-extrabold uppercase tracking-wider">
+                              <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-card-hover border border-line text-muted text-[9px] font-heading font-bold uppercase tracking-wider">
                                 {p.category}
                               </span>
                             )}
 
-                            <div className="mt-2 text-xs font-black tabnum text-gray-900">
+                            {/* Authoritative non-colored money amount */}
+                            <div className="mt-2 text-xs font-heading font-black tabnum text-ink">
                               {rwf(p.sell_price_rwf)} RWF
                             </div>
                           </div>
                         </button>
 
                         {inCart > 0 ? (
-                          <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-2 py-1.5 gap-1">
+                          <div className="flex items-center justify-between border-t border-line bg-card-hover px-2 py-1.5 gap-1">
                             <button
                               type="button"
                               onClick={() => decFromCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100 shrink-0"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-card border border-line text-ink hover:border-primary/40 transition shrink-0 cursor-pointer"
                             >
-                              <Minus size={14} />
+                              <Minus size={13} strokeWidth={2.2} />
                             </button>
 
                             <input
@@ -529,25 +532,25 @@ export default function Sell() {
                               max={p.quantity || 9999}
                               value={inCart}
                               onChange={(e) => updateCartQty(p, e.target.value)}
-                              className="w-12 text-center text-xs font-black tabnum text-gray-900 bg-white border border-gray-300 rounded-lg py-1 px-0 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                              className="w-12 text-center text-xs font-heading font-black tabnum text-ink bg-card border border-line rounded-lg py-1 px-0 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                               title="Type quantity manually"
                             />
 
                             <button
                               type="button"
                               onClick={() => addToCart(p)}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800 shrink-0"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-hover shadow-orange-sm transition shrink-0 cursor-pointer"
                             >
-                              <Plus size={14} />
+                              <Plus size={13} strokeWidth={2.2} />
                             </button>
                           </div>
                         ) : (
                           <div className="px-3 pb-3">
                             <button
                               onClick={() => addToCart(p)}
-                              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-900 text-xs font-extrabold text-white hover:bg-gray-800 transition shadow-sm"
+                              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-card-hover border border-line text-xs font-heading font-bold text-ink hover:border-primary hover:text-primary transition active:scale-95 cursor-pointer"
                             >
-                              <Plus size={14} /> {t("add")}
+                              <Plus size={14} strokeWidth={2.2} /> {t("add")}
                             </button>
                           </div>
                         )}
@@ -817,18 +820,18 @@ export default function Sell() {
 
       {/* RIGHT SIDEBAR (DESKTOP LIVE CART & CHECKOUT PANEL) */}
       {viewMode === "sell" && (
-        <div className="hidden md:flex md:w-80 lg:w-96 flex-col border border-line bg-card rounded-2xl p-5 shadow-card shrink-0 space-y-4">
+        <div className="hidden md:flex md:w-80 lg:w-96 flex-col border border-line bg-card rounded-2xl p-5 shadow-card shrink-0 space-y-4 font-body">
           <div className="flex items-center justify-between pb-3 border-b border-line">
             <div className="flex items-center gap-2">
               <ShoppingCart size={18} className="text-primary" />
-              <h2 className="font-heading text-base font-extrabold text-ink">
+              <h2 className="font-heading text-base font-extrabold text-ink tracking-tight">
                 {t("cart")}
               </h2>
             </div>
             {lines.length > 0 && (
               <button
                 onClick={clearCart}
-                className="text-xs font-semibold text-danger flex items-center gap-1 hover:underline"
+                className="text-xs font-heading font-bold text-danger flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <Trash2 size={13} /> {t("clear") || "Clear"}
               </button>
@@ -841,31 +844,26 @@ export default function Sell() {
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted">
                 <ShoppingCart size={32} className="mb-2 text-line" />
                 <p className="text-xs font-semibold">{t("cart_empty")}</p>
-                <p className="text-[11px] mt-1">Select items or tap "+ Custom Item" to start recording.</p>
+                <p className="text-[11px] mt-1 text-muted">Select items to start ringing up sale.</p>
               </div>
             ) : (
               lines.map(({ item, qty }) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper p-2.5"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card-hover/70 p-2.5"
                 >
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 text-gray-700 flex items-center justify-center shrink-0 border border-gray-200 font-extrabold text-xs">
+                  <div className="h-9 w-9 rounded-lg bg-card text-muted flex items-center justify-center shrink-0 border border-line font-heading font-extrabold text-xs">
                     {item.is_custom ? (
-                      <Tag size={16} className="text-purple-600" />
+                      <Tag size={15} className="text-primary" />
                     ) : (
                       <span>{String(item.name || "Item").trim().slice(0, 2).toUpperCase()}</span>
                     )}
                   </div>
                   <div className="flex-1 truncate pr-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-ink truncate">{item.name}</span>
-                      {item.is_custom && (
-                        <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 text-[9px] font-extrabold uppercase shrink-0">
-                          Custom
-                        </span>
-                      )}
+                      <span className="text-xs font-heading font-bold text-ink truncate">{item.name}</span>
                     </div>
-                    <div className="text-[11px] text-muted tabnum">
+                    <div className="text-[11px] text-muted tabnum font-heading">
                       {rwf(item.sell_price_rwf)} RWF x {qty}
                     </div>
                   </div>
@@ -873,9 +871,9 @@ export default function Sell() {
                     <button
                       type="button"
                       onClick={() => decFromCart(item)}
-                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-900 hover:bg-gray-100"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-card border border-line text-ink hover:border-primary/40 transition cursor-pointer"
                     >
-                      <Minus size={13} />
+                      <Minus size={13} strokeWidth={2.2} />
                     </button>
 
                     <input
@@ -883,16 +881,16 @@ export default function Sell() {
                       min="1"
                       value={qty}
                       onChange={(e) => updateCartQty(item, e.target.value)}
-                      className="w-12 text-center text-xs font-black tabnum text-gray-900 bg-white border border-gray-300 rounded-lg py-1 px-0 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                      className="w-12 text-center text-xs font-heading font-black tabnum text-ink bg-card border border-line rounded-lg py-1 px-0 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                       title="Type quantity manually"
                     />
 
                     <button
                       type="button"
                       onClick={() => addToCart(item)}
-                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800"
+                      className="h-7 w-7 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-hover shadow-orange-sm transition cursor-pointer"
                     >
-                      <Plus size={13} />
+                      <Plus size={13} strokeWidth={2.2} />
                     </button>
                   </div>
                 </div>
@@ -905,26 +903,26 @@ export default function Sell() {
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted">
                 <span>{t("items")}</span>
-                <span className="font-bold tabnum">{totalItems}</span>
+                <span className="font-heading font-bold tabnum text-ink">{totalItems}</span>
               </div>
-              <div className="flex justify-between text-base font-extrabold text-ink">
+              <div className="flex justify-between text-base font-heading font-extrabold text-ink">
                 <span>Total</span>
-                <span className="tabnum text-primary">{rwf(totalAmount)} RWF</span>
+                <span className="tabnum font-black text-ink">{rwf(totalAmount)} RWF</span>
               </div>
             </div>
 
             {/* Payment Mode Selector: Single vs Split Payment */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between font-heading">
                 <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
                   Payment Mode
                 </label>
-                <div className="flex items-center gap-1 bg-paper p-1 rounded-lg border border-line text-[10.5px]">
+                <div className="flex items-center gap-1 bg-card-hover p-1 rounded-lg border border-line text-[10.5px]">
                   <button
                     type="button"
                     onClick={() => setPayMode("single")}
-                    className={`px-2 py-0.5 rounded font-bold transition ${
-                      payMode === "single" ? "bg-primary text-white" : "text-muted hover:text-ink"
+                    className={`px-2.5 py-0.5 rounded-md font-bold transition cursor-pointer ${
+                      payMode === "single" ? "bg-primary text-white font-extrabold shadow-sm" : "text-muted hover:text-ink"
                     }`}
                   >
                     Single
@@ -938,8 +936,8 @@ export default function Sell() {
                         setSplitMomo(String(totalAmount - Math.round(totalAmount / 2)));
                       }
                     }}
-                    className={`px-2 py-0.5 rounded font-bold transition flex items-center gap-1 ${
-                      payMode === "split" ? "bg-primary text-white" : "text-muted hover:text-ink"
+                    className={`px-2.5 py-0.5 rounded-md font-bold transition flex items-center gap-1 cursor-pointer ${
+                      payMode === "split" ? "bg-primary text-white font-extrabold shadow-sm" : "text-muted hover:text-ink"
                     }`}
                   >
                     <Layers size={11} /> Split
@@ -953,21 +951,21 @@ export default function Sell() {
                     <button
                       key={value}
                       onClick={() => setMethod(value)}
-                      className={`flex items-center gap-1.5 rounded-xl border p-2 text-left transition ${
+                      className={`flex items-center gap-1.5 rounded-xl border p-2.5 text-left transition cursor-pointer ${
                         method === value
-                          ? "border-primary bg-primary-xlt text-primary font-bold"
-                          : "border-line bg-paper text-ink font-semibold"
+                          ? "border-primary bg-primary/10 text-primary font-heading font-bold"
+                          : "border-line bg-card-hover/60 text-ink font-medium hover:border-primary/40"
                       }`}
                     >
                       <Icon size={14} />
-                      <span className="text-[11px] truncate">{label}</span>
+                      <span className="text-[11px] truncate font-heading">{label}</span>
                     </button>
                   ))}
                 </div>
               ) : (
                 /* SPLIT PAYMENT CONTROLS */
-                <div className="space-y-2.5 p-3 rounded-2xl border border-primary/30 bg-primary-xlt/30">
-                  <div className="text-[11px] font-bold text-primary flex items-center gap-1">
+                <div className="space-y-2.5 p-3 rounded-xl border border-primary/30 bg-primary/5">
+                  <div className="text-[11px] font-heading font-bold text-primary flex items-center gap-1">
                     <Layers size={13} /> Split Cash + Mobile Money + Debt
                   </div>
 
@@ -992,15 +990,15 @@ export default function Sell() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted font-bold">MoMo Provider:</span>
-                    <div className="flex items-center gap-1">
+                    <span className="text-muted font-bold">MoMo:</span>
+                    <div className="flex items-center gap-1 font-heading">
                       <button
                         type="button"
                         onClick={() => setSplitMomoProvider("mtn_momo")}
-                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition ${
+                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer ${
                           splitMomoProvider === "mtn_momo"
-                            ? "bg-amber-400 text-amber-950 border-amber-500"
-                            : "bg-paper text-muted border-line"
+                            ? "bg-amber-400 text-amber-950 border-amber-500 font-extrabold"
+                            : "bg-card text-muted border-line"
                         }`}
                       >
                         MTN MoMo
@@ -1008,10 +1006,10 @@ export default function Sell() {
                       <button
                         type="button"
                         onClick={() => setSplitMomoProvider("airtel")}
-                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition ${
+                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer ${
                           splitMomoProvider === "airtel"
-                            ? "bg-red-500 text-white border-red-600"
-                            : "bg-paper text-muted border-line"
+                            ? "bg-rose-500 text-white border-rose-600 font-extrabold"
+                            : "bg-card text-muted border-line"
                         }`}
                       >
                         Airtel Money
@@ -1023,21 +1021,21 @@ export default function Sell() {
                   <div className="pt-2 border-t border-line/60 space-y-1 text-xs">
                     <div className="flex justify-between font-semibold">
                       <span>Total Paying Now:</span>
-                      <span className="font-extrabold text-emerald-700 tabnum">{rwf(splitTotalPaid)} RWF</span>
+                      <span className="font-heading font-black text-ink tabnum">{rwf(splitTotalPaid)} RWF</span>
                     </div>
 
                     {splitRemainingDebt > 0 ? (
-                      <div className="flex justify-between font-extrabold text-amber-800 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
-                        <span>Owed as Customer Debt:</span>
+                      <div className="flex justify-between font-heading font-extrabold text-amber-500 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
+                        <span>Owed as Debt:</span>
                         <span className="tabnum">{rwf(splitRemainingDebt)} RWF</span>
                       </div>
                     ) : splitTotalPaid > totalAmount ? (
-                      <div className="flex justify-between font-extrabold text-blue-800 bg-blue-100/70 p-2 rounded-xl border border-blue-300">
+                      <div className="flex justify-between font-heading font-extrabold text-blue-400 bg-blue-500/10 p-2 rounded-xl border border-blue-500/20">
                         <span>Change to Return:</span>
                         <span className="tabnum">{rwf(splitTotalPaid - totalAmount)} RWF</span>
                       </div>
                     ) : (
-                      <div className="flex justify-between font-bold text-emerald-800 text-[11px]">
+                      <div className="flex justify-between font-heading font-bold text-emerald-400 text-[11px]">
                         <span>Status:</span>
                         <span>Fully Paid (0 Debt)</span>
                       </div>
@@ -1049,7 +1047,7 @@ export default function Sell() {
 
             {/* Customer Information Section */}
             <div className="space-y-2">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
+              <label className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">
                 Customer & Credit Info
               </label>
 
@@ -1067,19 +1065,19 @@ export default function Sell() {
                 </datalist>
 
                 {isNewCustomer && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-primary/30 bg-primary-xlt/40 text-xs animate-fadeIn">
-                    <div className="flex items-center gap-1.5 font-bold text-ink">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-primary/30 bg-primary/10 text-xs">
+                    <div className="flex items-center gap-1.5 font-heading font-bold text-ink">
                       <UserPlus size={14} className="text-primary shrink-0" />
                       <span>Save as new customer?</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 font-heading">
                       <button
                         type="button"
                         onClick={() => setSaveAsNewCustomer(true)}
                         className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
                           saveAsNewCustomer
                             ? "bg-primary text-white shadow-sm"
-                            : "bg-paper text-muted border border-line hover:text-ink"
+                            : "bg-card text-muted border border-line hover:text-ink"
                         }`}
                       >
                         Yes
@@ -1089,8 +1087,8 @@ export default function Sell() {
                         onClick={() => setSaveAsNewCustomer(false)}
                         className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
                           !saveAsNewCustomer
-                            ? "bg-gray-800 text-white shadow-sm"
-                            : "bg-paper text-muted border border-line hover:text-ink"
+                            ? "bg-charcoal-700 text-white shadow-sm"
+                            : "bg-card text-muted border border-line hover:text-ink"
                         }`}
                       >
                         No
@@ -1100,8 +1098,8 @@ export default function Sell() {
                 )}
 
                 {(method === "credit" || (payMode === "split" && splitRemainingDebt > 0)) && (
-                  <div className="space-y-2 p-3 rounded-2xl border border-amber-300 bg-amber-50/60">
-                    <div className="text-[11px] font-extrabold text-amber-900 flex items-center gap-1">
+                  <div className="space-y-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
+                    <div className="text-[11px] font-heading font-extrabold text-amber-400 flex items-center gap-1">
                       <AlertCircle size={13} /> Customer Contact Required for Debt
                     </div>
 
@@ -1127,10 +1125,10 @@ export default function Sell() {
             {/* Complete Sale Button */}
             <Button
               full
-              variant="green"
+              variant="primary"
               disabled={!lines.length || saving}
               onClick={handleComplete}
-              className="py-3 text-sm font-extrabold shadow-sm"
+              className="py-3 text-sm font-heading font-black shadow-orange-sm"
             >
               {saving ? "…" : `${t("complete_sale")} · ${rwf(totalAmount)} RWF`}
             </Button>
@@ -1140,27 +1138,27 @@ export default function Sell() {
 
       {/* MOBILE STICKY FLOATING CART BAR (< md) when in 'sell' mode */}
       {viewMode === "sell" && (
-        <div className="md:hidden pointer-events-none fixed inset-x-0 bottom-16 px-4 pb-3 z-10">
+        <div className="md:hidden pointer-events-none fixed inset-x-0 bottom-16 px-4 pb-3 z-20">
           <div
-            className={`pointer-events-auto flex items-center justify-between rounded-2xl bg-ink px-4 py-3 shadow-pop transition ${
-              lines.length ? "opacity-100" : "opacity-70"
+            className={`pointer-events-auto flex items-center justify-between rounded-2xl bg-charcoal-900 border border-line px-4 py-3 shadow-2xl transition ${
+              lines.length ? "opacity-100 ring-1 ring-primary/30" : "opacity-75"
             }`}
           >
             <div>
-              <div className="text-[10.5px] font-semibold text-white/65">
+              <div className="text-[10.5px] font-heading font-bold text-muted uppercase tracking-wider">
                 {lines.length ? `${totalItems} ${t("items")}` : t("cart_empty")}
               </div>
-              <div className="font-heading text-base font-extrabold tabnum text-white">
+              <div className="font-heading text-base font-black tabnum text-ink">
                 {rwf(totalAmount)} RWF
               </div>
             </div>
             <button
               disabled={!lines.length}
               onClick={() => setPayOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary-lt disabled:opacity-50"
+              className="btn-kinetic flex items-center gap-1.5 px-5 py-2.5 text-xs font-heading font-black text-white shadow-orange-sm disabled:opacity-40 cursor-pointer"
             >
               <span>{t("checkout")}</span>
-              <ChevronRight size={14} />
+              <ChevronRight size={15} strokeWidth={2.5} />
             </button>
           </div>
         </div>
@@ -1168,35 +1166,35 @@ export default function Sell() {
 
       {/* MOBILE PAYMENT DRAWER SHEET */}
       <Sheet open={payOpen} onClose={() => setPayOpen(false)} title={t("complete_sale")}>
-        <div className="space-y-4 pt-2 pb-6 max-h-[80vh] overflow-y-auto">
-          <div className="rounded-2xl border border-line bg-paper p-4 space-y-2">
-            <div className="text-xs font-semibold text-muted uppercase tracking-wider">Cart Summary</div>
+        <div className="space-y-4 pt-2 pb-6 max-h-[80vh] overflow-y-auto font-body">
+          <div className="rounded-2xl border border-line bg-card-hover/50 p-4 space-y-2">
+            <div className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Cart Summary</div>
             <div className="max-h-32 overflow-y-auto space-y-2 pr-1">
               {lines.map(({ item, qty }) => (
                 <div key={item.id} className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-ink truncate pr-2">{item.name}</span>
-                  <span className="text-muted font-mono">{qty} x {rwf(item.sell_price_rwf)}</span>
+                  <span className="font-heading font-bold text-ink truncate pr-2">{item.name}</span>
+                  <span className="text-muted font-heading tabnum">{qty} x {rwf(item.sell_price_rwf)}</span>
                 </div>
               ))}
             </div>
-            <div className="pt-2 border-t border-line/60 flex justify-between text-sm font-extrabold text-ink">
+            <div className="pt-2 border-t border-line/60 flex justify-between text-sm font-heading font-black text-ink">
               <span>Total Payable:</span>
-              <span className="text-primary">{rwf(totalAmount)} RWF</span>
+              <span className="tabnum text-ink">{rwf(totalAmount)} RWF</span>
             </div>
           </div>
 
           {/* Mobile Payment Mode Switcher */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between font-heading">
               <label className="text-[11px] font-bold text-muted uppercase tracking-wider">
                 Payment Mode
               </label>
-              <div className="flex items-center gap-1 bg-paper p-1 rounded-lg border border-line text-xs font-semibold">
+              <div className="flex items-center gap-1 bg-card-hover p-1 rounded-lg border border-line text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setPayMode("single")}
-                  className={`px-3 py-1 rounded-lg transition ${
-                    payMode === "single" ? "bg-primary text-white font-bold" : "text-muted"
+                  className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                    payMode === "single" ? "bg-primary text-white font-extrabold shadow-sm" : "text-muted"
                   }`}
                 >
                   Single Payment
@@ -1210,8 +1208,8 @@ export default function Sell() {
                       setSplitMomo(String(totalAmount - Math.round(totalAmount / 2)));
                     }
                   }}
-                  className={`px-3 py-1 rounded-lg transition flex items-center gap-1 ${
-                    payMode === "split" ? "bg-primary text-white font-bold" : "text-muted"
+                  className={`px-3 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
+                    payMode === "split" ? "bg-primary text-white font-extrabold shadow-sm" : "text-muted"
                   }`}
                 >
                   <Layers size={13} /> Split Payment
@@ -1225,21 +1223,21 @@ export default function Sell() {
                   <button
                     key={value}
                     onClick={() => setMethod(value)}
-                    className={`flex items-center gap-2 rounded-xl border p-3 text-left transition ${
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-left transition cursor-pointer ${
                       method === value
-                        ? "border-primary bg-primary-xlt text-primary font-bold"
-                        : "border-line bg-paper text-ink font-semibold"
+                        ? "border-primary bg-primary/10 text-primary font-heading font-bold"
+                        : "border-line bg-card-hover text-ink font-medium hover:border-primary/40"
                     }`}
                   >
                     <Icon size={18} />
-                    <span className="text-xs">{label}</span>
+                    <span className="text-xs font-heading font-semibold">{label}</span>
                   </button>
                 ))}
               </div>
             ) : (
               /* Mobile Split Controls */
-              <div className="space-y-3 p-3.5 rounded-2xl border border-primary/30 bg-primary-xlt/30">
-                <div className="text-xs font-bold text-primary flex items-center gap-1">
+              <div className="space-y-3 p-3.5 rounded-xl border border-primary/30 bg-primary/5">
+                <div className="text-xs font-heading font-bold text-primary flex items-center gap-1">
                   <Layers size={14} /> Split Cash + Mobile Money + Customer Debt
                 </div>
 
@@ -1263,16 +1261,16 @@ export default function Sell() {
                   </Field>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-xs font-heading">
                   <span className="text-muted font-bold">MoMo Provider:</span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setSplitMomoProvider("mtn_momo")}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
                         splitMomoProvider === "mtn_momo"
-                          ? "bg-amber-400 text-amber-950 border-amber-500"
-                          : "bg-paper text-muted border-line"
+                          ? "bg-amber-400 text-amber-950 border-amber-500 font-extrabold"
+                          : "bg-card text-muted border-line"
                       }`}
                     >
                       MTN MoMo
@@ -1280,10 +1278,10 @@ export default function Sell() {
                     <button
                       type="button"
                       onClick={() => setSplitMomoProvider("airtel")}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
                         splitMomoProvider === "airtel"
-                          ? "bg-red-500 text-white border-red-600"
-                          : "bg-paper text-muted border-line"
+                          ? "bg-rose-500 text-white border-rose-600 font-extrabold"
+                          : "bg-card text-muted border-line"
                       }`}
                     >
                       Airtel Money
@@ -1294,21 +1292,21 @@ export default function Sell() {
                 <div className="pt-2 border-t border-line/60 space-y-1 text-xs">
                   <div className="flex justify-between font-semibold">
                     <span>Total Paying Upfront:</span>
-                    <span className="font-extrabold text-emerald-700 tabnum">{rwf(splitTotalPaid)} RWF</span>
+                    <span className="font-heading font-black text-ink tabnum">{rwf(splitTotalPaid)} RWF</span>
                   </div>
 
                   {splitRemainingDebt > 0 ? (
-                    <div className="flex justify-between font-extrabold text-amber-900 bg-amber-100 p-2.5 rounded-xl border border-amber-300">
+                    <div className="flex justify-between font-heading font-extrabold text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
                       <span>Owed as Customer Debt:</span>
                       <span className="tabnum">{rwf(splitRemainingDebt)} RWF</span>
                     </div>
                   ) : splitTotalPaid > totalAmount ? (
-                    <div className="flex justify-between font-extrabold text-blue-900 bg-blue-100 p-2.5 rounded-xl border border-blue-300">
+                    <div className="flex justify-between font-heading font-extrabold text-blue-400 bg-blue-500/10 p-2.5 rounded-xl border border-blue-500/20">
                       <span>Change to Return:</span>
                       <span className="tabnum">{rwf(splitTotalPaid - totalAmount)} RWF</span>
                     </div>
                   ) : (
-                    <div className="flex justify-between font-bold text-emerald-800">
+                    <div className="flex justify-between font-heading font-bold text-emerald-400">
                       <span>Status:</span>
                       <span>Fully Paid (0 Debt)</span>
                     </div>
@@ -1326,8 +1324,8 @@ export default function Sell() {
             />
 
             {(method === "credit" || (payMode === "split" && splitRemainingDebt > 0)) && (
-              <div className="space-y-2 p-3 rounded-2xl border border-amber-300 bg-amber-50/60">
-                <div className="text-[11px] font-extrabold text-amber-900 flex items-center gap-1">
+              <div className="space-y-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
+                <div className="text-[11px] font-heading font-extrabold text-amber-400 flex items-center gap-1">
                   <AlertCircle size={13} /> Phone Number Required for Customer Debt
                 </div>
 
@@ -1351,10 +1349,10 @@ export default function Sell() {
 
           <Button
             full
-            variant="green"
+            variant="primary"
             disabled={saving}
             onClick={handleComplete}
-            className="py-3 text-sm font-extrabold shadow-sm"
+            className="py-3.5 text-sm font-heading font-black shadow-orange-sm"
           >
             {saving ? "…" : `${t("complete_sale")} · ${rwf(totalAmount)} RWF`}
           </Button>

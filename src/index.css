@@ -3,6 +3,24 @@
 @tailwind utilities;
 
 :root {
+  /* Default: Kinetic Precision Dark Mode */
+  --color-paper: #08090C;
+  --color-card: #0F1117;
+  --color-card-hover: #171A24;
+  --color-line: #222634;
+  --color-ink: #F3F4F6;
+  --color-muted: #94A3B8;
+  color-scheme: dark;
+}
+
+html.light {
+  /* Secondary: Light Mode */
+  --color-paper: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-card-hover: #F1F5F9;
+  --color-line: #E2E8F0;
+  --color-ink: #090A0F;
+  --color-muted: #64748B;
   color-scheme: light;
 }
 
@@ -14,41 +32,53 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #F4FBE4 0%, #F9FAFB 40%, #F3F8EA 100%);
-  background-attachment: fixed;
-  font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
-  color: #0F172A;
+  background-color: var(--color-paper);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-/* Luminous card styling utility */
-.luminous-card {
-  background-color: #ffffff;
-  border-radius: 28px;
-  border: 1px solid rgba(229, 231, 235, 0.8);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+/* Kinetic Precision Card utility */
+.kinetic-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* Luminous Lime CTA Button styling utility */
-.luminous-btn {
-  background-color: #D4F06B;
-  color: #0F172A;
-  font-family: "Manrope", sans-serif;
-  font-weight: 700;
+.kinetic-card:hover {
+  border-color: rgba(255, 107, 0, 0.35);
+}
+
+/* Kinetic Orange CTA Button */
+.btn-kinetic {
+  background-color: #FF6B00;
+  color: #FFFFFF;
+  font-family: "Hanken Grotesk", sans-serif;
+  font-weight: 800;
   border-radius: 9999px;
-  transition: all 0.2s ease-in-out;
-}
-.luminous-btn:hover {
-  background-color: #C5E456;
-}
-.luminous-btn:active {
-  transform: scale(0.98);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(255, 107, 0, 0.35);
 }
 
-/* Tabular numbers for money — figures line up in columns */
+.btn-kinetic:hover {
+  background-color: #FF7F1F;
+  box-shadow: 0 6px 22px rgba(255, 107, 0, 0.48);
+  transform: translateY(-1px);
+}
+
+.btn-kinetic:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
+}
+
+/* Tabular figures for authoritative, non-colored money display */
 .tabnum {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* Hide scrollbars on horizontal chip rows */
@@ -60,62 +90,37 @@ body {
   scrollbar-width: none;
 }
 
-/* Big, comfortable tap targets for a shopkeeper at the counter */
+/* Fast tap response on mobile touchscreens */
 button,
 [role="button"] {
   -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes db-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.db-spin {
-  animation: db-spin 0.7s linear infinite;
-}
-
-@keyframes db-rise {
+/* Smooth motion & entry animations */
+@keyframes kinetic-fade-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-.db-rise {
-  animation: db-rise 0.25s ease-out both;
+
+.kinetic-fade-in {
+  animation: kinetic-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes logo-glow {
+@keyframes orange-pulse {
   0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 12px rgba(212, 240, 107, 0.5));
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
   }
   50% {
-    transform: scale(1.08);
-    filter: drop-shadow(0 0 24px rgba(212, 240, 107, 0.8));
+    box-shadow: 0 0 0 6px rgba(255, 107, 0, 0);
   }
 }
 
-.animate-logo-glow {
-  animation: logo-glow 2s ease-in-out infinite;
-}
-
-@keyframes shimmer-progress {
-  0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-shimmer {
-  animation: shimmer-progress 1.5s ease-in-out infinite;
+.orange-pulse {
+  animation: orange-pulse 2s infinite ease-in-out;
 }

@@ -15,9 +15,12 @@ import {
   Globe,
   LogOut,
   ChevronRight,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
+import { useTheme } from "../context/ThemeContext";
 import Logomark from "./Logomark";
 import OfflineBadge from "./OfflineBadge";
 
@@ -48,6 +51,8 @@ const ADMIN_NAV_ITEMS = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { t, lang, toggle } = useLang();
+  const { isDark, toggleTheme } = useTheme();
+
   const isAdmin =
     user?.role === "Admin" ||
     user?.role === "pulse_admin" ||
@@ -57,18 +62,18 @@ export default function Sidebar() {
   const navItems = isAdmin ? ADMIN_NAV_ITEMS : MERCHANT_NAV_ITEMS;
 
   return (
-    <aside className="hidden md:flex w-64 flex-col justify-between border-r border-gray-200/80 bg-white p-5 shrink-0 select-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] h-screen overflow-y-auto font-manrope">
+    <aside className="hidden md:flex w-64 flex-col justify-between border-r border-line bg-card p-5 shrink-0 select-none shadow-card h-screen overflow-y-auto font-body transition-colors duration-200">
       <div className="flex flex-col gap-5">
         {/* Brand Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between pb-3 border-b border-line">
           <div className="flex items-center gap-3">
-            <Logomark size={36} />
+            <Logomark size={36} className="shadow-sm border border-line rounded-xl" />
             <div>
-              <h1 className="font-manrope text-lg font-black text-gray-900 leading-tight">
+              <h1 className="font-heading text-lg font-black text-ink leading-tight tracking-tight">
                 DataBridge
               </h1>
-              <p className="text-[10px] font-extrabold text-purple-600 tracking-wider">
-                {isAdmin ? "ADMIN CONTROL CENTER" : "INZIRA INSIGHTS"}
+              <p className="text-[10px] font-heading font-extrabold text-primary tracking-wider uppercase">
+                {isAdmin ? "Admin Control" : "Kinetic POS"}
               </p>
             </div>
           </div>
@@ -76,8 +81,8 @@ export default function Sidebar() {
 
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1.5">
-          <span className="px-3 text-[10px] font-extrabold tracking-wider text-gray-400 uppercase">
-            {isAdmin ? "Admin Navigation" : "Menu Navigation"}
+          <span className="px-3 text-[10px] font-heading font-extrabold tracking-wider text-muted uppercase">
+            {isAdmin ? "Admin Navigation" : "Navigation"}
           </span>
 
           {navItems.map((item) => {
@@ -90,12 +95,10 @@ export default function Sidebar() {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `group flex items-center justify-between rounded-full px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+                  `group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-heading font-bold transition-all duration-150 ${
                     isActive
-                      ? isAdmin
-                        ? "bg-purple-900 text-white shadow-md shadow-purple-900/20"
-                        : "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-primary text-white shadow-orange-sm font-extrabold"
+                      : "text-muted hover:bg-card-hover hover:text-ink"
                   }`
                 }
               >
@@ -106,19 +109,17 @@ export default function Sidebar() {
                         size={17}
                         className={
                           isActive
-                            ? isAdmin
-                              ? "text-[#D4F06B]"
-                              : "text-gray-900"
-                            : "text-gray-400 group-hover:text-gray-700"
+                            ? "text-white"
+                            : "text-muted group-hover:text-ink"
                         }
-                        strokeWidth={isActive ? 2.4 : 1.8}
+                        strokeWidth={isActive ? 2.5 : 1.8}
                       />
                       <span>{label}</span>
                     </div>
                     {isActive && (
                       <ChevronRight
                         size={14}
-                        className={isAdmin ? "text-[#D4F06B]" : "text-gray-900/80"}
+                        className="text-white/90"
                       />
                     )}
                   </>
@@ -130,36 +131,51 @@ export default function Sidebar() {
       </div>
 
       {/* Footer Section */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-gray-100 mt-4">
-        {/* Language & Network Status */}
+      <div className="flex flex-col gap-3 pt-4 border-t border-line mt-4">
+        {/* Language & Theme & Network Status */}
         <div className="flex items-center justify-between px-1">
-          <button
-            onClick={toggle}
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-extrabold text-gray-800 hover:bg-gray-100 transition"
-          >
-            <Globe size={13} className="text-purple-600" />
-            <span>{lang.toUpperCase()}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggle}
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-card-hover px-2.5 py-1.5 text-[11px] font-heading font-bold text-ink hover:border-primary/40 transition cursor-pointer"
+            >
+              <Globe size={13} className="text-primary" />
+              <span>{lang.toUpperCase()}</span>
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center h-7 w-7 rounded-xl border border-line bg-card-hover text-muted hover:text-primary hover:border-primary/40 transition cursor-pointer"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? (
+                <Sun size={13} className="text-amber-400" />
+              ) : (
+                <Moon size={13} className="text-charcoal-700" />
+              )}
+            </button>
+          </div>
+
           <OfflineBadge />
         </div>
 
         {/* User Card & Logout */}
-        <div className="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-200/60 p-2.5">
+        <div className="flex items-center justify-between rounded-xl bg-card-hover border border-line p-2.5">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D4F06B] font-manrope text-xs font-black text-gray-900">
-              {(user?.name || "Shop")[0].toUpperCase()}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-white font-heading text-xs font-black">
+              {(user?.name || "S")[0].toUpperCase()}
             </div>
             <div className="truncate">
-              <div className="truncate text-xs font-bold text-gray-900">{user?.name || "My Shop"}</div>
-              <div className="truncate text-[10.5px] text-gray-500">{user?.email || "Shopkeeper"}</div>
+              <div className="truncate text-xs font-heading font-bold text-ink">{user?.name || "My Store"}</div>
+              <div className="truncate text-[10.5px] text-muted">{user?.email || "Staff"}</div>
             </div>
           </div>
           <button
             onClick={logout}
             title={t("logout")}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500 transition cursor-pointer"
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
           </button>
         </div>
       </div>

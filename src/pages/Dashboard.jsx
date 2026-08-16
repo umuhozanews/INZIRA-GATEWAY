@@ -1,34 +1,34 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   Bell,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   ChevronRight,
   ShoppingCart,
   Wallet,
   Package,
   Activity,
-  Sparkles,
-  Globe
+  Globe,
+  Sun,
+  Moon,
+  ArrowUpRight,
+  Plus,
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth, checkIsAdmin } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
+import { useTheme } from "../context/ThemeContext";
 import { rwfCompact, rwf, clockTime } from "../lib/format";
-import { bandKey } from "../lib/score";
-import HealthGauge from "../components/HealthGauge";
 import StatCard from "../components/StatCard";
 import Loading from "../components/Loading";
 import NotificationDrawer from "../components/NotificationDrawer";
 import { useData } from "../context/DataContext";
-import { Navigate } from "react-router-dom";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-  const { t, lang, toggle } = useLang();
+  const { t, lang, toggle: toggleLang } = useLang();
+  const { isDark, toggleTheme } = useTheme();
 
   if (isAdmin || checkIsAdmin(user)) {
     return <Navigate to="/admin" replace />;
@@ -111,53 +111,63 @@ export default function Dashboard() {
   const todayExpenses = todayExpensesSum;
   const cash = todayRevenue - todayExpenses;
 
-  // New accounts with 0 sales start with NULL health score & 0 stats
   const hasData = sales.length > 0;
-  const score = hasData ? (s.healthScore?.score ?? 82) : null;
-  const band = hasData ? (s.healthScore?.band ?? "green") : "neutral";
   const lowAlert = (s.alerts || []).find((a) => a.type === "low_stock");
-  const salesChange = hasData ? (s.salesChangePct ?? 18.5) : null;
+  const salesChange = hasData ? (s.salesChangePct ?? null) : null;
 
   const quickActions = [
-    { label: t("record_sale"), icon: ShoppingCart, to: "/sell", color: "bg-gray-900 text-white" },
-    { label: t("add_expense"), icon: Wallet, to: "/expenses?new=1", color: "bg-purple-100 text-purple-700" },
-    { label: t("add_stock"), icon: Package, to: "/stock?new=1", color: "bg-emerald-100 text-emerald-800" },
-    // Temporarily hidden for now — will be re-enabled later
-    // { label: t("health_score"), icon: TrendingUp, to: "/health-score", color: "bg-blue-100 text-blue-800" },
+    { label: t("record_sale"), icon: ShoppingCart, to: "/sell", primary: true },
+    { label: t("add_stock"), icon: Package, to: "/stock?new=1", primary: false },
+    { label: t("add_expense"), icon: Wallet, to: "/expenses?new=1", primary: false },
   ];
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope pb-24 md:pb-8">
-      {/* Top Header & Greeting */}
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="font-manrope text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
-            {t("hello")}
+    <div className="p-3.5 sm:p-5 md:p-8 space-y-4 max-w-5xl mx-auto font-body pb-24 md:pb-8 kinetic-fade-in">
+      {/* Top Header: Shop Title & Fast Utility Controls */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div className="min-w-0">
+          <span className="font-heading text-[10.5px] font-bold text-muted uppercase tracking-widest block">
+            {t("hello")} &bull; POS Terminal
           </span>
-          <h1 className="font-manrope text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
-            {user?.shop_name || shopName || user?.name || "My Shop"}
-            <Sparkles size={16} className="text-purple-600 shrink-0" />
+          <h1 className="font-heading text-xl sm:text-2xl font-black text-ink leading-tight tracking-tight truncate">
+            {user?.shop_name || shopName || user?.name || "My Store"}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Language Translation Toggle Button */}
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Language Switcher */}
           <button
-            onClick={toggle}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer text-xs font-black text-gray-900"
-            title="Switch Language / Hindura Ururimi"
+            onClick={toggleLang}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 active:scale-95 transition-all duration-150 cursor-pointer text-xs font-heading font-extrabold text-ink shadow-sm"
+            title="Switch Language (EN / RW)"
           >
-            <Globe size={15} className="text-purple-600 shrink-0" />
+            <Globe size={14} className="text-primary shrink-0" />
             <span>{lang === "en" ? "EN" : "RW"}</span>
           </button>
 
+          {/* Theme Switcher */}
+          <button
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm text-muted hover:text-primary"
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle Theme"
+          >
+            {isDark ? (
+              <Sun size={16} className="text-amber-400" />
+            ) : (
+              <Moon size={16} className="text-charcoal-700" />
+            )}
+          </button>
+
+          {/* Notifications */}
           <button
             onClick={() => setNotifOpen(true)}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer"
-            aria-label="Alerts & Notifications"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm text-ink"
+            aria-label="Notifications"
           >
-            <Bell size={17} className="text-gray-800" />
+            <Bell size={16} />
             {(s.alerts?.length || 0) > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow">
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-white shadow-orange-sm">
                 {s.alerts.length}
               </span>
             )}
@@ -165,128 +175,128 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Responsive Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
-        {/* Left Column (Key Metrics & Quick Actions) */}
-        <div className="md:col-span-7 lg:col-span-7 space-y-4">
+      {/* Main Kinetic Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+        {/* Left Column (Key Financial Metrics & Actions) */}
+        <div className="md:col-span-7 space-y-4">
           
-          {/* COMPACT Business Health Banner Card — Temporarily hidden
-          <button
-            onClick={() => navigate("/health-score")}
-            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-gray-200/80 bg-white p-3.5 sm:p-4 text-left shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-gray-400 transition duration-150 cursor-pointer active:scale-[0.99] group"
-          >
-            <div className="flex items-center gap-3.5">
-              <HealthGauge score={score} size={64} label={score != null ? t(bandKey(band, score)) : undefined} />
+          {/* Primary Quick POS Action Hero Banner */}
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-card">
+            {/* Subtle kinetic orange gradient trace in dark background */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10" />
+
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-manrope text-[11px] font-extrabold text-gray-900 group-hover:text-purple-600 transition">
-                    {t("health_score")}
-                  </span>
-                  {score != null && (
-                    <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase ${
-                      score >= 80 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                    }`}>
-                      {score >= 80 ? "Excellent" : "Good"}
-                    </span>
-                  )}
-                </div>
-                {score != null ? (
-                  <div className="mt-0.5 flex items-center gap-1">
-                    {salesChange >= 0 ? (
-                      <TrendingUp size={12} className="text-emerald-600" />
-                    ) : (
-                      <TrendingDown size={12} className="text-red-500" />
-                    )}
-                    <span className="text-[11px] font-bold text-emerald-600">
-                      +{salesChange}% {t("vs_last_month")}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-[11px] font-medium text-gray-400">Record your first sale to start tracking business health</p>
-                )}
+                <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider text-primary block">
+                  Quick POS Counter
+                </span>
+                <h2 className="text-lg font-heading font-black text-ink mt-0.5 tracking-tight">
+                  Ready for Next Sale
+                </h2>
+                <p className="text-xs text-muted mt-1 leading-relaxed max-w-xs">
+                  Ring up items with barcode or quick taps and generate instant customer invoices.
+                </p>
               </div>
-            </div>
 
-            <div className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-[11px] font-bold text-gray-800 group-hover:bg-gray-900 group-hover:text-white transition">
-              {t("see_drivers")} <ChevronRight size={13} />
+              <button
+                onClick={() => navigate("/sell")}
+                className="btn-kinetic flex items-center justify-center gap-2 px-6 py-3.5 text-xs sm:text-sm font-heading font-black tracking-wide shrink-0 cursor-pointer select-none"
+              >
+                <ShoppingCart size={17} strokeWidth={2.5} />
+                <span>{t("record_sale")}</span>
+                <ArrowUpRight size={16} strokeWidth={2.5} />
+              </button>
             </div>
-          </button>
-          */}
+          </div>
 
-          {/* Quick Stat Cards */}
+          {/* Financial Performance Stat Cards (High Contrast, Bold, Authoritative) */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
             <StatCard
               label={t("todays_sales")}
               value={rwfCompact(todayRevenue)}
               sub={hasData && salesChange != null ? `+${salesChange}%` : undefined}
               tone={hasData ? "up" : undefined}
+              icon={ShoppingCart}
               onClick={() => navigate("/sell")}
             />
             <StatCard
               label={t("todays_expenses")}
               value={rwfCompact(todayExpenses)}
+              icon={Wallet}
               onClick={() => navigate("/expenses")}
             />
             <StatCard
               label={t("cash_in_till")}
               value={rwfCompact(cash)}
+              icon={Activity}
               onClick={() => navigate("/sell")}
             />
           </div>
 
           {/* Quick Actions Panel */}
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-            <h2 className="font-manrope text-[10.5px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5">
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+            <h2 className="font-heading text-[10.5px] font-extrabold text-muted uppercase tracking-wider mb-2.5">
               {t("quick_actions")}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {quickActions.map(({ label, icon: Icon, to, color }) => (
+            <div className="grid grid-cols-3 gap-2.5">
+              {quickActions.map(({ label, icon: Icon, to, primary }) => (
                 <button
                   key={label}
                   onClick={() => navigate(to)}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200/70 bg-gray-50/60 hover:bg-gray-100 hover:border-gray-400 active:scale-95 transition duration-150 text-left group cursor-pointer"
+                  className={`flex flex-col items-center justify-center text-center p-3 rounded-xl border transition-all duration-150 cursor-pointer active:scale-[0.97] group ${
+                    primary
+                      ? "bg-primary text-white border-primary shadow-orange-sm hover:bg-primary-hover"
+                      : "bg-card-hover border-line hover:border-primary/40 text-ink"
+                  }`}
                 >
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${color} shadow-sm group-hover:scale-105 transition shrink-0`}>
-                    <Icon size={17} />
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg mb-1.5 transition ${
+                    primary ? "bg-white/20 text-white" : "bg-card border border-line text-muted group-hover:text-primary group-hover:border-primary/40"
+                  }`}>
+                    <Icon size={17} strokeWidth={2.2} />
                   </div>
-                  <span className="text-xs font-bold leading-snug text-gray-900 truncate">{label}</span>
+                  <span className={`text-[11px] font-heading font-extrabold leading-snug truncate w-full ${
+                    primary ? "text-white" : "text-ink group-hover:text-primary"
+                  }`}>
+                    {label}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right Column (Alerts & Activity Feed) */}
-        <div className="md:col-span-5 lg:col-span-5 space-y-4">
-          {/* Low Stock Alert */}
+        {/* Right Column (Alerts & Activity Stream) */}
+        <div className="md:col-span-5 space-y-4">
+          {/* Low Stock Alert Pill */}
           {lowAlert && (
             <button
               onClick={() => navigate("/stock")}
-              className="w-full flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-3.5 text-left shadow-sm hover:border-red-400 transition cursor-pointer active:scale-95"
+              className="w-full flex items-center gap-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-left hover:border-amber-500/60 transition cursor-pointer active:scale-[0.98]"
             >
-              <AlertTriangle size={18} className="text-red-500 shrink-0" />
-              <span className="flex-1 text-xs font-bold text-red-900">{lowAlert.message}</span>
-              <ChevronRight size={15} className="text-red-500 shrink-0" />
+              <AlertTriangle size={18} className="text-amber-500 shrink-0" />
+              <span className="flex-1 text-xs font-heading font-bold text-ink truncate">{lowAlert.message}</span>
+              <ChevronRight size={15} className="text-amber-500 shrink-0" />
             </button>
           )}
 
-          {/* Recent Activity Panel */}
-          <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+          {/* Real-time Activity Feed */}
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-manrope text-[10.5px] font-extrabold text-gray-400 uppercase tracking-wider">
+              <h2 className="font-heading text-[10.5px] font-extrabold text-muted uppercase tracking-wider">
                 {t("recent_activity")}
               </h2>
               <button
-                onClick={() => navigate("/sell")}
-                className="text-[11px] font-extrabold text-purple-600 hover:underline"
+                onClick={() => navigate("/invoices")}
+                className="text-[11px] font-heading font-extrabold text-primary hover:underline cursor-pointer"
               >
-                {t("record_sale")}
+                View History
               </button>
             </div>
+
             <div className="space-y-2">
               {(!activities || activities.length === 0) && (!recent || recent.length === 0) ? (
-                <div className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-xs text-gray-400 font-semibold">
-                  No activity recorded yet. Click 'Record Sale' to start!
+                <div className="rounded-xl border border-dashed border-line p-6 text-center text-xs text-muted font-medium">
+                  No activity recorded yet. Tap <span className="text-primary font-bold">Record Sale</span> to start.
                 </div>
               ) : activities && activities.length > 0 ? (
                 activities.slice(0, 6).map((act) => {
@@ -294,50 +304,42 @@ export default function Dashboard() {
                   const isExp = act.entity_type === "expenses" || act.action?.includes("EXPENSE");
                   const isStock = act.entity_type === "stock_items" || act.action?.includes("STOCK");
                   const isInv = act.entity_type === "invoices" || act.action?.includes("INVOICE");
-                  const isUser = act.entity_type === "users" || act.action?.includes("USER") || act.action?.includes("WORKER");
 
                   let label = act.action?.replace(/_/g, " ") || "Activity";
                   let amountStr = null;
-                  let isPositive = false;
 
                   if (isSale) {
-                    label = act.details?.invoice_number || (act.details?.total_amount ? `Sale ${rwf(act.details.total_amount)}` : "Sale Processed");
+                    label = act.details?.invoice_number || (act.details?.total_amount ? `Sale ${rwf(act.details.total_amount)} RWF` : "Sale Processed");
                     if (act.details?.total_amount) {
-                      amountStr = `+${rwf(act.details.total_amount)}`;
-                      isPositive = true;
+                      amountStr = `+${rwf(act.details.total_amount)} RWF`;
                     }
                   } else if (isExp) {
                     label = act.details?.category || act.details?.description || "Expense Logged";
                     if (act.details?.amount) {
-                      amountStr = `-${rwf(act.details.amount)}`;
-                      isPositive = false;
+                      amountStr = `-${rwf(act.details.amount)} RWF`;
                     }
                   } else if (isStock) {
                     label = act.details?.name || act.details?.item_name ? `Stock: ${act.details.name || act.details.item_name}` : "Stock Adjusted";
                   } else if (isInv) {
                     label = act.details?.invoice_number ? `Invoice: ${act.details.invoice_number}` : "Invoice Generated";
-                  } else if (isUser) {
-                    label = `${act.user_name || "Team Member"} signed in`;
                   }
 
                   return (
                     <button
                       key={act.id}
                       onClick={() => handleActivityClick(act)}
-                      className="w-full flex items-center justify-between rounded-2xl border border-gray-200/70 bg-gray-50/60 p-2.5 sm:p-3 text-left hover:bg-purple-50/40 hover:border-purple-200 transition cursor-pointer active:scale-[0.99] group shadow-[0_1px_4px_rgba(0,0,0,0.02)]"
+                      className="w-full flex items-center justify-between rounded-xl border border-line bg-card-hover/60 p-2.5 sm:p-3 text-left hover:border-primary/40 hover:bg-card-hover transition cursor-pointer active:scale-[0.98] group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition shadow-sm ${
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition ${
                             isSale
-                              ? "bg-emerald-100 text-emerald-800 group-hover:scale-105"
+                              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                               : isExp
-                              ? "bg-red-100 text-red-800 group-hover:scale-105"
+                              ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
                               : isStock
-                              ? "bg-amber-100 text-amber-800 group-hover:scale-105"
-                              : isInv
-                              ? "bg-blue-100 text-blue-800 group-hover:scale-105"
-                              : "bg-gray-900 text-white group-hover:scale-105"
+                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                              : "bg-primary/10 text-primary border-primary/20"
                           }`}
                         >
                           {isSale ? (
@@ -352,13 +354,13 @@ export default function Dashboard() {
                         </div>
 
                         <div className="min-w-0 flex-1 pr-2">
-                          <div className="text-xs font-bold text-gray-900 group-hover:text-purple-700 transition truncate capitalize">
+                          <div className="text-xs font-heading font-bold text-ink group-hover:text-primary transition truncate capitalize">
                             {label}
                           </div>
-                          <div className="text-[10px] font-semibold text-gray-400 flex items-center gap-1.5 mt-0.5">
+                          <div className="text-[10px] font-semibold text-muted flex items-center gap-1.5 mt-0.5">
                             <span>{clockTime(act.created_at)}</span>
                             {act.user_name && (
-                              <span className="text-purple-600 font-bold truncate">
+                              <span className="text-muted font-bold truncate">
                                 &bull; {act.user_name}
                               </span>
                             )}
@@ -368,15 +370,11 @@ export default function Dashboard() {
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         {amountStr && (
-                          <span
-                            className={`text-xs font-black tabnum px-2 py-0.5 rounded-md ${
-                              isPositive ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50"
-                            }`}
-                          >
+                          <span className="text-xs font-heading font-black tabnum text-ink">
                             {amountStr}
                           </span>
                         )}
-                        <ChevronRight size={14} className="text-gray-400 group-hover:text-purple-600 transition group-hover:translate-x-0.5" />
+                        <ChevronRight size={14} className="text-muted group-hover:text-primary transition group-hover:translate-x-0.5" />
                       </div>
                     </button>
                   );
@@ -386,25 +384,25 @@ export default function Dashboard() {
                   <button
                     key={sale.id}
                     onClick={() => navigate("/invoices")}
-                    className="w-full flex items-center justify-between rounded-2xl border border-gray-200/70 bg-gray-50/60 p-2.5 text-left hover:bg-gray-100 transition cursor-pointer active:scale-[0.99] group shadow-[0_1px_4px_rgba(0,0,0,0.02)]"
+                    className="w-full flex items-center justify-between rounded-xl border border-line bg-card-hover/60 p-2.5 text-left hover:border-primary/40 hover:bg-card-hover transition cursor-pointer active:scale-[0.98] group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0 group-hover:scale-105 transition shadow-sm">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
                         <ShoppingCart size={14} />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">
+                        <div className="text-xs font-heading font-bold text-ink group-hover:text-primary transition">
                           {sale.customer_name || t("record_sale")}
                           {sale.items_count ? ` · ${sale.items_count} ${t("items")}` : ""}
                         </div>
-                        <div className="text-[10px] font-semibold text-gray-400">{clockTime(sale.created_at)}</div>
+                        <div className="text-[10px] font-semibold text-muted">{clockTime(sale.created_at)}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black tabnum text-emerald-600">
-                        +{rwf(sale.total_amount)}
+                      <span className="text-xs font-heading font-black tabnum text-ink">
+                        {rwf(sale.total_amount)} RWF
                       </span>
-                      <ChevronRight size={14} className="text-gray-400 group-hover:text-purple-600 transition" />
+                      <ChevronRight size={14} className="text-muted group-hover:text-primary transition" />
                     </div>
                   </button>
                 ))
