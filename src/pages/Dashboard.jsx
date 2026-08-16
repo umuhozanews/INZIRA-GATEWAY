@@ -178,10 +178,10 @@ export default function Dashboard() {
         {/* Left Column (Key Financial Metrics & Actions) */}
         <div className="md:col-span-7 space-y-4">
           {/* Financial Performance Stat Cards (High Contrast, Bold, Authoritative) */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <StatCard
               label={t("todays_sales")}
-              value={rwfCompact(todayRevenue)}
+              value={`${rwfCompact(todayRevenue)} RWF`}
               sub={hasData && salesChange != null ? `+${salesChange}%` : undefined}
               tone={hasData ? "up" : undefined}
               icon={ShoppingCart}
@@ -189,13 +189,13 @@ export default function Dashboard() {
             />
             <StatCard
               label={t("todays_expenses")}
-              value={rwfCompact(todayExpenses)}
+              value={`${rwfCompact(todayExpenses)} RWF`}
               icon={Wallet}
               onClick={() => navigate("/expenses")}
             />
             <StatCard
               label={t("cash_in_till")}
-              value={rwfCompact(cash)}
+              value={`${rwfCompact(cash)} RWF`}
               icon={Activity}
               onClick={() => navigate("/sell")}
             />
