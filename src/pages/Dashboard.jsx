@@ -13,6 +13,7 @@ import {
   Moon,
   ArrowUpRight,
   Plus,
+  LogOut,
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth, checkIsAdmin } from "../context/AuthContext";
@@ -26,7 +27,7 @@ import { useData } from "../context/DataContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { t, lang, toggle: toggleLang } = useLang();
   const { isDark, toggleTheme } = useTheme();
 
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [shopName, setShopName] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -164,6 +166,7 @@ export default function Dashboard() {
             onClick={() => setNotifOpen(true)}
             className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm text-ink"
             aria-label="Notifications"
+            title="Notifications"
           >
             <Bell size={16} />
             {(s.alerts?.length || 0) > 0 && (
@@ -171,6 +174,16 @@ export default function Dashboard() {
                 {s.alerts.length}
               </span>
             )}
+          </button>
+
+          {/* Logout Button with Confirmation Guard */}
+          <button
+            onClick={() => setConfirmLogoutOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-red-500/40 hover:text-red-500 text-muted active:scale-95 transition-all duration-150 cursor-pointer shadow-sm"
+            title="Log out"
+            aria-label="Log out"
+          >
+            <LogOut size={16} strokeWidth={2.2} />
           </button>
         </div>
       </div>
@@ -417,6 +430,47 @@ export default function Dashboard() {
         onClose={() => setNotifOpen(false)}
         stats={stats}
       />
+
+      {/* Logout Confirmation Prompt Modal */}
+      {confirmLogoutOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            onClick={() => setConfirmLogoutOpen(false)}
+          />
+          <div className="relative w-full max-w-sm rounded-2xl border border-line bg-card p-5 shadow-2xl space-y-4 kinetic-fade-in font-body">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
+                <LogOut size={20} strokeWidth={2.2} />
+              </div>
+              <div>
+                <h3 className="font-heading text-base font-black text-ink tracking-tight">Log out?</h3>
+                <p className="text-xs text-muted mt-0.5">Are you sure you want to sign out of your account?</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 font-heading">
+              <button
+                type="button"
+                onClick={() => setConfirmLogoutOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-line bg-card-hover text-xs font-bold text-ink hover:border-primary/40 transition active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setConfirmLogoutOpen(false);
+                  await logout();
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 text-xs font-black text-white hover:bg-red-700 transition active:scale-95 shadow-sm cursor-pointer"
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
