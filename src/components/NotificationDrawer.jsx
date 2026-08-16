@@ -27,25 +27,27 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
   const expenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
 
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
+  const [readIds, setReadIds] = useState(new Set());
 
   const s = stats || {};
   const todayRev = Number(s.today_revenue) || sales.reduce((sum, x) => sum + (Number(x.total_amount) || 0), 0);
-  const lowCount = Number(s.low_stock_count) || stock.filter((x) => Number(x.quantity) <= (Number(x.low_stock_threshold) || 5)).length;
+  const lowStockItems = stock.filter((x) => Number(x.quantity) <= (Number(x.low_stock_threshold) || 5));
+  const lowCount = Number(s.low_stock_count) || lowStockItems.length;
   const healthScore = s.health_score !== undefined ? s.health_score : null;
+  const hasData = sales.length > 0 || stock.length > 0 || expenses.length > 0;
 
   // Build notifications dynamically based purely on the active logged-in user's own data
   const notifications = useMemo(() => {
     const list = [];
-    const hasData = sales.length > 0 || stock.length > 0 || expenses.length > 0;
 
     // 1. Stock alerts
     if (lowCount > 0) {
       list.push({
         id: "user-stock-low",
-        type: "stock",
+        type: "alert",
         icon: AlertTriangle,
-        iconBg: "bg-amber-100 text-amber-800 border-amber-200",
+        iconBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
         title: `${lowCount} item${lowCount > 1 ? "s" : ""} low in stock`,
         desc: "Items in your store are reaching minimum thresholds. Restock soon to prevent missed sales.",
         time: "Action needed",
@@ -58,9 +60,9 @@ export default function NotificationDrawer({ open, onClose, stats }) {
     if (todayRev > 0) {
       list.push({
         id: "user-today-sales",
-        type: "sales",
+        type: "analytics",
         icon: TrendingUp,
-        iconBg: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        iconBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
         title: `Today's Revenue: ${rwf(todayRev)} RWF`,
         desc: `Your store has completed ${sales.length} sale${sales.length === 1 ? "" : "s"} today. Great progress!`,
         time: "Today",
@@ -97,7 +99,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
     }
 
     return list;
-  }, [lowStockItems, userSales, todayRevenue, todayExpensesSum, user, hasData, healthScore]);
+  }, [lowCount, todayRev, sales.length, user, hasData, healthScore]);
 
   const markAllRead = () => {
     setReadIds(new Set(notifications.map((n) => n.id)));
@@ -114,38 +116,38 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-manrope">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-body">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Sheet Content Container */}
-      <div className="relative w-full max-w-lg rounded-t-[28px] sm:rounded-[32px] bg-white border border-gray-200 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-card border border-line shadow-2xl overflow-hidden max-h-[90vh] flex flex-col text-ink">
         {/* Top Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-4 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-card/95 px-5 py-4 backdrop-blur font-heading">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-orange-sm">
               <Bell size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-gray-900">
+                <h3 className="text-base font-black text-ink">
                   {t("notifications")}
                 </h3>
                 {unreadCount > 0 && (
-                  <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-black text-white">
+                  <span className="rounded-md bg-primary px-2 py-0.5 text-[10px] font-black text-white shadow-orange-sm">
                     {unreadCount} new
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 font-semibold">{user?.shop_name || "My Shop"} Alerts & Insights</p>
+              <p className="text-xs text-muted font-medium font-body">{user?.shop_name || "My Shop"} Alerts & Insights</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-card-hover border border-line text-muted hover:text-ink transition cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
@@ -160,53 +162,53 @@ export default function NotificationDrawer({ open, onClose, stats }) {
               onClose();
               navigate("/health-score");
             }}
-            className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 bg-white hover:border-gray-400 transition cursor-pointer group shadow-sm"
+            className="flex items-center justify-between p-4 rounded-xl border border-line bg-card-hover hover:border-primary/40 transition cursor-pointer group shadow-card"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 font-heading">
               <HealthGauge score={healthScore} size={48} showLabel={false} />
               <div>
-                <span className="text-xs font-black text-gray-900 group-hover:text-purple-600 transition flex items-center gap-1">
+                <span className="text-xs font-black text-ink group-hover:text-primary transition flex items-center gap-1">
                   Business Health Gauge <ChevronRight size={14} />
                 </span>
-                <span className="text-[11px] text-gray-500 font-semibold block">
+                <span className="text-[11px] text-muted font-medium block font-body">
                   {hasData ? `Score: ${healthScore}/100` : "Tap to calculate health score"}
                 </span>
               </div>
             </div>
-            <span className="text-xs font-extrabold text-purple-600 underline group-hover:no-underline">
+            <span className="text-xs font-heading font-black text-primary underline group-hover:no-underline">
               Analyze
             </span>
           </div>
 
           {/* Tabs Filter & Mark All Read */}
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full border border-gray-200 text-xs font-bold">
+          <div className="flex items-center justify-between gap-2 pt-1 font-heading">
+            <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-line text-xs font-bold">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-3 py-1.5 rounded-full transition ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
                   activeTab === "all"
-                    ? "bg-white text-gray-900 shadow-sm font-black"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
                 All ({notifications.length})
               </button>
               <button
                 onClick={() => setActiveTab("alerts")}
-                className={`px-3 py-1.5 rounded-full transition ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
                   activeTab === "alerts"
-                    ? "bg-white text-gray-900 shadow-sm font-black"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
-                Alerts ({lowStockItems.length})
+                Alerts ({lowCount})
               </button>
               <button
                 onClick={() => setActiveTab("analytics")}
-                className={`px-3 py-1.5 rounded-full transition ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
                   activeTab === "analytics"
-                    ? "bg-white text-gray-900 shadow-sm font-black"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
                 Analytics
@@ -216,7 +218,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="text-[11px] font-extrabold text-purple-600 hover:underline"
+                className="text-[11px] font-heading font-black text-primary hover:underline cursor-pointer"
               >
                 Mark all read
               </button>
@@ -224,11 +226,11 @@ export default function NotificationDrawer({ open, onClose, stats }) {
           </div>
 
           {/* Notifications List */}
-          <div className="space-y-3">
+          <div className="space-y-3 font-body">
             {filteredNotifications.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-dashed border-gray-200 text-xs font-semibold text-gray-400 space-y-2">
-                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-1" />
-                <p className="font-bold text-gray-900">All clear!</p>
+              <div className="p-8 text-center rounded-2xl border border-dashed border-line text-xs font-medium text-muted space-y-2 bg-card-hover">
+                <CheckCircle size={28} className="mx-auto text-emerald-400 mb-1" />
+                <p className="font-heading font-bold text-ink">All clear!</p>
                 <p>No active notifications or low stock alerts for this account.</p>
               </div>
             ) : (
@@ -239,10 +241,10 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                 return (
                   <div
                     key={item.id}
-                    className={`relative p-4 rounded-2xl border transition duration-200 ${
+                    className={`relative p-4 rounded-xl border transition duration-200 ${
                       isRead
-                        ? "bg-gray-50/60 border-gray-100 opacity-80"
-                        : "bg-white border-gray-200 shadow-sm hover:border-gray-400"
+                        ? "bg-card-hover/40 border-line opacity-75"
+                        : "bg-card border-line shadow-card hover:border-primary/40"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -251,25 +253,25 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                       >
                         <Icon size={18} />
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-black text-gray-900">{item.title}</h4>
-                          <span className="text-[10px] font-semibold text-gray-400">
+                      <div className="flex-1 space-y-1 font-body">
+                        <div className="flex items-center justify-between font-heading">
+                          <h4 className="text-xs font-black text-ink">{item.title}</h4>
+                          <span className="text-[10px] font-medium text-muted">
                             {item.time}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 font-medium leading-relaxed">{item.desc}</p>
+                        <p className="text-xs text-muted leading-relaxed">{item.desc}</p>
 
                         {/* Action Link Button */}
                         {item.actionLabel && (
-                          <div className="pt-2">
+                          <div className="pt-2 font-heading">
                             <button
                               onClick={() => {
                                 setReadIds((prev) => new Set(prev).add(item.id));
                                 onClose();
                                 navigate(item.actionTo);
                               }}
-                              className="inline-flex items-center gap-1 text-[11px] font-black text-purple-600 hover:underline cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] font-black text-primary hover:underline cursor-pointer"
                             >
                               {item.actionLabel} <ArrowUpRight size={14} />
                             </button>
@@ -285,10 +287,10 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 bg-white p-4 text-center">
+        <div className="border-t border-line bg-card p-4 text-center font-heading">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-900 transition cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-card-hover border border-line hover:border-primary/40 text-xs font-bold text-ink transition cursor-pointer"
           >
             Close Notification Center
           </button>
