@@ -25,6 +25,8 @@ import { rwf, formatDate } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
 import Loading from "../components/Loading";
 import { useData } from "../context/DataContext";
+import { generatePdfReport } from "../lib/pdfReportGenerator";
+import toast from "react-hot-toast";
 
 function parseSafeDate(dInput) {
   if (!dInput) return null;
@@ -258,7 +260,31 @@ export default function Reports() {
   const shopPhone = shopSettings?.shop_phone || user?.phone || "";
   const shopLocation = shopSettings?.shop_address || user?.district || "Kigali, Rwanda";
 
-  // Handle Clean PDF Export / Print
+  // Handle Clean PDF Download
+  const handleDownloadPdf = (tabToExport = activeTab) => {
+    try {
+      const filename = generatePdfReport({
+        activeTab: tabToExport,
+        dateRangeLabel,
+        shopSettings,
+        user,
+        salesReport,
+        expensesReport,
+        stockReport,
+        taxReport,
+        filteredSales,
+        filteredExpenses,
+        stock: stock || [],
+      });
+      toast.success(`Downloaded ${filename}`);
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Failed to generate PDF. Using Print export fallback.");
+      window.print();
+    }
+  };
+
+  // Handle Clean Browser Print
   const handlePrintReport = () => {
     window.print();
   };
@@ -308,13 +334,24 @@ export default function Reports() {
         <ScreenHeader
           title={t("nav_reports") || "Reports & Books"}
           right={
-            <button
-              onClick={handlePrintReport}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
-            >
-              <Printer size={15} />
-              <span>Export PDF / Print</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleDownloadPdf(activeTab)}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
+                title="Download Official PDF Report"
+              >
+                <Download size={14} />
+                <span>Download PDF</span>
+              </button>
+              <button
+                onClick={handlePrintReport}
+                className="flex items-center gap-1.5 rounded-xl border border-line bg-card hover:bg-card-hover px-3 py-1.5 text-xs font-heading font-bold text-ink transition cursor-pointer active:scale-95"
+                title="Print Report"
+              >
+                <Printer size={14} className="text-primary" />
+                <span className="hidden sm:inline">Print</span>
+              </button>
+            </div>
           }
         />
       </div>
@@ -378,6 +415,15 @@ export default function Reports() {
                   {p.label}
                 </button>
               ))}
+
+              <button
+                onClick={() => handleDownloadPdf("all")}
+                className="px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center gap-1 shrink-0 ml-1"
+                title="Download Full Multi-Section Audit PDF"
+              >
+                <Download size={13} />
+                <span>Full Audit PDF</span>
+              </button>
             </div>
           </div>
 
