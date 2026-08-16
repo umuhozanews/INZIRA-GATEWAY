@@ -45,11 +45,53 @@ export default function BorrowerDirectory() {
         const list = res.data?.smes || res.data || [];
         if (Array.isArray(list) && list.length > 0) {
           setBorrowers(list);
+        } else if (user && (sales.length > 0 || stock.length > 0)) {
+          const userScoreObj = computeHealthScoreFromData({ sales, expenses, stock });
+          const userRev = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
+          const userStockVal = stock.reduce((sum, i) => sum + ((Number(i.quantity) || 0) * (Number(i.unit_cost_rwf || i.cost_price_rwf || 0))), 0);
+          
+          setBorrowers([
+            {
+              id: user.id || "sme_current_user",
+              name: user.name || "Store Owner",
+              shop_name: user.shop_name || "Active Store",
+              district: user.district || "Kigali",
+              sector: user.sector || "General Retail",
+              health_score: userScoreObj.score || 70,
+              monthly_sales: userRev,
+              pre_approved_limit: Math.round(userRev * 0.8),
+              stock_valuation: userStockVal,
+              ebm_verified: Boolean(user.tin_number),
+              phone: user.phone || "N/A",
+            }
+          ]);
         } else {
-          setBorrowers(getMockBorrowers(user, sales, expenses, stock));
+          setBorrowers([]);
         }
       } catch {
-        setBorrowers(getMockBorrowers(user, sales, expenses, stock));
+        if (user && (sales.length > 0 || stock.length > 0)) {
+          const userScoreObj = computeHealthScoreFromData({ sales, expenses, stock });
+          const userRev = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
+          const userStockVal = stock.reduce((sum, i) => sum + ((Number(i.quantity) || 0) * (Number(i.unit_cost_rwf || i.cost_price_rwf || 0))), 0);
+          
+          setBorrowers([
+            {
+              id: user.id || "sme_current_user",
+              name: user.name || "Store Owner",
+              shop_name: user.shop_name || "Active Store",
+              district: user.district || "Kigali",
+              sector: user.sector || "General Retail",
+              health_score: userScoreObj.score || 70,
+              monthly_sales: userRev,
+              pre_approved_limit: Math.round(userRev * 0.8),
+              stock_valuation: userStockVal,
+              ebm_verified: Boolean(user.tin_number),
+              phone: user.phone || "N/A",
+            }
+          ]);
+        } else {
+          setBorrowers([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -63,7 +105,7 @@ export default function BorrowerDirectory() {
       const nameMatch = !q || (b.shop_name || "").toLowerCase().includes(q) || (b.name || "").toLowerCase().includes(q) || (b.phone || "").includes(q);
       const districtMatch = districtFilter === "all" || (b.district || "").toLowerCase() === districtFilter.toLowerCase();
       
-      const score = b.health_score || 75;
+      const score = b.health_score || 0;
       let grade = "B";
       if (score >= 80) grade = "A";
       else if (score < 60) grade = "C";
@@ -76,7 +118,7 @@ export default function BorrowerDirectory() {
 
   const handleInstantPreApprove = (b, e) => {
     e.stopPropagation();
-    toast.success(`🎉 Pre-approved ${rwf(b.pre_approved_limit || 2500000)} RWF credit line for ${b.shop_name || b.name}!`);
+    toast.success(`Pre-approved ${rwf(b.pre_approved_limit || 0)} RWF credit line for ${b.shop_name || b.name}!`);
   };
 
   return (
@@ -89,11 +131,11 @@ export default function BorrowerDirectory() {
               SME Borrower Underwriting Queue
             </h1>
             <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-heading font-black text-primary">
-              {filteredBorrowers.length} active
+              {filteredBorrowers.length} live
             </span>
           </div>
           <p className="text-xs text-muted mt-1">
-            Verified Rwandan SME retail merchants seeking working capital, inventory advances, and SACCO micro-credit.
+            Real merchant stores with live sales records seeking working capital and credit lines.
           </p>
         </div>
 
@@ -157,7 +199,7 @@ export default function BorrowerDirectory() {
                 <th className="py-3.5 px-4">SME Store & Owner</th>
                 <th className="py-3.5 px-4">District / Sector</th>
                 <th className="py-3.5 px-4 text-center">Health Score</th>
-                <th className="py-3.5 px-4 text-right">30D Turnover</th>
+                <th className="py-3.5 px-4 text-right">Turnover</th>
                 <th className="py-3.5 px-4 text-right">Stock Valuation</th>
                 <th className="py-3.5 px-4 text-right">Pre-Approved Offer</th>
                 <th className="py-3.5 px-4 text-center">EBM Tax</th>
@@ -167,13 +209,13 @@ export default function BorrowerDirectory() {
             <tbody className="divide-y divide-line">
               {filteredBorrowers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted font-medium">
-                    No SME borrowers match the selected filter criteria.
+                  <td colSpan={8} className="py-10 text-center text-muted font-medium">
+                    No active SME borrower accounts found matching criteria.
                   </td>
                 </tr>
               ) : (
                 filteredBorrowers.map((b) => {
-                  const score = b.health_score || 78;
+                  const score = b.health_score || 0;
                   const isGradeA = score >= 80;
                   const isGradeB = score >= 60 && score < 80;
 
@@ -214,18 +256,18 @@ export default function BorrowerDirectory() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-black text-ink tabnum">{rwf(b.monthly_sales || 1850000)}</span>
-                        <span className="text-[10px] text-muted block">RWF / mo</span>
+                        <span className="font-black text-ink tabnum">{rwf(b.monthly_sales || 0)}</span>
+                        <span className="text-[10px] text-muted block">RWF</span>
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-bold text-ink tabnum">{rwf(b.stock_valuation || 4200000)}</span>
-                        <span className="text-[10px] text-muted block">RWF collateral</span>
+                        <span className="font-bold text-ink tabnum">{rwf(b.stock_valuation || 0)}</span>
+                        <span className="text-[10px] text-muted block">RWF</span>
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-heading">
-                        <span className="font-black text-primary tabnum">{rwf(b.pre_approved_limit || 2500000)}</span>
-                        <span className="text-[10px] text-muted block">RWF limit</span>
+                        <span className="font-black text-primary tabnum">{rwf(b.pre_approved_limit || 0)}</span>
+                        <span className="text-[10px] text-muted block">RWF</span>
                       </td>
 
                       <td className="py-3.5 px-4 text-center font-heading">
@@ -268,77 +310,4 @@ export default function BorrowerDirectory() {
       </div>
     </div>
   );
-}
-
-function getMockBorrowers(user, sales = [], expenses = [], stock = []) {
-  const userScore = computeHealthScoreFromData({ sales, expenses, stock })?.score || 82;
-  const userRev = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
-
-  return [
-    {
-      id: user?.id || "sme_current_user",
-      name: user?.name || "Merchant Owner",
-      shop_name: user?.shop_name || "Active Inzira Store",
-      district: user?.district || "Nyarugenge",
-      sector: user?.sector || "Retail & Wholesale",
-      health_score: userScore,
-      monthly_sales: Math.max(1200000, userRev || 2400000),
-      pre_approved_limit: Math.max(1500000, Math.round((userRev || 2400000) * 0.8)),
-      stock_valuation: 4200000,
-      ebm_verified: true,
-      phone: user?.phone || "+250 788 123 456",
-    },
-    {
-      id: "sme_kgl_02",
-      name: "Emmanuel Habimana",
-      shop_name: "Kigali Provisions & FMCG Ltd",
-      district: "Gasabo",
-      sector: "Groceries & FMCG",
-      health_score: 88,
-      monthly_sales: 3800000,
-      pre_approved_limit: 4500000,
-      stock_valuation: 8500000,
-      ebm_verified: true,
-      phone: "+250 788 345 678",
-    },
-    {
-      id: "sme_kgl_03",
-      name: "Jeanne Mukamana",
-      shop_name: "Mukamana Hardware & Tools",
-      district: "Nyarugenge",
-      sector: "Hardware & Construction",
-      health_score: 79,
-      monthly_sales: 2900000,
-      pre_approved_limit: 3000000,
-      stock_valuation: 6200000,
-      ebm_verified: true,
-      phone: "+250 788 901 234",
-    },
-    {
-      id: "sme_kgl_04",
-      name: "Patrick Ndayisaba",
-      shop_name: "Ndayisaba Pharmacy & Cosmetics",
-      district: "Kicukiro",
-      sector: "Pharmacy & Health",
-      health_score: 91,
-      monthly_sales: 5200000,
-      pre_approved_limit: 6500000,
-      stock_valuation: 11000000,
-      ebm_verified: true,
-      phone: "+250 788 567 890",
-    },
-    {
-      id: "sme_kgl_05",
-      name: "Alice Uwamahoro",
-      shop_name: "Uwamahoro Fashion & Textiles",
-      district: "Musanze",
-      sector: "Apparel & Textiles",
-      health_score: 68,
-      monthly_sales: 1450000,
-      pre_approved_limit: 1500000,
-      stock_valuation: 3100000,
-      ebm_verified: false,
-      phone: "+250 788 234 567",
-    }
-  ];
 }

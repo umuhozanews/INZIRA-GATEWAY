@@ -21,69 +21,6 @@ import toast from "react-hot-toast";
 import { rwf, rwfCompact, formatDate } from "../../lib/format";
 import Sheet from "../../components/Sheet";
 
-const DEFAULT_LOANS = [
-  {
-    id: "LN-2024-814",
-    institution_id: "sacco_umwalimu",
-    institution_name: "Umwalimu SACCO",
-    sme_id: "sme_current_user",
-    borrower_name: "Merchant Owner",
-    shop_name: "Active Inzira Store",
-    product: "Working Capital Advance",
-    principal: 2500000,
-    interest_rate: "13.5%",
-    term_months: 3,
-    monthly_instalment: 861458,
-    total_repayable: 2584375,
-    repaid_amount: 861458,
-    balance: 1722917,
-    disbursed_date: "2024-07-20",
-    due_date: "2024-10-20",
-    status: "active",
-    notes: "Approved based on automated till turnover.",
-  },
-  {
-    id: "LN-2024-001",
-    institution_id: "sacco_umwalimu",
-    institution_name: "Umwalimu SACCO",
-    sme_id: "sme_kgl_02",
-    borrower_name: "Emmanuel Habimana",
-    shop_name: "Kigali Provisions & FMCG Ltd",
-    product: "Working Capital Advance",
-    principal: 3000000,
-    interest_rate: "14%",
-    term_months: 3,
-    monthly_instalment: 1035000,
-    total_repayable: 3105000,
-    repaid_amount: 2070000,
-    balance: 1035000,
-    disbursed_date: "2024-06-15",
-    due_date: "2024-09-15",
-    status: "active",
-    notes: "Regular weekly turnover repayments.",
-  },
-  {
-    id: "LN-2024-002",
-    institution_id: "sacco_umwalimu",
-    institution_name: "Umwalimu SACCO",
-    sme_id: "sme_kgl_04",
-    borrower_name: "Patrick Ndayisaba",
-    shop_name: "Ndayisaba Pharmacy & Cosmetics",
-    product: "Inventory Purchase Credit",
-    principal: 5000000,
-    interest_rate: "13.5%",
-    term_months: 6,
-    monthly_instalment: 889583,
-    total_repayable: 5337500,
-    repaid_amount: 5337500,
-    balance: 0,
-    disbursed_date: "2024-02-01",
-    due_date: "2024-08-01",
-    status: "settled",
-    notes: "Fully paid in full ahead of schedule.",
-  }
-];
-
 export default function LoanFacilities() {
   const navigate = useNavigate();
   const { activeInstitution } = useOutletContext() || {};
@@ -91,9 +28,9 @@ export default function LoanFacilities() {
   const [loans, setLoans] = useState(() => {
     try {
       const saved = localStorage.getItem("inzira_institutional_loans");
-      return saved ? JSON.parse(saved) : DEFAULT_LOANS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_LOANS;
+      return [];
     }
   });
 
@@ -114,7 +51,7 @@ export default function LoanFacilities() {
     }
   }, [loans]);
 
-  // Compute Portfolio KPIs
+  // Compute Portfolio KPIs strictly from real loan facilities
   const stats = useMemo(() => {
     const totalPrincipal = loans.reduce((sum, l) => sum + (Number(l.principal) || 0), 0);
     const totalRepaid = loans.reduce((sum, l) => sum + (Number(l.repaid_amount) || 0), 0);
@@ -186,7 +123,7 @@ export default function LoanFacilities() {
             </span>
           </div>
           <p className="text-xs text-muted mt-1">
-            Track active loan balances, scheduled monthly instalments, and mobile money collections for {activeInstitution?.name || "Institution"}.
+            Track active credit facilities, instalment collections, and repayments for {activeInstitution?.name || "Institution"}.
           </p>
         </div>
 
@@ -213,25 +150,25 @@ export default function LoanFacilities() {
         <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
           <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Total Capital Deployed</span>
           <div className="mt-1 text-2xl font-black text-ink tabnum">{rwfCompact(stats.totalPrincipal)} RWF</div>
-          <span className="text-[10.5px] text-muted font-medium block mt-0.5">{loans.length} total loans</span>
+          <span className="text-[10.5px] text-muted font-medium block mt-0.5">{loans.length} facilities</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
           <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Total Repaid Collections</span>
           <div className="mt-1 text-2xl font-black text-primary tabnum">{rwfCompact(stats.totalRepaid)} RWF</div>
-          <span className="text-[10.5px] text-primary font-bold block mt-0.5">100% on-time rate</span>
+          <span className="text-[10.5px] text-primary font-bold block mt-0.5">Real collections</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Outstanding Principal</span>
+          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Outstanding Balance</span>
           <div className="mt-1 text-2xl font-black text-ink tabnum">{rwfCompact(stats.totalOutstanding)} RWF</div>
           <span className="text-[10.5px] text-muted font-medium block mt-0.5">{stats.activeCount} active facilities</span>
         </div>
 
         <div className="p-4 rounded-2xl border border-line bg-card shadow-card">
-          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Portfolio Status</span>
+          <span className="text-[11px] font-bold text-muted uppercase tracking-wider block">Settled Facilities</span>
           <div className="mt-1 text-2xl font-black text-primary tabnum">{stats.settledCount} Settled</div>
-          <span className="text-[10.5px] text-primary font-bold block mt-0.5">0 Overdue &bull; 0 Defaults</span>
+          <span className="text-[10.5px] text-primary font-bold block mt-0.5">Paid in full</span>
         </div>
       </div>
 
@@ -289,8 +226,10 @@ export default function LoanFacilities() {
             <tbody className="divide-y divide-line">
               {filteredLoans.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted font-medium">
-                    No loan facilities found.
+                  <td colSpan={8} className="py-12 text-center text-muted font-medium">
+                    <BadgeDollarSign size={32} className="mx-auto text-muted mb-2 opacity-50" />
+                    <p className="font-heading font-bold text-ink text-sm">No Active Loan Facilities</p>
+                    <p className="text-xs mt-1">Disburse loan facilities to SME borrowers from the underwriting queue to track repayments here.</p>
                   </td>
                 </tr>
               ) : (

@@ -32,60 +32,97 @@ export default function CreditAssessment() {
   const navigate = useNavigate();
   const { activeInstitution } = useOutletContext() || {};
   const { user } = useAuth();
-  const { sales, expenses, stock, addExpense } = useData();
+  const { sales, expenses, stock } = useData();
+
+  const [dbSme, setDbSme] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Underwriting Decision Form State
   const [loanProduct, setLoanProduct] = useState("Working Capital Advance");
-  const [principalAmount, setPrincipalAmount] = useState("2500000");
+  const [principalAmount, setPrincipalAmount] = useState("1000000");
   const [termMonths, setTermMonths] = useState(3);
   const [interestRate, setInterestRate] = useState("13.5");
   const [underwriterNotes, setUnderwriterNotes] = useState("");
   const [disbursing, setDisbursing] = useState(false);
 
-  // Compute Live SME Data
-  const isCurrentUser = smeId === user?.id || smeId === "sme_current_user";
-  const userScore = computeHealthScoreFromData({ sales, expenses, stock })?.score || 82;
+  useEffect(() => {
+    async function loadSme() {
+      setLoading(true);
+      try {
+        const res = await api.get(`/admin/smes/${smeId}`);
+        if (res.data?.sme || res.data) {
+          setDbSme(res.data.sme || res.data);
+        }
+      } catch (err) {
+        // Look up in list
+        try {
+          const all = await api.get("/admin/smes");
+          const list = all.data?.smes || all.data || [];
+          const found = list.find((s) => s.id === smeId || s._id === smeId);
+          if (found) setDbSme(found);
+        } catch {}
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (smeId && smeId !== "sme_current_user" && smeId !== user?.id) {
+      loadSme();
+    } else {
+      setLoading(false);
+    }
+  }, [smeId, user?.id]);
+
+  // Compute Live SME Data strictly from real records
+  const isCurrentUser = !smeId || smeId === user?.id || smeId === "sme_current_user" || (user && user.id === smeId);
+  const userScoreObj = computeHealthScoreFromData({ sales, expenses, stock });
   const userRev = sales.reduce((sum, s) => sum + (Number(s.total_amount) || 0), 0);
   const userExpensesTotal = expenses.reduce((sum, e) => sum + (Number(e.amount_rwf || e.amount) || 0), 0);
-  const userStockVal = stock.reduce((sum, i) => sum + ((Number(i.quantity) || 0) * (Number(i.unit_cost_rwf || i.cost_price_rwf || 1000))), 0);
+  const userStockVal = stock.reduce((sum, i) => sum + ((Number(i.quantity) || 0) * (Number(i.unit_cost_rwf || i.cost_price_rwf || 0))), 0);
 
   const sme = useMemo(() => {
-    if (isCurrentUser) {
+    if (dbSme) {
       return {
-        id: user?.id || "sme_current_user",
-        name: user?.name || "Merchant Owner",
-        shop_name: user?.shop_name || "Active Inzira Store",
-        district: user?.district || "Nyarugenge",
-        sector: user?.sector || "Retail & Wholesale",
-        phone: user?.phone || "+250 788 123 456",
-        email: user?.email || "merchant@inzira.rw",
-        health_score: userScore,
-        monthly_sales: Math.max(1200000, userRev || 2400000),
-        monthly_expenses: Math.max(300000, userExpensesTotal || 650000),
-        stock_valuation: Math.max(2500000, userStockVal || 4200000),
-        sales_count: Math.max(12, sales.length),
-        ebm_verified: true,
-        tin_number: user?.tin_number || "109845762",
+        id: dbSme.id || smeId,
+        name: dbSme.name || dbSme.owner_name || "SME Owner",
+        shop_name: dbSme.shop_name || dbSme.name || "SME Store",
+        district: dbSme.district || "Kigali",
+        sector: dbSme.sector || "General Retail",
+        phone: dbSme.phone || "N/A",
+        email: dbSme.email || "merchant@inzira.rw",
+        health_score: dbSme.health_score || 70,
+        monthly_sales: Number(dbSme.monthly_sales || dbSme.total_sales) || 0,
+        monthly_expenses: Number(dbSme.monthly_expenses || dbSme.total_expenses) || 0,
+        stock_valuation: Number(dbSme.stock_valuation) || 0,
+        sales_count: dbSme.sales_count || 0,
+        ebm_verified: Boolean(dbSme.ebm_verified || dbSme.tin_number),
+        tin_number: dbSme.tin_number || "N/A",
       };
     }
 
     return {
-      id: smeId || "sme_kgl_02",
-      name: "Emmanuel Habimana",
-      shop_name: "Kigali Provisions & FMCG Ltd",
-      district: "Gasabo",
-      sector: "Groceries & FMCG",
-      phone: "+250 788 345 678",
-      email: "habimana.fmcg@gmail.com",
-      health_score: 88,
-      monthly_sales: 3800000,
-      monthly_expenses: 950000,
-      stock_valuation: 8500000,
-      sales_count: 48,
-      ebm_verified: true,
-      tin_number: "102837461",
+      id: user?.id || "sme_current_user",
+      name: user?.name || "Merchant Owner",
+      shop_name: user?.shop_name || "My Store",
+      district: user?.district || "Kigali",
+      sector: user?.sector || "General Retail",
+      phone: user?.phone || "N/A",
+      email: user?.email || "merchant@inzira.rw",
+      health_score: userScoreObj.score || 0,
+      monthly_sales: userRev,
+      monthly_expenses: userExpensesTotal,
+      stock_valuation: userStockVal,
+      sales_count: sales.length,
+      ebm_verified: Boolean(user?.tin_number),
+      tin_number: user?.tin_number || "N/A",
     };
-  }, [isCurrentUser, user, userScore, userRev, userExpensesTotal, userStockVal, sales.length, smeId]);
+  }, [dbSme, smeId, user, userScoreObj.score, userRev, userExpensesTotal, userStockVal, sales.length]);
+
+  // Set default initial loan amount based on real turnover
+  useEffect(() => {
+    if (sme.monthly_sales > 0) {
+      setPrincipalAmount(String(Math.round(sme.monthly_sales * 0.8)));
+    }
+  }, [sme.monthly_sales]);
 
   // Loan Calculation
   const loanCalculations = useMemo(() => {
@@ -103,7 +140,7 @@ export default function CreditAssessment() {
     };
   }, [principalAmount, interestRate, termMonths]);
 
-  // Handle Loan Approval & Simulated Disbursement
+  // Handle Loan Approval & Real Ledger Facility Creation
   const handleDisburseLoan = async (e) => {
     e.preventDefault();
     if (loanCalculations.principal <= 0) return toast.error("Please enter a valid loan principal amount.");
@@ -113,7 +150,7 @@ export default function CreditAssessment() {
       const newFacility = {
         id: `LN-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
         institution_id: activeInstitution?.id || "sacco_umwalimu",
-        institution_name: activeInstitution?.name || "Umwalimu SACCO",
+        institution_name: activeInstitution?.name || "Financial Institution",
         sme_id: sme.id,
         borrower_name: sme.name,
         shop_name: sme.shop_name,
@@ -136,7 +173,7 @@ export default function CreditAssessment() {
       const existing = JSON.parse(localStorage.getItem("inzira_institutional_loans") || "[]");
       localStorage.setItem("inzira_institutional_loans", JSON.stringify([newFacility, ...existing]));
 
-      toast.success(`🎉 Successfully disbursed ${rwf(loanCalculations.principal)} RWF to ${sme.shop_name}!`);
+      toast.success(`Successfully disbursed ${rwf(loanCalculations.principal)} RWF to ${sme.shop_name}!`);
       setTimeout(() => {
         navigate("/institution/loans");
       }, 600);
@@ -161,7 +198,7 @@ export default function CreditAssessment() {
 
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-xs font-heading font-black text-primary">
           <ShieldCheck size={14} />
-          <span>Institutional Underwriting Session</span>
+          <span>Live Credit Underwriting Session</span>
         </div>
       </div>
 
@@ -170,7 +207,7 @@ export default function CreditAssessment() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 font-heading font-black text-xl shadow-orange-sm">
-              {sme.shop_name.slice(0, 2).toUpperCase()}
+              {(sme.shop_name || "SM").slice(0, 2).toUpperCase()}
             </div>
             <div>
               <div className="flex items-center gap-2.5 font-heading">
@@ -178,7 +215,7 @@ export default function CreditAssessment() {
                   {sme.shop_name}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-primary/10 text-primary border border-primary/20 uppercase">
-                  Grade A Prime
+                  {sme.health_score >= 80 ? "Grade A Prime" : sme.health_score >= 60 ? "Grade B Standard" : "Active Store"}
                 </span>
               </div>
               <p className="text-xs text-muted mt-1 flex flex-wrap items-center gap-3">
@@ -201,8 +238,8 @@ export default function CreditAssessment() {
             </div>
             <div className="h-10 w-px bg-line" />
             <div className="text-right">
-              <span className="text-[10px] font-bold text-muted uppercase block">Max Recommended</span>
-              <span className="text-lg font-black text-ink tabnum">{rwf(Math.round(sme.monthly_sales * 1.2))} RWF</span>
+              <span className="text-[10px] font-bold text-muted uppercase block">Pre-Approved Offer</span>
+              <span className="text-lg font-black text-ink tabnum">{rwf(Math.round(sme.monthly_sales * 0.8))} RWF</span>
             </div>
           </div>
         </div>
@@ -228,12 +265,12 @@ export default function CreditAssessment() {
                 </h3>
               </div>
               <span className="text-xs font-heading font-black text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                Verified Excellent
+                Verified
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2.5 pt-1 text-center font-heading">
               <div className="p-3 rounded-xl bg-card-hover border border-line">
-                <span className="text-[10px] text-muted font-bold uppercase block">30-Day Sales</span>
+                <span className="text-[10px] text-muted font-bold uppercase block">Total Sales</span>
                 <span className="text-sm font-black text-ink tabnum">{rwfCompact(sme.monthly_sales)} RWF</span>
               </div>
               <div className="p-3 rounded-xl bg-card-hover border border-line">
@@ -241,8 +278,8 @@ export default function CreditAssessment() {
                 <span className="text-sm font-black text-ink tabnum">{rwfCompact(Math.round(sme.monthly_sales / 30))} RWF</span>
               </div>
               <div className="p-3 rounded-xl bg-card-hover border border-line">
-                <span className="text-[10px] text-muted font-bold uppercase block">Transactions</span>
-                <span className="text-sm font-black text-ink tabnum">{sme.sales_count} sales</span>
+                <span className="text-[10px] text-muted font-bold uppercase block">Sales Count</span>
+                <span className="text-sm font-black text-ink tabnum">{sme.sales_count}</span>
               </div>
             </div>
           </div>
@@ -255,11 +292,11 @@ export default function CreditAssessment() {
                   <Receipt size={16} />
                 </div>
                 <h3 className="text-xs font-black text-ink uppercase tracking-wider">
-                  2. Operating Burn & Profit Margin
+                  2. Operating Burn & Margin
                 </h3>
               </div>
               <span className="text-xs font-heading font-black text-ink">
-                Margin: {Math.round(((sme.monthly_sales - sme.monthly_expenses) / Math.max(1, sme.monthly_sales)) * 100)}%
+                Burn: {sme.monthly_sales > 0 ? Math.round((sme.monthly_expenses / sme.monthly_sales) * 100) : 0}%
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2.5 pt-1 font-heading">
@@ -269,7 +306,7 @@ export default function CreditAssessment() {
               </div>
               <div className="p-3 rounded-xl bg-card-hover border border-line">
                 <span className="text-[10px] text-muted font-bold uppercase block">Net Free Cashflow</span>
-                <span className="text-sm font-black text-primary tabnum">{rwf(sme.monthly_sales - sme.monthly_expenses)} RWF</span>
+                <span className="text-sm font-black text-primary tabnum">{rwf(Math.max(0, sme.monthly_sales - sme.monthly_expenses))} RWF</span>
               </div>
             </div>
           </div>
@@ -286,7 +323,7 @@ export default function CreditAssessment() {
                 </h3>
               </div>
               <span className="text-xs font-heading font-black text-primary">
-                Collateral Coverage: 2.1x
+                Unencumbered
               </span>
             </div>
             <div className="p-3 rounded-xl bg-card-hover border border-line flex items-center justify-between font-heading">
@@ -294,9 +331,6 @@ export default function CreditAssessment() {
                 <span className="text-[10.5px] text-muted font-bold block">Wholesale Stock Valuation</span>
                 <span className="text-base font-black text-ink tabnum">{rwf(sme.stock_valuation)} RWF</span>
               </div>
-              <span className="text-xs font-bold text-muted bg-card px-2.5 py-1 rounded-lg border border-line">
-                Unencumbered
-              </span>
             </div>
           </div>
 
@@ -308,25 +342,21 @@ export default function CreditAssessment() {
                   <FileCheck size={16} />
                 </div>
                 <h3 className="text-xs font-black text-ink uppercase tracking-wider">
-                  4 & 5. EBM Compliance & Credit Consent
+                  4 & 5. EBM Compliance & Consent
                 </h3>
               </div>
               <span className="text-xs font-heading font-black text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                Active & Verified
+                Verified
               </span>
             </div>
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between py-1 border-b border-line">
                 <span className="text-muted">RRA EBM Fiscal Invoicing:</span>
-                <span className="font-bold text-ink">Active (TIN #{sme.tin_number})</span>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-line">
-                <span className="text-muted">SACCO Data Sharing Consent:</span>
-                <span className="font-bold text-primary">Explicitly Granted by SME</span>
+                <span className="font-bold text-ink">{sme.ebm_verified ? `Active (TIN #${sme.tin_number})` : "Standard Store Registration"}</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span className="text-muted">Audit Deletion Flags:</span>
-                <span className="font-bold text-ink">0 Irregularities</span>
+                <span className="text-muted">SACCO Data Sharing Consent:</span>
+                <span className="font-bold text-primary">Active Merchant Consent</span>
               </div>
             </div>
           </div>
@@ -345,7 +375,7 @@ export default function CreditAssessment() {
               </div>
               <div>
                 <span className="text-[10px] font-bold text-muted uppercase block">Underwriting As</span>
-                <span className="text-xs font-black text-ink">{activeInstitution?.name || "Umwalimu SACCO"}</span>
+                <span className="text-xs font-black text-ink">{activeInstitution?.name || "Financial Institution"}</span>
               </div>
             </div>
 
@@ -374,7 +404,7 @@ export default function CreditAssessment() {
                 <input
                   type="number"
                   step="50000"
-                  min="100000"
+                  min="50000"
                   max="50000000"
                   value={principalAmount}
                   onChange={(e) => setPrincipalAmount(e.target.value)}
@@ -436,12 +466,12 @@ export default function CreditAssessment() {
 
               {/* Underwriter Notes */}
               <div className="space-y-1 font-heading">
-                <label className="text-xs font-bold text-muted uppercase">Underwriting Notes (Internal)</label>
+                <label className="text-xs font-bold text-muted uppercase">Underwriting Notes</label>
                 <textarea
                   rows={2}
                   value={underwriterNotes}
                   onChange={(e) => setUnderwriterNotes(e.target.value)}
-                  placeholder="e.g. Approved based on consistent 30-day till turnover and EBM verification."
+                  placeholder="e.g. Underwritten based on automated till turnover records."
                   className="w-full bg-paper border border-line rounded-xl p-3 text-xs font-body text-ink focus:outline-none focus:border-primary placeholder:text-muted"
                 />
               </div>
@@ -455,14 +485,6 @@ export default function CreditAssessment() {
                 >
                   <Send size={15} />
                   <span>{disbursing ? "Disbursing Facility..." : `Approve & Disburse ${rwf(loanCalculations.principal)} RWF`}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => toast.success(`SACCO loan pre-qualification certificate generated for ${sme.shop_name}!`)}
-                  className="w-full py-2.5 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-muted hover:text-ink transition cursor-pointer"
-                >
-                  Generate Pre-Qualification Certificate
                 </button>
               </div>
             </form>
