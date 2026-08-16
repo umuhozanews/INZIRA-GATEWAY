@@ -139,10 +139,11 @@ export default function Stock() {
     if (isNaN(qty) || qty <= 0) {
       return toast.error("Please enter a valid positive quantity to add.");
     }
+    const targetItem = restockTarget;
     setRestocking(true);
     try {
-      await addStockQuantity(restockTarget.id, qty);
-      toast.success(`🎉 Added +${qty} ${restockTarget.unit || "units"} to "${restockTarget.name}"!`);
+      await addStockQuantity(targetItem.id, qty, "Quick restock", targetItem);
+      toast.success(`🎉 Added +${qty} ${targetItem.unit || "units"} to "${targetItem.name}"!`);
       setRestockTarget(null);
     } catch {
       toast.error("Failed to update stock quantity.");
