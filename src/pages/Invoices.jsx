@@ -86,7 +86,7 @@ export default function Invoices() {
 
       // 2. Perform client-side inventory restoration and state update
       if (voidSale) {
-        await voidSale(saleId);
+        await voidSale(saleId, voidReason.trim(), voidTarget);
       }
 
       toast.success(`Invoice ${voidTarget.invoice_number || targetIdentifier} voided, items restored to inventory.`);

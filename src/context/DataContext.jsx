@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import toast from "react-hot-toast";
 import api from "../lib/api";
 import { useAuth } from "./AuthContext";
+import { rwf } from "../lib/format";
 
 const DataContext = createContext(null);
 
@@ -18,6 +19,7 @@ export function DataProvider({ children }) {
   const STOCK_KEY = `db_stock_${userKey}`;
   const SALES_KEY = `db_sales_${userKey}`;
   const EXPENSES_KEY = `db_expenses_${userKey}`;
+  const NOTIFS_KEY = `db_notifications_${userKey}`;
 
   // Load account-specific stock
   const [stock, setStock] = useState(() => {
@@ -49,6 +51,16 @@ export function DataProvider({ children }) {
     }
   });
 
+  // Load account-specific persistent notifications (deletions, audits, system alerts)
+  const [persistentNotifs, setPersistentNotifs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`db_notifications_${userKey}`);
+      return saved !== null ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [loading, setLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
@@ -58,28 +70,57 @@ export function DataProvider({ children }) {
       const savedStock = localStorage.getItem(STOCK_KEY);
       const savedSales = localStorage.getItem(SALES_KEY);
       const savedExpenses = localStorage.getItem(EXPENSES_KEY);
+      const savedNotifs = localStorage.getItem(NOTIFS_KEY);
 
       setStock(savedStock !== null ? JSON.parse(savedStock) : []);
       setSales(savedSales !== null ? JSON.parse(savedSales) : []);
       setExpenses(savedExpenses !== null ? JSON.parse(savedExpenses) : []);
+      setPersistentNotifs(savedNotifs !== null ? JSON.parse(savedNotifs) : []);
     } catch (e) {
       console.error("Failed to load user-scoped data:", e);
     }
-  }, [userKey, STOCK_KEY, SALES_KEY, EXPENSES_KEY]);
+  }, [userKey, STOCK_KEY, SALES_KEY, EXPENSES_KEY, NOTIFS_KEY]);
 
   // Method to completely reset all data state for a fresh new account
   const resetData = useCallback(() => {
     setStock([]);
     setSales([]);
     setExpenses([]);
+    setPersistentNotifs([]);
     try {
       localStorage.setItem(STOCK_KEY, JSON.stringify([]));
       localStorage.setItem(SALES_KEY, JSON.stringify([]));
       localStorage.setItem(EXPENSES_KEY, JSON.stringify([]));
+      localStorage.setItem(NOTIFS_KEY, JSON.stringify([]));
     } catch (e) {
       console.error(e);
     }
-  }, [STOCK_KEY, SALES_KEY, EXPENSES_KEY]);
+  }, [STOCK_KEY, SALES_KEY, EXPENSES_KEY, NOTIFS_KEY]);
+
+  const recordNotification = useCallback((notif) => {
+    const entry = {
+      id: notif.id || `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      type: notif.type || "alert", // 'deletion' | 'alert' | 'analytics'
+      category: notif.category || "general",
+      title: notif.title || "Notification",
+      desc: notif.desc || "",
+      actionLabel: notif.actionLabel || null,
+      actionTo: notif.actionTo || null,
+      meta: notif.meta || {},
+      created_at: notif.created_at || new Date().toISOString(),
+      user_name: user?.name || "Store Owner",
+    };
+    setPersistentNotifs((prev) => [entry, ...prev.slice(0, 49)]); // keep latest 50
+    return entry;
+  }, [user]);
+
+  const deleteNotification = useCallback((id) => {
+    setPersistentNotifs((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    setPersistentNotifs([]);
+  }, []);
 
   // Sync state to user-scoped localStorage whenever it changes
   useEffect(() => {
@@ -105,6 +146,14 @@ export function DataProvider({ children }) {
       console.error("Failed to save expenses to localStorage:", e);
     }
   }, [expenses, EXPENSES_KEY]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(NOTIFS_KEY, JSON.stringify(persistentNotifs));
+    } catch (e) {
+      console.error("Failed to save notifications to localStorage:", e);
+    }
+  }, [persistentNotifs, NOTIFS_KEY]);
 
   // Real-Time Cross-Tab / Cross-Window Sync via Web Storage Listener
   useEffect(() => {
@@ -373,8 +422,8 @@ export function DataProvider({ children }) {
   };
 
   // Void a sale and restore inventory quantity
-  const voidSale = async (saleId) => {
-    const saleToVoid = sales.find(s => String(s.id) === String(saleId) || (s.invoice_number && s.invoice_number === saleId));
+  const voidSale = async (saleId, voidReason = "Customer cancellation", voidTarget = null) => {
+    const saleToVoid = voidTarget || sales.find(s => String(s.id) === String(saleId) || (s.invoice_number && s.invoice_number === saleId));
     if (saleToVoid && Array.isArray(saleToVoid.items)) {
       setStock(prevStock => {
         return prevStock.map(item => {
@@ -395,8 +444,26 @@ export function DataProvider({ children }) {
 
     setSales(prev => prev.filter(s => String(s.id) !== String(saleId) && s.invoice_number !== saleId));
 
+    if (saleToVoid) {
+      const invNum = saleToVoid.invoice_number || `INV-${saleToVoid.id || saleId}`;
+      const amount = Number(saleToVoid.total_amount) || 0;
+      recordNotification({
+        type: "deletion",
+        category: "invoice_voided",
+        title: "Invoice Voided & Deleted",
+        desc: `Invoice #${invNum} (${rwf(amount)} RWF) was voided and removed. Reason: "${voidReason || "Customer cancellation"}". Sold items were restored to inventory.`,
+        actionLabel: "View Invoices",
+        actionTo: "/invoices",
+        meta: {
+          invoice_number: invNum,
+          total_amount: amount,
+          void_reason: voidReason
+        }
+      });
+    }
+
     try {
-      await api.post(`/sales/${saleId}/void`, { void_reason: "Customer cancellation" });
+      await api.post(`/sales/${saleId}/void`, { void_reason: voidReason || "Customer cancellation" });
       setTimeout(() => refreshAll(true), 1000);
     } catch (err) {
       console.warn("[DataContext] Async sale void fallback:", err.message);
@@ -563,8 +630,27 @@ export function DataProvider({ children }) {
   };
 
   // Delete Stock Item Action
-  const deleteStockItem = async (id) => {
+  const deleteStockItem = async (id, itemData = null) => {
+    const itemToDelete = itemData || stock.find(item => String(item.id) === String(id));
     setStock(prev => prev.filter(item => String(item.id) !== String(id)));
+
+    if (itemToDelete) {
+      recordNotification({
+        type: "deletion",
+        category: "stock_deletion",
+        title: "Stock Item Deleted",
+        desc: `"${itemToDelete.name}" (${itemToDelete.quantity || 0} ${itemToDelete.unit || "units"}) was deleted from inventory.`,
+        actionLabel: "View Stock",
+        actionTo: "/stock",
+        meta: {
+          itemId: itemToDelete.id,
+          name: itemToDelete.name,
+          quantity: itemToDelete.quantity,
+          unit: itemToDelete.unit
+        }
+      });
+    }
+
     try {
       await api.delete(`/stock/${id}`);
       setTimeout(() => refreshAll(true), 400);
@@ -619,8 +705,26 @@ export function DataProvider({ children }) {
   };
 
   // Delete Expense Action
-  const deleteExpense = async (id) => {
+  const deleteExpense = async (id, expData = null) => {
+    const expToDelete = expData || expenses.find(exp => String(exp.id) === String(id));
     setExpenses(prev => prev.filter(exp => String(exp.id) !== String(id)));
+
+    if (expToDelete) {
+      const amount = Number(expToDelete.amount || expToDelete.amount_rwf) || 0;
+      recordNotification({
+        type: "deletion",
+        category: "expense_deletion",
+        title: "Expense Entry Deleted",
+        desc: `Expense "${expToDelete.title || expToDelete.category || "Expense"}" (${rwf(amount)} RWF) was deleted.`,
+        actionLabel: "View Expenses",
+        actionTo: "/expenses",
+        meta: {
+          expenseId: expToDelete.id,
+          amount
+        }
+      });
+    }
+
     try {
       await api.delete(`/expenses/${id}`);
       setTimeout(() => refreshAll(true), 1000);
@@ -642,6 +746,10 @@ export function DataProvider({ children }) {
         stock,
         sales,
         expenses,
+        notifications: persistentNotifs,
+        recordNotification,
+        deleteNotification,
+        clearNotifications,
         loading,
         isOnline,
         pendingSyncCount,

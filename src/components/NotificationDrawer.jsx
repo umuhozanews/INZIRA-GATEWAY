@@ -11,8 +11,10 @@ import {
   ChevronRight,
   CheckCircle,
   Activity,
+  Trash2,
+  FileText,
 } from "lucide-react";
-import { rwf, rwfCompact } from "../lib/format";
+import { rwf, rwfCompact, formatDate, clockTime } from "../lib/format";
 import HealthGauge from "./HealthGauge";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
@@ -26,6 +28,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   const stock = Array.isArray(dataCtx.stock) ? dataCtx.stock : [];
   const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
   const expenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
+  const persistentNotifs = Array.isArray(dataCtx.notifications) ? dataCtx.notifications : [];
 
   const [activeTab, setActiveTab] = useState("all");
   const [readIds, setReadIds] = useState(new Set());
@@ -37,15 +40,36 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   const healthScore = s.health_score !== undefined ? s.health_score : null;
   const hasData = sales.length > 0 || stock.length > 0 || expenses.length > 0;
 
-  // Build notifications dynamically based purely on the active logged-in user's own data
+  // Build notifications dynamically based on active merchant data + recorded deletions/audits
   const notifications = useMemo(() => {
     const list = [];
 
-    // 1. Stock alerts
+    // 1. Persistent Logged Deletions & Events (Stock, Invoices, Expenses)
+    persistentNotifs.forEach((item) => {
+      const isInvoice = item.category === "invoice_voided" || item.title?.toLowerCase().includes("invoice");
+      const isStock = item.category === "stock_deletion" || item.title?.toLowerCase().includes("stock");
+      
+      list.push({
+        id: item.id,
+        type: item.type || "deletion",
+        category: item.category || (isInvoice ? "invoice_voided" : isStock ? "stock_deletion" : "deletion"),
+        icon: isInvoice ? FileText : Trash2,
+        iconBg: "bg-card-hover text-primary border border-line",
+        title: item.title,
+        desc: item.desc,
+        time: item.created_at ? `${formatDate(item.created_at)} ${clockTime(item.created_at)}` : "Recently",
+        actionLabel: item.actionLabel || (isInvoice ? "View Invoices" : "View Stock"),
+        actionTo: item.actionTo || (isInvoice ? "/invoices" : "/stock"),
+        rawDate: item.created_at ? new Date(item.created_at).getTime() : 0,
+      });
+    });
+
+    // 2. Stock alerts
     if (lowCount > 0) {
       list.push({
         id: "user-stock-low",
         type: "alert",
+        category: "stock_alert",
         icon: AlertTriangle,
         iconBg: "bg-primary/10 text-primary border border-primary/20",
         title: `${lowCount} item${lowCount > 1 ? "s" : ""} low in stock`,
@@ -53,14 +77,16 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         time: "Action needed",
         actionLabel: "View Stock",
         actionTo: "/stock",
+        rawDate: Date.now() + 1000,
       });
     }
 
-    // 2. Sales Summary / Welcome for Logged-in Merchant
+    // 3. Sales Summary / Welcome for Logged-in Merchant
     if (todayRev > 0) {
       list.push({
         id: "user-today-sales",
         type: "analytics",
+        category: "sales_summary",
         icon: TrendingUp,
         iconBg: "bg-primary/10 text-primary border border-primary/20",
         title: `Today's Revenue: ${rwf(todayRev)} RWF`,
@@ -68,11 +94,13 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         time: "Today",
         actionLabel: "View Sales",
         actionTo: "/sell",
+        rawDate: Date.now(),
       });
     } else {
       list.push({
         id: "user-welcome-start",
         type: "analytics",
+        category: "welcome",
         icon: Activity,
         iconBg: "bg-primary/10 text-primary border-primary/20",
         title: `Welcome, ${user?.name || "Merchant"}!`,
@@ -80,14 +108,16 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         time: "Just now",
         actionLabel: "Record Sale",
         actionTo: "/sell",
+        rawDate: 0,
       });
     }
 
-    // 3. Dynamic Health Score Status for Logged-In User
+    // 4. Dynamic Health Score Status for Logged-In User
     if (hasData && healthScore !== null) {
       list.push({
         id: "user-health-score",
         type: "analytics",
+        category: "health_score",
         icon: TrendingUp,
         iconBg: "bg-primary/10 text-primary border-primary/20",
         title: `Business Health Score: ${healthScore}/100`,
@@ -95,17 +125,22 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         time: "Today",
         actionLabel: "View Health Score",
         actionTo: "/health-score",
+        rawDate: Date.now() - 1000,
       });
     }
 
-    return list;
-  }, [lowCount, todayRev, sales.length, user, hasData, healthScore]);
+    return list.sort((a, b) => (b.rawDate || 0) - (a.rawDate || 0));
+  }, [persistentNotifs, lowCount, todayRev, sales.length, user, hasData, healthScore]);
 
   const markAllRead = () => {
     setReadIds(new Set(notifications.map((n) => n.id)));
   };
 
+  const deletionsCount = notifications.filter((n) => n.type === "deletion").length;
+  const alertsCount = notifications.filter((n) => n.type === "alert").length;
+
   const filteredNotifications = notifications.filter((n) => {
+    if (activeTab === "deletions") return n.type === "deletion";
     if (activeTab === "alerts") return n.type === "alert";
     if (activeTab === "analytics") return n.type === "analytics";
     return true;
@@ -142,7 +177,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted font-medium font-body">{user?.shop_name || "My Shop"} Alerts & Insights</p>
+              <p className="text-xs text-muted font-medium font-body">{user?.shop_name || "My Shop"} Alerts, Audits & Insights</p>
             </div>
           </div>
           <button
@@ -182,10 +217,10 @@ export default function NotificationDrawer({ open, onClose, stats }) {
 
           {/* Tabs Filter & Mark All Read */}
           <div className="flex items-center justify-between gap-2 pt-1 font-heading">
-            <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-line text-xs font-bold">
+            <div className="flex items-center gap-1 bg-paper p-1 rounded-xl border border-line text-xs font-bold overflow-x-auto">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeTab === "all"
                     ? "bg-primary text-white shadow-orange-sm font-black"
                     : "text-muted hover:text-ink hover:bg-card-hover"
@@ -194,18 +229,28 @@ export default function NotificationDrawer({ open, onClose, stats }) {
                 All ({notifications.length})
               </button>
               <button
+                onClick={() => setActiveTab("deletions")}
+                className={`px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                  activeTab === "deletions"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
+                }`}
+              >
+                Deletions ({deletionsCount})
+              </button>
+              <button
                 onClick={() => setActiveTab("alerts")}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeTab === "alerts"
                     ? "bg-primary text-white shadow-orange-sm font-black"
                     : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
-                Alerts ({lowCount})
+                Alerts ({alertsCount})
               </button>
               <button
                 onClick={() => setActiveTab("analytics")}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                className={`px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeTab === "analytics"
                     ? "bg-primary text-white shadow-orange-sm font-black"
                     : "text-muted hover:text-ink hover:bg-card-hover"

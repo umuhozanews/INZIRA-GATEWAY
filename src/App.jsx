@@ -57,6 +57,14 @@ const AdminAudit = lazyWithRetry(() => import("./pages/admin/AdminAudit"));
 const AdminDeletionLogs = lazyWithRetry(() => import("./pages/admin/AdminDeletionLogs"));
 const AdminSettings = lazyWithRetry(() => import("./pages/admin/AdminSettings"));
 
+// Dedicated Financial Institution & SACCO Lending Partner Portal
+const InstitutionLayout = lazyWithRetry(() => import("./layouts/InstitutionLayout"));
+const InstitutionOverview = lazyWithRetry(() => import("./pages/institution/InstitutionOverview"));
+const BorrowerDirectory = lazyWithRetry(() => import("./pages/institution/BorrowerDirectory"));
+const CreditAssessment = lazyWithRetry(() => import("./pages/institution/CreditAssessment"));
+const LoanFacilities = lazyWithRetry(() => import("./pages/institution/LoanFacilities"));
+const InstitutionSettings = lazyWithRetry(() => import("./pages/institution/InstitutionSettings"));
+
 export default function App() {
   return (
     <Suspense fallback={<Loading />}>
@@ -88,6 +96,22 @@ export default function App() {
           <Route path="audit" element={<AdminAudit />} />
           <Route path="deletion-logs" element={<AdminDeletionLogs />} />
           <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
+        {/* Dedicated Financial Institution / SACCO Lending Portal Routes */}
+        <Route
+          path="/institution"
+          element={
+            <ProtectedRoute>
+              <InstitutionLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<InstitutionOverview />} />
+          <Route path="borrowers" element={<BorrowerDirectory />} />
+          <Route path="assessment/:smeId" element={<CreditAssessment />} />
+          <Route path="loans" element={<LoanFacilities />} />
+          <Route path="settings" element={<InstitutionSettings />} />
         </Route>
 
         {/* SME Merchant Store Pages wrapped inside AppLayout */}

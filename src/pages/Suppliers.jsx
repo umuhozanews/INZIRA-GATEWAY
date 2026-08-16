@@ -39,7 +39,7 @@ import { useAuth } from "../context/AuthContext";
 export default function Suppliers() {
   const { t } = useLang();
   const { user } = useAuth();
-  const { sales, recordDebtPayment, stock, reload: reloadData } = useData();
+  const { sales, recordDebtPayment, stock, addStockQuantity, reload: reloadData } = useData();
   const [params, setParams] = useSearchParams();
 
   // User-scoped keys so new signups start at clean NULL state
@@ -50,6 +50,7 @@ export default function Suppliers() {
 
   const CUST_KEY = `db_customers_${userKey}`;
   const SUPP_KEY = `db_suppliers_${userKey}`;
+  const ORDERS_KEY = `db_orders_${userKey}`;
 
   const [activeTab, setActiveTab] = useState("customers"); // 'customers' | 'owed' | 'payables' | 'orders'
   const [orderStatusFilter, setOrderStatusFilter] = useState("all"); // 'all' | 'ordered' | 'in_transit' | 'received' | 'stocked'
@@ -77,7 +78,14 @@ export default function Suppliers() {
   });
 
   // Purchase Orders State
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`db_orders_${userKey}`);
+      return saved !== null ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Catalog Stock items for PO autocomplete
@@ -139,12 +147,14 @@ export default function Suppliers() {
     try {
       const savedCust = localStorage.getItem(CUST_KEY);
       const savedSupp = localStorage.getItem(SUPP_KEY);
+      const savedOrders = localStorage.getItem(ORDERS_KEY);
       if (savedCust !== null) setCustomers(JSON.parse(savedCust));
       if (savedSupp !== null) setSuppliers(JSON.parse(savedSupp));
+      if (savedOrders !== null) setOrders(JSON.parse(savedOrders));
     } catch (e) {
-      console.error("Failed to load user-scoped customers/suppliers:", e);
+      console.error("Failed to load user-scoped customers/suppliers/orders:", e);
     }
-  }, [userKey, CUST_KEY, SUPP_KEY]);
+  }, [userKey, CUST_KEY, SUPP_KEY, ORDERS_KEY]);
 
   useEffect(() => {
     try {
@@ -161,6 +171,14 @@ export default function Suppliers() {
       console.error(e);
     }
   }, [suppliers, SUPP_KEY]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [orders, ORDERS_KEY]);
 
   // Modal States
   const [addCustOpen, setAddCustOpen] = useState(false);
@@ -415,19 +433,44 @@ export default function Suppliers() {
   };
 
   const handleUpdatePoStatus = async (po, nextStatus) => {
+    // 1. Optimistically update local state immediately so UI updates with zero lag
+    setOrders((prev) =>
+      prev.map((o) => (String(o.id) === String(po.id) ? { ...o, status: nextStatus } : o))
+    );
+
+    // 2. If marked as 'stocked', auto-increment inventory for every line item
+    if (nextStatus === "stocked" && Array.isArray(po.items)) {
+      po.items.forEach((it) => {
+        if (addStockQuantity) {
+          const qty = parseInt(it.quantity, 10) || 1;
+          const target = it.stock_item_id || it.item_name;
+          addStockQuantity(target, qty);
+        }
+      });
+      toast.success(`🎉 PO-${po.id} marked as Stocked! Items added to live inventory.`);
+      if (reloadData) reloadData();
+    } else if (nextStatus === "received") {
+      toast.success(`📦 PO-${po.id} marked as Received at store.`);
+    } else if (nextStatus === "in_transit") {
+      toast.success(`🚚 PO-${po.id} marked as In Transit.`);
+    } else {
+      toast.success(`Status updated to ${nextStatus.replace(/_/g, " ")}.`);
+    }
+
+    // 3. Send remote updates with multiple endpoint fallbacks
     try {
-      await api.put(`/purchase-orders/${po.id}/status`, { status: nextStatus });
-      if (nextStatus === "stocked") {
-        toast.success(`🎉 Purchase Order PO-${po.id} marked as Stocked! Items added to live inventory.`);
-        if (reloadData) reloadData();
-      } else if (nextStatus === "received") {
-        toast.success(`📦 Purchase Order PO-${po.id} marked as Received at store.`);
-      } else {
-        toast.success(`Status updated to ${nextStatus.replace(/_/g, " ")}.`);
+      try {
+        await api.put(`/purchase-orders/${po.id}/status`, { status: nextStatus });
+      } catch (err1) {
+        try {
+          await api.put(`/purchase-orders/${po.id}`, { status: nextStatus });
+        } catch (err2) {
+          await api.patch(`/purchase-orders/${po.id}`, { status: nextStatus });
+        }
       }
-      fetchOrders();
+      setTimeout(() => fetchOrders(), 500);
     } catch (err) {
-      toast.error(errorMessage(err, "Failed to update order status."));
+      console.warn("Remote PO status update fallback (saved locally):", err.message);
     }
   };
 

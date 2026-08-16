@@ -163,8 +163,8 @@ export default function Stock() {
   const handleDeleteStockClick = async (item) => {
     if (window.confirm(`Are you sure? This action will be logged.\n\nDelete "${item.name}" from inventory?`)) {
       try {
-        await deleteStockItem(item.id);
-        toast.success(`"${item.name}" removed from stock and recorded in permanent deletion logs.`);
+        await deleteStockItem(item.id, item);
+        toast.success(`"${item.name}" removed from stock and recorded in notifications.`);
       } catch {
         toast.error("Failed to delete stock item.");
       }

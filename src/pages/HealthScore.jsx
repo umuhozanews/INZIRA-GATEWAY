@@ -214,14 +214,15 @@ export default function HealthScore() {
               <Button
                 full
                 variant="primary"
-                className="py-3.5 font-black shadow-orange-sm"
-                onClick={() =>
-                  toast.success(lang === "rw" ? "Ubu buryo buraza vuba" : "Sharing coming soon")
-                }
+                className="py-3.5 font-black shadow-orange-sm cursor-pointer"
+                onClick={() => {
+                  toast.success("Opening SACCO Institutional Underwriting Portal...");
+                  navigate(`/institution/assessment/${user?.id || "sme_current_user"}`);
+                }}
               >
                 <CheckCircle2 size={16} /> {t("share_sacco")}
               </Button>
-              <Button full variant="paper" className="py-3.5 font-bold" disabled={calculating} onClick={calculate}>
+              <Button full variant="paper" className="py-3.5 font-bold cursor-pointer" disabled={calculating} onClick={calculate}>
                 <RefreshCw size={16} className={calculating ? "animate-spin" : ""} /> {calculating ? "…" : t("recalculate")}
               </Button>
             </div>
