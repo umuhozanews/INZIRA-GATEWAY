@@ -382,7 +382,11 @@ export default function SignIn() {
             disabled={busy}
             className="w-full rounded-xl bg-primary py-3 text-xs font-heading font-black text-white hover:bg-primary-hover active:scale-[0.98] transition shadow-orange-sm mt-2 cursor-pointer disabled:opacity-50"
           >
-            {busy ? "Signing in…" : "Sign In to Store"}
+            {busy
+              ? "Signing in…"
+              : tab === "institution"
+              ? "Sign In to Institutional Portal"
+              : "Sign In to Store"}
           </button>
         </form>
 
