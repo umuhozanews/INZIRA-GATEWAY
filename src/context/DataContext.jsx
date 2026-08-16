@@ -312,10 +312,18 @@ export function DataProvider({ children }) {
 
     setStock(prevStock => {
       return prevStock.map(item => {
-        const cartMatch = items.find(ci => ci.stock_item_id && String(ci.stock_item_id) === String(item.id));
+        const itemCleanName = (item.name || "").toLowerCase().trim();
+        const cartMatch = items.find(ci => {
+          const ciCleanName = (ci.item_name || ci.name || "").toLowerCase().trim();
+          const matchId = (ci.stock_item_id && String(ci.stock_item_id) === String(item.id)) || (ci.id && String(ci.id) === String(item.id));
+          const matchName = ciCleanName && ciCleanName === itemCleanName;
+          return matchId || matchName;
+        });
+
         if (cartMatch) {
           const currentQty = Number(item.quantity) || 0;
-          const newQty = Math.max(0, currentQty - Number(cartMatch.quantity));
+          const soldQty = Number(cartMatch.quantity) || 1;
+          const newQty = Math.max(0, currentQty - soldQty);
           return { ...item, quantity: newQty };
         }
         return item;
@@ -341,7 +349,7 @@ export function DataProvider({ children }) {
           headers: { "Idempotency-Key": idempotencyKey },
         }
       );
-      setTimeout(() => refreshAll(true), 1000);
+      setTimeout(() => refreshAll(true), 600);
     } catch (err) {
       console.warn("[DataContext] Async sale post fallback:", err.message);
     }
@@ -351,20 +359,26 @@ export function DataProvider({ children }) {
 
   // Void a sale and restore inventory quantity
   const voidSale = async (saleId) => {
-    const saleToVoid = sales.find(s => String(s.id) === String(saleId));
+    const saleToVoid = sales.find(s => String(s.id) === String(saleId) || (s.invoice_number && s.invoice_number === saleId));
     if (saleToVoid && Array.isArray(saleToVoid.items)) {
       setStock(prevStock => {
         return prevStock.map(item => {
-          const itemMatch = saleToVoid.items.find(i => i.stock_item_id && String(i.stock_item_id) === String(item.id));
+          const itemCleanName = (item.name || "").toLowerCase().trim();
+          const itemMatch = saleToVoid.items.find(i => {
+            const iCleanName = (i.item_name || i.name || "").toLowerCase().trim();
+            const matchId = (i.stock_item_id && String(i.stock_item_id) === String(item.id)) || (i.id && String(i.id) === String(item.id));
+            const matchName = iCleanName && iCleanName === itemCleanName;
+            return matchId || matchName;
+          });
           if (itemMatch) {
-            return { ...item, quantity: (Number(item.quantity) || 0) + Number(itemMatch.quantity) };
+            return { ...item, quantity: (Number(item.quantity) || 0) + Number(itemMatch.quantity || 1) };
           }
           return item;
         });
       });
     }
 
-    setSales(prev => prev.filter(s => String(s.id) !== String(saleId)));
+    setSales(prev => prev.filter(s => String(s.id) !== String(saleId) && s.invoice_number !== saleId));
 
     try {
       await api.post(`/sales/${saleId}/void`, { void_reason: "Customer cancellation" });

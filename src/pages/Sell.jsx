@@ -252,8 +252,10 @@ export default function Sell() {
     setSaving(true);
     try {
       const items = lines.map((l) => ({
+        id: l.item.id,
         stock_item_id: l.item.is_custom ? null : l.item.id,
         item_name: l.item.name,
+        name: l.item.name,
         quantity: l.qty,
         unit_price: Number(l.item.sell_price_rwf) || 0,
       }));
