@@ -149,9 +149,9 @@ export default function Sidebar() {
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDark ? (
-                <Sun size={13} className="text-amber-400" />
+                <Sun size={13} className="text-primary" />
               ) : (
-                <Moon size={13} className="text-charcoal-700" />
+                <Moon size={13} className="text-muted" />
               )}
             </button>
           </div>
@@ -173,7 +173,7 @@ export default function Sidebar() {
           <button
             onClick={logout}
             title={t("logout")}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500 transition cursor-pointer"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-card hover:text-ink transition cursor-pointer"
           >
             <LogOut size={14} />
           </button>

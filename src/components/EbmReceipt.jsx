@@ -233,7 +233,7 @@ export default function EbmReceipt({ sale, shopSettings }) {
 
           {Number(sale.amount_owed) > 0 && (
             <div className="pt-1 border-t border-dashed border-black">
-              <div className="flex justify-between font-bold text-[12px] text-red-700">
+              <div className="flex justify-between font-bold text-[12px] text-black">
                 <span>REMAINING DEBT:</span>
                 <span>{Number(sale.amount_owed).toLocaleString("en-US")} RWF</span>
               </div>

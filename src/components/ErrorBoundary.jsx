@@ -32,9 +32,9 @@ export default class ErrorBoundary extends React.Component {
         <div className="min-h-screen w-full flex items-center justify-center bg-paper p-4">
           <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6 shadow-2xl text-center space-y-4 font-body">
             <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-xl ${
-              isChunkError ? "bg-primary/10 text-primary border border-primary/20" : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
+              isChunkError ? "bg-primary/10 text-primary border border-primary/20 shadow-orange-sm" : "bg-card-hover text-ink border border-line"
             }`}>
-              {isChunkError ? <RefreshCw size={26} className="animate-spin" /> : <AlertTriangle size={26} />}
+              {isChunkError ? <RefreshCw size={26} className="animate-spin" /> : <AlertTriangle size={26} className="text-primary" />}
             </div>
 
             <div className="space-y-1">

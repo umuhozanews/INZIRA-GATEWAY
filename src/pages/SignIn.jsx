@@ -100,54 +100,29 @@ export default function SignIn() {
 
         return true;
       } catch (err) {
-        console.error("[GIS] Google Identity Services init error:", err);
+        console.warn("GIS initialization notice:", err);
         return false;
       }
     };
 
-    if (initGIS()) return;
-
-    // Poll every 200ms for up to 10 seconds if script loaded asynchronously after mount
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (initGIS() || attempts > 50) {
-        clearInterval(interval);
-      }
-    }, 200);
-
-    return () => clearInterval(interval);
+    if (!initGIS()) {
+      const interval = setInterval(() => {
+        if (initGIS()) clearInterval(interval);
+      }, 500);
+      return () => clearInterval(interval);
+    }
   }, [loginWithGoogle, navigate]);
 
-  const handleTabChange = (newTab) => {
-    setTab(newTab);
-    clearRateLimit("login");
-  };
-
-  const handleLogin = async (e) => {
+  const handleManualGoogleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Security Rate Limiter: Protect against brute-force password guessing
-    const rateCheck = checkRateLimit("login", 15, 30);
-    if (!rateCheck.allowed) {
-      toast.error(`Too many failed login attempts. Account temporarily locked for ${rateCheck.remainingSec} seconds for security.`);
-      return;
+    if (!googleCredential.trim()) {
+      return toast.error("Please paste your Google ID credential token.");
     }
-
     setBusy(true);
     try {
-      const rawIdentifier = tab === "email" ? email : phone;
-      const identifier = tab === "email" ? sanitizeEmail(rawIdentifier) : sanitizePhone(rawIdentifier);
-
-      if (!identifier) {
-        toast.error(`Please enter a valid ${tab === "email" ? "email address" : "phone number"}.`);
-        setBusy(false);
-        return;
-      }
-
-      const loggedUser = await login(identifier, password.trim());
-      clearRateLimit("login");
-      toast.success("Welcome back!");
+      const loggedUser = await loginWithGoogle(googleCredential.trim());
+      toast.success("Successfully signed in with Google!");
+      setGoogleOpen(false);
       const isAdmin =
         loggedUser?.role === "pulse_admin" ||
         loggedUser?.role === "admin" ||
@@ -161,7 +136,57 @@ export default function SignIn() {
         navigate("/", { replace: true });
       }
     } catch (err) {
-      recordFailedAttempt("login", 15, 30);
+      toast.error(errorMessage(err, "Invalid Google credential token."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+
+    const rateLimit = checkRateLimit();
+    if (!rateLimit.allowed) {
+      return toast.error(
+        `Too many failed sign-in attempts. Please wait ${rateLimit.remainingTime} seconds.`
+      );
+    }
+
+    const payload = {};
+    if (tab === "phone") {
+      const cleanPhone = sanitizePhone(phone);
+      if (!cleanPhone) return toast.error("Please enter a valid phone number.");
+      payload.phone = cleanPhone;
+    } else {
+      const cleanEmail = sanitizeEmail(email);
+      if (!cleanEmail) return toast.error("Please enter a valid email address.");
+      payload.email = cleanEmail;
+    }
+
+    const cleanPass = sanitizeInput(password);
+    if (!cleanPass) return toast.error("Please enter your password.");
+    payload.password = cleanPass;
+
+    setBusy(true);
+    try {
+      const loggedUser = await login(payload);
+      clearRateLimit();
+      toast.success("Welcome back to INZIRA!");
+
+      const isAdmin =
+        loggedUser?.role === "pulse_admin" ||
+        loggedUser?.role === "admin" ||
+        loggedUser?.email?.includes("creator");
+
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else if (loggedUser?.profile_complete === false) {
+        navigate("/complete-setup", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (err) {
+      recordFailedAttempt();
       toast.error(errorMessage(err, "Login failed. Please check your credentials."));
     } finally {
       setBusy(false);
@@ -169,162 +194,163 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#FFFFFF] font-manrope text-gray-900 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-[400px] rounded-[36px] bg-white p-7 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-gray-100/80">
-        
+    <div className="min-h-[100dvh] w-full bg-paper font-body text-ink flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-[420px] rounded-3xl bg-card p-6 sm:p-8 shadow-card border border-line">
         {/* Header Branding */}
-        <div className="text-center">
+        <div className="text-center mb-6">
           <div className="mx-auto mb-3 flex items-center justify-center">
-            <Logomark size={56} className="shadow-md border-2 border-white ring-2 ring-[#D4F06B]" />
+            <Logomark size={56} className="shadow-orange-sm border border-line" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Welcome Back</h1>
-          <p className="mt-1 text-xs font-medium text-gray-500">Login to access your business account</p>
+          <h1 className="text-2xl font-heading font-black text-ink tracking-tight">
+            Sign In to DataBridge
+          </h1>
+          <p className="text-xs font-medium text-muted mt-1 font-body">
+            Access your inventory, POS, and financial books
+          </p>
         </div>
 
-        {/* Tab Selector (Phone Number vs Email) */}
-        <div className="mt-6 flex rounded-full bg-gray-100 p-1.5 border border-gray-200/50">
+        {/* Tab Switcher */}
+        <div className="mb-5 flex rounded-xl bg-paper p-1 border border-line font-heading">
           <button
             type="button"
-            onClick={() => handleTabChange("phone")}
-            className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all duration-200 ${
+            onClick={() => setTab("phone")}
+            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === "phone"
-                ? "bg-[#D4F06B] text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-800"
+                ? "bg-primary text-white shadow-orange-sm font-black"
+                : "text-muted hover:text-ink"
             }`}
           >
             Phone Number
           </button>
           <button
             type="button"
-            onClick={() => handleTabChange("email")}
-            className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all duration-200 ${
+            onClick={() => setTab("email")}
+            className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all cursor-pointer ${
               tab === "email"
-                ? "bg-[#D4F06B] text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-800"
+                ? "bg-primary text-white shadow-orange-sm font-black"
+                : "text-muted hover:text-ink"
             }`}
           >
-            Email
+            Email Address
           </button>
         </div>
 
-        {/* Main Direct Login Form */}
-        <form onSubmit={handleLogin} className="mt-6 space-y-4">
+        {/* Form */}
+        <form onSubmit={handleManualSubmit} className="space-y-3.5 font-body">
           {tab === "phone" ? (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
                 Phone Number
               </label>
               <input
                 type="tel"
-                placeholder="+250 788 123 456"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                placeholder="+250 788 123 456"
+                className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                 required
               />
             </div>
           ) : (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
                 Email Address
               </label>
               <input
                 type="email"
-                placeholder="owner@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                placeholder="merchant@inzira.rw"
+                className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                 required
               />
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
+            <label className="block text-xs font-heading font-bold text-ink mb-1">
               Password
             </label>
-            <div className="relative flex items-center">
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition pr-10"
+                placeholder="••••••••••••"
+                className="w-full rounded-xl border border-line bg-paper px-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition pr-10"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 text-gray-400 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Options Row (Remember Me & Forgot Password) */}
-          <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center justify-between pt-1 text-xs">
+            <label className="flex items-center gap-2 text-muted cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 text-[#D4F06B] focus:ring-[#D4F06B]"
+                className="h-3.5 w-3.5 rounded border-line text-primary focus:ring-primary"
               />
-              <span className="text-xs font-semibold text-gray-700">Remember me</span>
+              <span>Remember me</span>
             </label>
-            <button
-              type="button"
-              onClick={() => toast.success("Password reset link sent!")}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+
+            <Link
+              to="/signup"
+              className="text-xs font-heading font-black text-primary hover:underline"
             >
-              Forget password?
-            </button>
+              Forgot password?
+            </Link>
           </div>
 
-          {/* Primary Login Button */}
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-full bg-[#D4F06B] py-3.5 text-xs font-black text-gray-900 hover:bg-[#C5E456] active:scale-[0.98] transition shadow-sm mt-2 cursor-pointer"
+            className="w-full rounded-xl bg-primary py-3 text-xs font-heading font-black text-white hover:bg-primary-hover active:scale-[0.98] transition shadow-orange-sm mt-2 cursor-pointer disabled:opacity-50"
           >
-            {busy ? "Logging in..." : "Log In"}
+            {busy ? "Signing in…" : "Sign In to Store"}
           </button>
         </form>
 
         {/* Divider */}
-        <div className="relative my-6 flex items-center justify-center">
-          <div className="w-full border-t border-gray-100" />
-          <span className="absolute bg-white px-3 text-[11px] font-semibold text-gray-400">
-            Or Sign In With
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-line" />
+          <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-muted">
+            OR
           </span>
+          <div className="h-px flex-1 bg-line" />
         </div>
 
-        {/* Official Google Identity Services Button Container */}
+        {/* Official Google GIS Button Container */}
         <div className="flex justify-center w-full min-h-[44px]">
-          <div id="google-signin-button" className="w-full flex justify-center overflow-hidden rounded-full"></div>
+          <div id="google-signin-button" className="flex justify-center w-full" />
         </div>
 
-        {/* Footer Link & Direct APK Download */}
-        <div className="mt-6 text-center text-xs font-medium text-gray-500 space-y-3">
-          <div>
-            Don't have an account?{" "}
-            <Link to="/signup" className="font-bold text-purple-600 hover:underline">
-              Sign Up
-            </Link>
-          </div>
+        {/* Footer Link */}
+        <p className="mt-6 text-center text-xs text-muted font-body">
+          Don't have a DataBridge account?{" "}
+          <Link to="/signup" className="font-heading font-black text-primary hover:underline">
+            Register Business
+          </Link>
+        </p>
 
-          <div className="pt-2 border-t border-gray-100">
-            <a
-              href="/INZIRA-DataBridge-v1.0.apk"
-              download="INZIRA-DataBridge-v1.0.apk"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-[#D4F06B] text-gray-800 text-[11px] font-extrabold transition shadow-sm"
-            >
-              <span>📲</span> <span>Download Android App (.APK)</span>
-            </a>
-          </div>
+        {/* Live Demo Store Fast Entry */}
+        <div className="mt-4 pt-4 border-t border-line text-center font-heading">
+          <Link
+            to="/sell"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-card-hover hover:border-primary/40 border border-line text-ink text-[11px] font-black transition shadow-sm"
+          >
+            <Store size={14} className="text-primary" />
+            <span>Launch POS Sandbox Directly</span>
+          </Link>
         </div>
-
       </div>
     </div>
   );

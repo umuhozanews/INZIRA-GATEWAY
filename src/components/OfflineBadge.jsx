@@ -23,7 +23,7 @@ export default function OfflineBadge() {
   const { t } = useLang();
   if (online) return <Wifi size={15} strokeWidth={2.4} className="text-muted" />;
   return (
-    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-[#3A2A0A]">
+    <span className="flex items-center gap-1 rounded-xl bg-card border border-line px-2 py-0.5 text-[10px] font-heading font-black text-primary shadow-orange-sm">
       <WifiOff size={11} strokeWidth={2.6} /> {t("offline")}
     </span>
   );

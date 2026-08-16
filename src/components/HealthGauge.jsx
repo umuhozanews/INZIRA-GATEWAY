@@ -4,18 +4,18 @@ export default function HealthGauge({ score = 0, size = 132, label }) {
   const c = 2 * Math.PI * r;
   const has = typeof score === "number" && !Number.isNaN(score);
   const pct = has ? Math.max(0, Math.min(100, score)) / 100 : 0;
-  const bandColor = !has ? "#8A8272" : score >= 65 ? "#2F8F6E" : score >= 40 ? "#E8A33D" : "#C24B3D";
+  const bandColor = "#FF6B00";
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="#E3DDC9" strokeWidth="10" fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="currentColor" className="text-line" strokeWidth="8" fill="none" />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           stroke={bandColor}
-          strokeWidth="10"
+          strokeWidth="8"
           fill="none"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
@@ -25,13 +25,13 @@ export default function HealthGauge({ score = 0, size = 132, label }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span
-          className="font-heading text-[28px] font-extrabold leading-none tabnum text-ink"
+          className="font-heading text-[28px] font-black leading-none tabnum text-ink"
           style={{ fontSize: size * 0.22 }}
         >
           {has ? score : "—"}
         </span>
         {label && (
-          <span className="mt-0.5 text-[10px] font-semibold" style={{ color: bandColor }}>
+          <span className="mt-1 text-[10px] font-heading font-extrabold text-muted uppercase tracking-wider">
             {label}
           </span>
         )}

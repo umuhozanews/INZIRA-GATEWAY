@@ -10,7 +10,7 @@ import Sheet from "../components/Sheet";
 import { Button, Field, TextInput } from "../components/ui";
 import { useData } from "../context/DataContext";
 
-const CAT_COLORS = ["#D4F06B", "#8B5CF6", "#10B981", "#EF4444", "#6B7280", "#3B82F6"];
+const CAT_COLORS = ["#FF6B00", "#FF8533", "#FFA066", "#FFBD99", "#94A3B8", "#64748B"];
 
 const EXPENSE_CATEGORIES = [
   { key: "exp_rent", label: "Rent & Facility", value: "Rent & Facility" },
@@ -128,11 +128,11 @@ export default function Expenses() {
                 {changePct != null && (
                   <div className="mt-1.5 flex items-center gap-1">
                     {down ? (
-                      <TrendingDown size={14} className="text-emerald-400" />
+                      <TrendingDown size={14} className="text-muted" />
                     ) : (
-                      <TrendingUp size={14} className="text-rose-400" />
+                      <TrendingUp size={14} className="text-primary" />
                     )}
-                    <span className={`text-xs font-heading font-bold ${down ? "text-emerald-400" : "text-rose-400"}`}>
+                    <span className="text-xs font-heading font-bold text-ink">
                       {Math.abs(changePct)}% {down ? "less than" : "more than"} {t("vs_last_month")}
                     </span>
                   </div>
@@ -185,7 +185,7 @@ export default function Expenses() {
                   className="flex items-center justify-between rounded-xl border border-line bg-card p-4 shadow-card hover:border-primary/40 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card-hover text-ink border border-line shrink-0">
                       <Wallet size={18} />
                     </div>
                     <div>
@@ -196,7 +196,7 @@ export default function Expenses() {
                       <div className="text-[11px] font-medium text-muted">{timeAgo(e.expense_date, lang)}</div>
                     </div>
                   </div>
-                  <span className="text-xs md:text-sm font-heading font-black tabnum text-rose-400">
+                  <span className="text-xs md:text-sm font-heading font-black tabnum text-ink">
                     -{rwf(e.amount)} RWF
                   </span>
                 </div>

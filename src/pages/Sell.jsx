@@ -565,22 +565,22 @@ export default function Sell() {
 
         {/* VIEW 2: CUSTOMER DEBT BOOK & RECOVERY LEDGER */}
         {viewMode === "debts" && (
-          <div className="flex-1 overflow-y-auto px-4 md:px-0 space-y-4 pb-20">
+          <div className="flex-1 overflow-y-auto px-4 md:px-0 space-y-4 pb-20 font-body">
             {/* KPI Cards for Debts */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
-                <span className="text-xs font-bold text-amber-800 uppercase">Total Outstanding Debt</span>
-                <h3 className="text-xl font-extrabold text-amber-900 mt-1">{rwf(totalOutstandingDebt)} RWF</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-heading">
+              <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Outstanding Debt</span>
+                <h3 className="text-xl font-black text-ink tabnum mt-1">{rwf(totalOutstandingDebt)} RWF</h3>
               </div>
 
-              <div className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-                <span className="text-xs font-bold text-muted uppercase">Active Debtors</span>
-                <h3 className="text-xl font-extrabold text-ink mt-1">{debtSales.length} Customers</h3>
+              <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Active Debtors</span>
+                <h3 className="text-xl font-black text-ink mt-1">{debtSales.length} Customers</h3>
               </div>
 
-              <div className="rounded-2xl border border-line bg-card p-4 shadow-sm col-span-2 sm:col-span-1">
-                <span className="text-xs font-bold text-muted uppercase">Repayment Rate</span>
-                <h3 className="text-xl font-extrabold text-emerald-600 mt-1">High Health</h3>
+              <div className="rounded-2xl border border-line bg-card p-4 shadow-card col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Repayment Health</span>
+                <h3 className="text-xl font-black text-primary mt-1">Prime Active</h3>
               </div>
             </div>
 
@@ -596,13 +596,13 @@ export default function Sell() {
                 />
               </div>
 
-              <div className="flex items-center gap-1 bg-card p-1 rounded-xl border border-line text-xs font-semibold">
+              <div className="flex items-center gap-1 bg-card p-1 rounded-xl border border-line text-xs font-heading font-bold">
                 {["all", "unpaid", "partial"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setDebtFilter(tab)}
-                    className={`px-3 py-1.5 rounded-lg capitalize transition ${
-                      debtFilter === tab ? "bg-primary text-white shadow-sm font-bold" : "text-muted hover:text-ink"
+                    className={`px-3 py-1.5 rounded-lg capitalize transition cursor-pointer ${
+                      debtFilter === tab ? "bg-primary text-white shadow-orange-sm font-black" : "text-muted hover:text-ink hover:bg-card-hover"
                     }`}
                   >
                     {tab}
@@ -614,8 +614,8 @@ export default function Sell() {
             {/* Debt Cards List */}
             {filteredDebts.length === 0 ? (
               <div className="mt-8 text-center text-xs md:text-sm text-muted p-8 rounded-2xl border border-line bg-card space-y-2">
-                <CheckCircle size={32} className="mx-auto text-emerald-500 mb-2" />
-                <p className="font-bold text-ink">No Customer Debts Found!</p>
+                <CheckCircle size={32} className="mx-auto text-primary mb-2" />
+                <p className="font-heading font-black text-ink">No Customer Debts Found!</p>
                 <p className="text-xs text-muted">All customer credit accounts are fully balanced or match filter criteria.</p>
               </div>
             ) : (
@@ -629,21 +629,21 @@ export default function Sell() {
                   return (
                     <div
                       key={s.id}
-                      className="flex flex-col p-4 rounded-2xl border border-line bg-card shadow-sm space-y-3 hover:border-primary/40 transition"
+                      className="flex flex-col p-4.5 rounded-2xl border border-line bg-card shadow-card space-y-3 hover:border-primary/40 transition"
                     >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-line/60 pb-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-line pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 font-bold">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card-hover text-primary border border-line font-bold">
                             <User size={20} />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-extrabold text-ink">{s.customer_name || "Unknown Customer"}</h4>
-                              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase">
+                              <h4 className="text-sm font-heading font-black text-ink">{s.customer_name || "Unknown Customer"}</h4>
+                              <span className="px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[10px] font-heading font-black uppercase">
                                 {s.payment_status || "Debt"}
                               </span>
                             </div>
-                            <p className="text-xs text-muted mt-0.5 flex items-center gap-2">
+                            <p className="text-xs text-muted mt-0.5 flex items-center gap-2 font-body">
                               {s.customer_phone ? (
                                 <span className="font-mono text-primary font-bold">{s.customer_phone}</span>
                               ) : (
@@ -658,30 +658,30 @@ export default function Sell() {
                         </div>
 
                         <div className="text-left sm:text-right">
-                          <span className="text-[11px] font-bold text-muted uppercase block">Remaining Debt</span>
-                          <span className="text-lg font-black text-danger tabnum">{rwf(owed)} RWF</span>
+                          <span className="text-[10px] font-heading font-bold text-muted uppercase block">Remaining Debt</span>
+                          <span className="text-lg font-heading font-black text-ink tabnum">{rwf(owed)} RWF</span>
                         </div>
                       </div>
 
                       {/* Repayment Progress Bar */}
                       <div className="space-y-1">
-                        <div className="flex justify-between text-[11px] font-semibold text-muted">
-                          <span>Paid: <strong className="text-emerald-700 tabnum">{rwf(paid)} RWF</strong> ({progressPct}%)</span>
-                          <span>Total Invoice: <strong className="text-ink tabnum">{rwf(total)} RWF</strong></span>
+                        <div className="flex justify-between text-[11px] font-medium text-muted">
+                          <span>Paid: <strong className="text-ink tabnum font-heading font-bold">{rwf(paid)} RWF</strong> ({progressPct}%)</span>
+                          <span>Total Invoice: <strong className="text-ink tabnum font-heading font-bold">{rwf(total)} RWF</strong></span>
                         </div>
                         <div className="w-full h-2 rounded-full bg-paper border border-line overflow-hidden">
                           <div
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                            className="h-full bg-primary rounded-full transition-all duration-300"
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
                       </div>
 
                       {/* Due Date & Action Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                        <div className="text-xs text-muted flex items-center gap-1.5">
-                          <Calendar size={14} className="text-amber-600" />
-                          <span>Due: <strong className="text-ink">{s.due_date || "No due date"}</strong></span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-heading">
+                        <div className="text-xs text-muted flex items-center gap-1.5 font-body">
+                          <Calendar size={14} className="text-muted" />
+                          <span>Due: <strong className="text-ink font-heading font-bold">{s.due_date || "No due date"}</strong></span>
                         </div>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -689,7 +689,7 @@ export default function Sell() {
                             <>
                               <a
                                 href={`tel:${s.customer_phone}`}
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-paper text-xs font-bold text-ink hover:bg-card transition"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-paper text-xs font-bold text-ink hover:bg-card-hover transition"
                               >
                                 <Phone size={13} /> Call
                               </a>
@@ -700,9 +700,9 @@ export default function Sell() {
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-card-hover text-xs font-bold text-ink hover:border-primary/40 transition"
                               >
-                                <MessageCircle size={13} /> WhatsApp
+                                <MessageCircle size={13} className="text-primary" /> WhatsApp
                               </a>
                             </>
                           )}
@@ -712,7 +712,7 @@ export default function Sell() {
                               setRepayTarget(s);
                               setRepayAmount(String(owed));
                             }}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-primary text-xs font-extrabold text-white shadow-sm hover:bg-primary-lt transition cursor-pointer"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-primary text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
                           >
                             <DollarSign size={14} /> Pay Off Debt
                           </button>
@@ -784,26 +784,26 @@ export default function Sell() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/60">
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
                       <div className="text-right">
-                        <div className="text-sm font-extrabold tabnum text-primary">
+                        <div className="text-sm font-heading font-black tabnum text-ink">
                           {rwf(s.total_amount)} RWF
                         </div>
-                        <div className="text-[10.5px] font-semibold text-emerald-700 flex items-center justify-end gap-1">
-                          <CheckCircle size={12} /> {s.payment_status || "Completed"}
+                        <div className="text-[10.5px] font-heading font-bold text-muted flex items-center justify-end gap-1">
+                          <CheckCircle size={12} className="text-primary" /> {s.payment_status || "Completed"}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 font-heading">
                         <button
                           onClick={() => setSelectedReceipt(s)}
-                          className="px-3 py-1.5 rounded-xl border border-line bg-paper hover:bg-card text-xs font-bold text-ink transition cursor-pointer flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer flex items-center gap-1"
                         >
                           <FileText size={13} /> View
                         </button>
                         <button
                           onClick={() => handleDeleteSale(s)}
-                          className="p-1.5 rounded-xl border border-line text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          className="p-1.5 rounded-xl border border-line text-muted hover:text-ink hover:bg-card-hover transition cursor-pointer"
                           title="Delete / Void Sale (Logged)"
                         >
                           <Trash2 size={14} />
@@ -824,14 +824,14 @@ export default function Sell() {
           <div className="flex items-center justify-between pb-3 border-b border-line">
             <div className="flex items-center gap-2">
               <ShoppingCart size={18} className="text-primary" />
-              <h2 className="font-heading text-base font-extrabold text-ink tracking-tight">
+              <h2 className="font-heading text-base font-black text-ink tracking-tight">
                 {t("cart")}
               </h2>
             </div>
             {lines.length > 0 && (
               <button
                 onClick={clearCart}
-                className="text-xs font-heading font-bold text-danger flex items-center gap-1 hover:underline cursor-pointer"
+                className="text-xs font-heading font-bold text-muted hover:text-ink flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <Trash2 size={13} /> {t("clear") || "Clear"}
               </button>
@@ -997,8 +997,8 @@ export default function Sell() {
                         onClick={() => setSplitMomoProvider("mtn_momo")}
                         className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer ${
                           splitMomoProvider === "mtn_momo"
-                            ? "bg-amber-400 text-amber-950 border-amber-500 font-extrabold"
-                            : "bg-card text-muted border-line"
+                            ? "bg-primary text-white border-primary font-black shadow-orange-sm"
+                            : "bg-card text-muted border-line hover:text-ink"
                         }`}
                       >
                         MTN MoMo
@@ -1008,8 +1008,8 @@ export default function Sell() {
                         onClick={() => setSplitMomoProvider("airtel")}
                         className={`px-2 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer ${
                           splitMomoProvider === "airtel"
-                            ? "bg-rose-500 text-white border-rose-600 font-extrabold"
-                            : "bg-card text-muted border-line"
+                            ? "bg-primary text-white border-primary font-black shadow-orange-sm"
+                            : "bg-card text-muted border-line hover:text-ink"
                         }`}
                       >
                         Airtel Money
@@ -1018,24 +1018,24 @@ export default function Sell() {
                   </div>
 
                   {/* Split Calculation Live Summary Box */}
-                  <div className="pt-2 border-t border-line/60 space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold">
+                  <div className="pt-2 border-t border-line space-y-1 text-xs">
+                    <div className="flex justify-between font-medium">
                       <span>Total Paying Now:</span>
                       <span className="font-heading font-black text-ink tabnum">{rwf(splitTotalPaid)} RWF</span>
                     </div>
 
                     {splitRemainingDebt > 0 ? (
-                      <div className="flex justify-between font-heading font-extrabold text-amber-500 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
+                      <div className="flex justify-between font-heading font-black text-primary bg-primary/10 p-2 rounded-xl border border-primary/20">
                         <span>Owed as Debt:</span>
                         <span className="tabnum">{rwf(splitRemainingDebt)} RWF</span>
                       </div>
                     ) : splitTotalPaid > totalAmount ? (
-                      <div className="flex justify-between font-heading font-extrabold text-blue-400 bg-blue-500/10 p-2 rounded-xl border border-blue-500/20">
+                      <div className="flex justify-between font-heading font-black text-ink bg-card-hover p-2 rounded-xl border border-line">
                         <span>Change to Return:</span>
                         <span className="tabnum">{rwf(splitTotalPaid - totalAmount)} RWF</span>
                       </div>
                     ) : (
-                      <div className="flex justify-between font-heading font-bold text-emerald-400 text-[11px]">
+                      <div className="flex justify-between font-heading font-black text-primary text-[11px] bg-primary/10 p-2 rounded-xl border border-primary/20">
                         <span>Status:</span>
                         <span>Fully Paid (0 Debt)</span>
                       </div>
@@ -1076,7 +1076,7 @@ export default function Sell() {
                         onClick={() => setSaveAsNewCustomer(true)}
                         className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
                           saveAsNewCustomer
-                            ? "bg-primary text-white shadow-sm"
+                            ? "bg-primary text-white shadow-orange-sm"
                             : "bg-card text-muted border border-line hover:text-ink"
                         }`}
                       >
@@ -1085,9 +1085,9 @@ export default function Sell() {
                       <button
                         type="button"
                         onClick={() => setSaveAsNewCustomer(false)}
-                        className={`px-3 py-1 rounded-lg font-black text-[11px] transition cursor-pointer ${
+                        className={`px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer ${
                           !saveAsNewCustomer
-                            ? "bg-charcoal-700 text-white shadow-sm"
+                            ? "bg-card-hover text-ink border border-line font-black"
                             : "bg-card text-muted border border-line hover:text-ink"
                         }`}
                       >
@@ -1098,9 +1098,9 @@ export default function Sell() {
                 )}
 
                 {(method === "credit" || (payMode === "split" && splitRemainingDebt > 0)) && (
-                  <div className="space-y-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
-                    <div className="text-[11px] font-heading font-extrabold text-amber-400 flex items-center gap-1">
-                      <AlertCircle size={13} /> Customer Contact Required for Debt
+                  <div className="space-y-2 p-3 rounded-xl border border-line bg-card-hover">
+                    <div className="text-[11px] font-heading font-black text-ink flex items-center gap-1">
+                      <AlertCircle size={13} className="text-primary" /> Customer Contact Required for Debt
                     </div>
 
                     <TextInput
@@ -1269,8 +1269,8 @@ export default function Sell() {
                       onClick={() => setSplitMomoProvider("mtn_momo")}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
                         splitMomoProvider === "mtn_momo"
-                          ? "bg-amber-400 text-amber-950 border-amber-500 font-extrabold"
-                          : "bg-card text-muted border-line"
+                          ? "bg-primary text-white border-primary font-black shadow-orange-sm"
+                          : "bg-card text-muted border-line hover:text-ink"
                       }`}
                     >
                       MTN MoMo
@@ -1280,8 +1280,8 @@ export default function Sell() {
                       onClick={() => setSplitMomoProvider("airtel")}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
                         splitMomoProvider === "airtel"
-                          ? "bg-rose-500 text-white border-rose-600 font-extrabold"
-                          : "bg-card text-muted border-line"
+                          ? "bg-primary text-white border-primary font-black shadow-orange-sm"
+                          : "bg-card text-muted border-line hover:text-ink"
                       }`}
                     >
                       Airtel Money
@@ -1289,24 +1289,24 @@ export default function Sell() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-line/60 space-y-1 text-xs">
-                  <div className="flex justify-between font-semibold">
+                <div className="pt-2 border-t border-line space-y-1 text-xs">
+                  <div className="flex justify-between font-medium">
                     <span>Total Paying Upfront:</span>
                     <span className="font-heading font-black text-ink tabnum">{rwf(splitTotalPaid)} RWF</span>
                   </div>
 
                   {splitRemainingDebt > 0 ? (
-                    <div className="flex justify-between font-heading font-extrabold text-amber-400 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                    <div className="flex justify-between font-heading font-black text-primary bg-primary/10 p-2.5 rounded-xl border border-primary/20">
                       <span>Owed as Customer Debt:</span>
                       <span className="tabnum">{rwf(splitRemainingDebt)} RWF</span>
                     </div>
                   ) : splitTotalPaid > totalAmount ? (
-                    <div className="flex justify-between font-heading font-extrabold text-blue-400 bg-blue-500/10 p-2.5 rounded-xl border border-blue-500/20">
+                    <div className="flex justify-between font-heading font-black text-ink bg-card-hover p-2.5 rounded-xl border border-line">
                       <span>Change to Return:</span>
                       <span className="tabnum">{rwf(splitTotalPaid - totalAmount)} RWF</span>
                     </div>
                   ) : (
-                    <div className="flex justify-between font-heading font-bold text-emerald-400">
+                    <div className="flex justify-between font-heading font-black text-primary bg-primary/10 p-2 rounded-xl border border-primary/20">
                       <span>Status:</span>
                       <span>Fully Paid (0 Debt)</span>
                     </div>
@@ -1324,9 +1324,9 @@ export default function Sell() {
             />
 
             {(method === "credit" || (payMode === "split" && splitRemainingDebt > 0)) && (
-              <div className="space-y-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
-                <div className="text-[11px] font-heading font-extrabold text-amber-400 flex items-center gap-1">
-                  <AlertCircle size={13} /> Phone Number Required for Customer Debt
+              <div className="space-y-2 p-3 rounded-xl border border-line bg-card-hover">
+                <div className="text-[11px] font-heading font-black text-ink flex items-center gap-1">
+                  <AlertCircle size={13} className="text-primary" /> Phone Number Required for Customer Debt
                 </div>
 
                 <TextInput
@@ -1362,19 +1362,19 @@ export default function Sell() {
       {/* REPAY DEBT MODAL SHEET */}
       <Sheet open={!!repayTarget} onClose={() => setRepayTarget(null)} title="Record Customer Debt Repayment">
         {repayTarget && (
-          <form onSubmit={handleRecordRepayment} className="space-y-4 pt-2 pb-6">
-            <div className="rounded-2xl border border-line bg-paper p-4 space-y-1">
-              <div className="flex justify-between items-center text-xs">
+          <form onSubmit={handleRecordRepayment} className="space-y-4 pt-2 pb-6 font-body">
+            <div className="rounded-2xl border border-line bg-card p-4 space-y-1">
+              <div className="flex justify-between items-center text-xs font-heading">
                 <span className="font-bold text-ink">{repayTarget.customer_name}</span>
                 <span className="font-mono text-muted">{repayTarget.invoice_number}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-muted">Total Invoice:</span>
-                <span className="font-bold tabnum">{rwf(repayTarget.total_amount)} RWF</span>
+                <span className="font-heading font-bold text-ink tabnum">{rwf(repayTarget.total_amount)} RWF</span>
               </div>
-              <div className="flex justify-between items-center text-sm font-extrabold text-danger pt-1 border-t border-line/60">
+              <div className="flex justify-between items-center text-sm font-heading font-black text-ink pt-1 border-t border-line">
                 <span>Current Debt Balance:</span>
-                <span className="tabnum">{rwf(repayTarget.amount_owed)} RWF</span>
+                <span className="tabnum text-primary">{rwf(repayTarget.amount_owed)} RWF</span>
               </div>
             </div>
 

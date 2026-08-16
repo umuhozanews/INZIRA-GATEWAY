@@ -1,10 +1,7 @@
 // Shared helpers for turning a raw score/band into UI-friendly color + label.
 export function bandColor(band, score) {
-  if (score === null || score === undefined) return "#9CA3AF";
-  if (band === "green" || score >= 80) return "#10B981";
-  if (band === "amber" || score >= 50) return "#F59E0B";
-  if (band === "red" || (typeof score === "number" && score < 50)) return "#EF4444";
-  return "#6B7280";
+  if (score === null || score === undefined) return "#64748B";
+  return "#FF6B00";
 }
 
 export function bandKey(band, score) {

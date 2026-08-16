@@ -44,40 +44,40 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body text-ink">
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between font-heading">
         <div>
-          <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
+          <span className="text-[10px] sm:text-xs font-bold text-muted uppercase tracking-widest">
             INFRASTRUCTURE & CONFIGURATION
           </span>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+          <h1 className="text-lg md:text-2xl font-black text-ink flex items-center gap-1.5 leading-tight">
             Settings & Database Backups
           </h1>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 font-body">
         {/* Database Backup Card */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-[#D4F06B] text-gray-900 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-orange-sm">
               <Database size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900">Database Snapshot Export</h3>
-              <p className="text-[11px] text-gray-500">Download complete encrypted JSON data dump</p>
+              <h3 className="text-sm font-heading font-black text-ink">Database Snapshot Export</h3>
+              <p className="text-[11px] text-muted font-medium">Download complete encrypted JSON data dump</p>
             </div>
           </div>
 
-          <p className="text-xs text-gray-600 font-medium leading-relaxed">
+          <p className="text-xs text-muted font-medium leading-relaxed">
             Generates a sanitized JSON export of all registered SMEs, sales transactions, stock catalogs, invoices, and audit logs.
           </p>
 
           <button
             onClick={handleDownloadBackup}
             disabled={downloading}
-            className="w-full py-3 px-4 rounded-full bg-[#D4F06B] text-gray-900 font-black text-xs hover:bg-[#C5E456] transition shadow-md shadow-[#D4F06B]/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-xl bg-primary text-white font-heading font-black text-xs hover:bg-primary-hover transition shadow-orange-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
           >
             <Download size={15} />
             <span>{downloading ? "Preparing Backup..." : "Export Full Database JSON"}</span>
@@ -85,47 +85,47 @@ export default function AdminSettings() {
         </div>
 
         {/* Cloud Infrastructure Status */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-orange-sm">
               <Server size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900">Cloud Infrastructure Status</h3>
-              <p className="text-[11px] text-gray-500">Real-time platform services health</p>
+              <h3 className="text-sm font-heading font-black text-ink">Cloud Infrastructure Status</h3>
+              <p className="text-[11px] text-muted font-medium">Real-time platform services health</p>
             </div>
           </div>
 
           <div className="space-y-2.5 pt-1">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-card-hover border border-line text-xs font-heading">
               <div className="flex items-center gap-2">
-                <Database size={14} className="text-purple-600" />
-                <span className="font-bold text-gray-800">PostgreSQL Primary Database</span>
+                <Database size={14} className="text-primary" />
+                <span className="font-bold text-ink">PostgreSQL Primary Database</span>
               </div>
-              <span className="flex items-center gap-1 font-black text-emerald-700 text-[11px]">
-                <CheckCircle2 size={13} />
+              <span className="flex items-center gap-1 font-black text-ink text-[11px]">
+                <CheckCircle2 size={13} className="text-primary" />
                 <span>Connected</span>
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-card-hover border border-line text-xs font-heading">
               <div className="flex items-center gap-2">
-                <Mail size={14} className="text-purple-600" />
-                <span className="font-bold text-gray-800">Resend Email Gateway</span>
+                <Mail size={14} className="text-primary" />
+                <span className="font-bold text-ink">Resend Email Gateway</span>
               </div>
-              <span className="flex items-center gap-1 font-black text-emerald-700 text-[11px]">
-                <CheckCircle2 size={13} />
+              <span className="flex items-center gap-1 font-black text-ink text-[11px]">
+                <CheckCircle2 size={13} className="text-primary" />
                 <span>Active</span>
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-card-hover border border-line text-xs font-heading">
               <div className="flex items-center gap-2">
-                <Globe size={14} className="text-purple-600" />
-                <span className="font-bold text-gray-800">Google OAuth SSO</span>
+                <Globe size={14} className="text-primary" />
+                <span className="font-bold text-ink">Google OAuth SSO</span>
               </div>
-              <span className="flex items-center gap-1 font-black text-emerald-700 text-[11px]">
-                <CheckCircle2 size={13} />
+              <span className="flex items-center gap-1 font-black text-ink text-[11px]">
+                <CheckCircle2 size={13} className="text-primary" />
                 <span>Enabled</span>
               </span>
             </div>

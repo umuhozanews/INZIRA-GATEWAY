@@ -47,7 +47,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         id: "user-stock-low",
         type: "alert",
         icon: AlertTriangle,
-        iconBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+        iconBg: "bg-primary/10 text-primary border border-primary/20",
         title: `${lowCount} item${lowCount > 1 ? "s" : ""} low in stock`,
         desc: "Items in your store are reaching minimum thresholds. Restock soon to prevent missed sales.",
         time: "Action needed",
@@ -62,7 +62,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
         id: "user-today-sales",
         type: "analytics",
         icon: TrendingUp,
-        iconBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+        iconBg: "bg-primary/10 text-primary border border-primary/20",
         title: `Today's Revenue: ${rwf(todayRev)} RWF`,
         desc: `Your store has completed ${sales.length} sale${sales.length === 1 ? "" : "s"} today. Great progress!`,
         time: "Today",
@@ -229,7 +229,7 @@ export default function NotificationDrawer({ open, onClose, stats }) {
           <div className="space-y-3 font-body">
             {filteredNotifications.length === 0 ? (
               <div className="p-8 text-center rounded-2xl border border-dashed border-line text-xs font-medium text-muted space-y-2 bg-card-hover">
-                <CheckCircle size={28} className="mx-auto text-emerald-400 mb-1" />
+                <CheckCircle size={28} className="mx-auto text-primary mb-1" />
                 <p className="font-heading font-bold text-ink">All clear!</p>
                 <p>No active notifications or low stock alerts for this account.</p>
               </div>

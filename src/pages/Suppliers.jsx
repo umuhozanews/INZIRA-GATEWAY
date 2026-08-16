@@ -589,7 +589,7 @@ export default function Suppliers() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Customer Debts</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-card-hover text-primary border border-line">
                 <Clock size={16} />
               </div>
             </div>
@@ -701,21 +701,21 @@ export default function Suppliers() {
             </div>
 
             {ordersLoading ? (
-              <div className="p-12 text-center text-xs font-bold text-gray-400">Loading purchase orders…</div>
+              <div className="p-12 text-center text-xs font-bold text-muted">Loading purchase orders…</div>
             ) : orders.length === 0 ? (
-              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-purple-50 text-purple-600 border border-purple-100 shadow-sm">
-                  <Boxes size={36} />
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-2xl border border-dashed border-line bg-card shadow-card space-y-4 max-w-lg mx-auto">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-orange-sm">
+                  <Boxes size={32} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900">No Supplier Orders Yet</h3>
-                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                  <h3 className="text-lg font-heading font-black text-ink">No Supplier Orders Yet</h3>
+                  <p className="mt-1.5 text-xs text-muted font-body leading-relaxed max-w-xs mx-auto">
                     Create purchase orders to restock products from your suppliers, send orders via WhatsApp with 1 tap, and track arrival through to inventory stocking.
                   </p>
                 </div>
                 <button
                   onClick={() => setCreatePoOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-6 py-3 text-xs font-black text-white hover:bg-purple-700 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-heading font-black text-white hover:bg-primary-hover active:scale-95 transition shadow-orange-sm cursor-pointer mt-2"
                 >
                   <PackagePlus size={16} />
                   <span>+ Create First Purchase Order</span>
@@ -748,88 +748,82 @@ export default function Suppliers() {
                     const isOrdered = o.status === "ordered" || o.status === "draft";
 
                     const statusColor = isStocked
-                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-                      : isReceived
-                      ? "bg-purple-100 text-purple-900 border-purple-300"
-                      : isInTransit
-                      ? "bg-blue-100 text-blue-900 border-blue-300"
-                      : "bg-amber-100 text-amber-900 border-amber-300";
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-card-hover text-ink border-line";
 
                     return (
                       <div
                         key={o.id}
-                        className={`flex flex-col justify-between rounded-3xl border bg-white p-5 shadow-sm transition space-y-4 ${
-                          isStocked ? "border-gray-200" : "border-purple-200/80 hover:border-purple-400"
-                        }`}
+                        className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-primary/40 transition space-y-4 font-body"
                       >
                         {/* Order Header */}
                         <div>
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-2 font-heading">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                <span className="font-mono text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                                   PO-{o.id}
                                 </span>
-                                <h3 className="font-extrabold text-sm text-gray-900">{o.supplier_name || "Supplier"}</h3>
+                                <h3 className="font-black text-sm text-ink">{o.supplier_name || "Supplier"}</h3>
                               </div>
-                              <p className="text-[11px] text-gray-400 mt-1">
+                              <p className="text-[11px] text-muted mt-1 font-body">
                                 Ordered: {formatDate(o.order_date || o.created_at)}
                                 {o.arrival_date ? ` · Delivery: ${formatDate(o.arrival_date)}` : ""}
                               </p>
                             </div>
 
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${statusColor}`}>
+                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-heading font-black uppercase tracking-wide border ${statusColor}`}>
                               {o.status?.replace(/_/g, " ")}
                             </span>
                           </div>
 
                           {/* Items List Preview */}
-                          <div className="mt-3.5 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-1.5 text-xs">
-                            <div className="font-bold text-gray-700 flex justify-between text-[11px] uppercase tracking-wider text-gray-400">
+                          <div className="mt-3.5 p-3 rounded-xl bg-card-hover border border-line space-y-1.5 text-xs">
+                            <div className="font-heading font-bold text-muted flex justify-between text-[10px] uppercase tracking-wider">
                               <span>Line Items ({o.items_count || (o.items || []).length})</span>
                               <span>Subtotal</span>
                             </div>
                             {(o.items || []).slice(0, 4).map((it, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-gray-800">
+                              <div key={idx} className="flex justify-between items-center text-ink font-body">
                                 <span className="truncate pr-2 font-medium">
-                                  <strong className="text-gray-900">{it.quantity}x</strong> {it.item_name}
+                                  <strong className="font-heading font-bold text-primary">{it.quantity}x</strong> {it.item_name}
                                 </span>
-                                <span className="font-mono text-gray-600 font-bold tabnum shrink-0">
+                                <span className="font-mono text-ink font-bold tabnum shrink-0">
                                   {rwf((Number(it.quantity) || 1) * (Number(it.unit_cost_rwf) || 0))} RWF
                                 </span>
                               </div>
                             ))}
                             {(o.items || []).length > 4 && (
-                              <div className="text-[10px] text-purple-600 font-bold">
+                              <div className="text-[10px] text-primary font-bold font-heading">
                                 + {(o.items || []).length - 4} more items…
                               </div>
                             )}
 
-                            <div className="mt-2 pt-2 border-t border-gray-200/80 flex justify-between items-center font-extrabold text-gray-900">
+                            <div className="mt-2 pt-2 border-t border-line flex justify-between items-center font-heading font-black text-ink">
                               <span>Total Estimated Cost:</span>
-                              <span className="text-emerald-700 tabnum text-sm">
+                              <span className="text-ink tabnum text-sm">
                                 {rwf(o.total_cost_rwf || 0)} RWF
                               </span>
                             </div>
                           </div>
 
                           {o.notes && (
-                            <p className="text-[11px] text-gray-500 italic mt-2">
+                            <p className="text-[11px] text-muted italic mt-2 font-body">
                               Notes: {o.notes}
                             </p>
                           )}
                         </div>
 
                         {/* Action Buttons Toolbar */}
-                        <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                        <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2 font-heading">
                           {/* WhatsApp Click-to-Chat Button */}
                           <button
                             type="button"
                             onClick={() => handleSendToWhatsApp(o)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm active:scale-95 transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card border border-line hover:bg-card-hover text-ink text-xs font-bold transition cursor-pointer"
                             title="Send Purchase Order to Supplier on WhatsApp"
                           >
-                            <MessageSquare size={14} />
+                            <MessageSquare size={14} className="text-primary" />
                             <span>WhatsApp Order</span>
                           </button>
 
@@ -840,14 +834,14 @@ export default function Suppliers() {
                                 <button
                                   type="button"
                                   onClick={() => handleUpdatePoStatus(o, "in_transit")}
-                                  className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold transition cursor-pointer"
+                                  className="px-3 py-1.5 rounded-xl bg-card hover:bg-card-hover text-ink border border-line text-xs font-bold transition cursor-pointer"
                                 >
                                   Mark In Transit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleUpdatePoStatus(o, "received")}
-                                  className="px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-bold transition cursor-pointer"
+                                  className="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm"
                                 >
                                   Mark Received
                                 </button>
@@ -858,7 +852,7 @@ export default function Suppliers() {
                               <button
                                 type="button"
                                 onClick={() => handleUpdatePoStatus(o, "received")}
-                                className="px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition cursor-pointer shadow-sm"
+                                className="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm"
                               >
                                 Mark Received
                               </button>
@@ -868,7 +862,7 @@ export default function Suppliers() {
                               <button
                                 type="button"
                                 onClick={() => handleUpdatePoStatus(o, "stocked")}
-                                className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black transition cursor-pointer shadow-sm active:scale-95"
+                                className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm active:scale-95"
                               >
                                 <PackageCheck size={14} />
                                 <span>Mark as Stocked</span>
@@ -876,7 +870,7 @@ export default function Suppliers() {
                             )}
 
                             {isStocked && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                              <span className="inline-flex items-center gap-1 text-xs font-black text-primary bg-primary/10 px-3 py-1 rounded-md border border-primary/20">
                                 <CheckCircle2 size={13} /> In Stock
                               </span>
                             )}
@@ -885,7 +879,7 @@ export default function Suppliers() {
                               <button
                                 type="button"
                                 onClick={() => handleDeletePo(o)}
-                                className="p-2 text-gray-400 hover:text-red-600 transition cursor-pointer"
+                                className="p-2 text-muted hover:text-ink hover:bg-card-hover border border-line rounded-xl transition cursor-pointer"
                                 title="Delete Order"
                               >
                                 <Trash2 size={15} />
@@ -903,21 +897,21 @@ export default function Suppliers() {
 
         {/* TAB 1: CUSTOMERS DIRECTORY */}
         {activeTab === "customers" && (
-          <div className="space-y-3">
+          <div className="space-y-3 font-body">
             {allCustomers.filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-900 shadow-sm">
-                  <Users size={36} className="text-gray-800" />
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-2xl border border-dashed border-line bg-card shadow-card space-y-4 max-w-lg mx-auto">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card-hover border border-line text-primary shadow-sm">
+                  <Users size={32} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900">No Customers Listed Yet</h3>
-                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                  <h3 className="text-lg font-heading font-black text-ink">No Customers Listed Yet</h3>
+                  <p className="mt-1.5 text-xs text-muted font-body leading-relaxed max-w-xs mx-auto">
                     Add your customer client accounts or record credit sales at the POS counter to track receivables.
                   </p>
                 </div>
                 <button
                   onClick={() => setAddCustOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-6 py-3 text-xs font-black text-white hover:bg-gray-800 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-heading font-black text-white hover:bg-primary-hover active:scale-95 transition shadow-orange-sm cursor-pointer mt-2"
                 >
                   <UserPlus size={16} />
                   <span>+ Add Your First Customer Account</span>
@@ -930,24 +924,24 @@ export default function Suppliers() {
                   .map((c) => (
                     <div
                       key={c.id}
-                      className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-primary/40 transition"
+                      className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-primary/40 transition font-body"
                     >
                       <div className="flex items-start gap-3.5">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-xlt text-primary font-heading font-extrabold text-base shrink-0">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-card-hover border border-line text-primary font-heading font-black text-base shrink-0">
                           {initials(c.name)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-heading text-sm font-extrabold text-ink truncate">{c.name}</h3>
+                          <h3 className="font-heading text-sm font-black text-ink truncate">{c.name}</h3>
                           <p className="text-xs text-muted mt-0.5">{c.phone || "No phone"}</p>
 
-                          <div className="mt-3 pt-3 border-t border-line/60 space-y-1.5 text-xs">
+                          <div className="mt-3 pt-3 border-t border-line space-y-1.5 text-xs">
                             <div className="flex justify-between">
                               <span className="text-muted font-medium">Total Spent:</span>
-                              <span className="font-bold text-ink tabnum">{rwf(c.total_spent_rwf)} RWF</span>
+                              <span className="font-heading font-bold text-ink tabnum">{rwf(c.total_spent_rwf)} RWF</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted font-medium">Owed to Us:</span>
-                              <span className={`font-extrabold tabnum ${c.owed_to_us_rwf > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                              <span className="font-heading font-black tabnum text-ink">
                                 {c.owed_to_us_rwf > 0 ? `${rwf(c.owed_to_us_rwf)} RWF` : "Clean 0 RWF"}
                               </span>
                             </div>
@@ -956,13 +950,13 @@ export default function Suppliers() {
                       </div>
 
                       {c.phone && c.phone !== "N/A" && (
-                        <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between">
-                          <span className="text-[11px] font-semibold text-muted">{c.phone}</span>
+                        <div className="mt-4 pt-3 border-t border-line flex items-center justify-between font-heading">
+                          <span className="text-[11px] font-semibold text-muted font-mono">{c.phone}</span>
                           <a
                             href={`tel:${c.phone}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-card border border-line hover:bg-card-hover text-ink text-xs font-bold transition"
                           >
-                            <Phone size={13} /> Call Client
+                            <Phone size={13} className="text-primary" /> Call Client
                           </a>
                         </div>
                       )}
@@ -975,13 +969,13 @@ export default function Suppliers() {
 
         {/* TAB 2: RECEIVABLES */}
         {activeTab === "owed" && (
-          <div className="space-y-3">
+          <div className="space-y-3 font-body">
             {receivables.length === 0 ? (
-              <div className="p-12 text-center text-xs text-muted bg-card rounded-3xl border border-line space-y-2">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+              <div className="p-12 text-center text-xs text-muted bg-card rounded-2xl border border-line space-y-2">
+                <div className="w-12 h-12 rounded-xl bg-card-hover border border-line text-primary flex items-center justify-center mx-auto">
                   <CheckCircle2 size={24} />
                 </div>
-                <p className="font-extrabold text-sm text-ink">All Customer Accounts Settled!</p>
+                <p className="font-heading font-black text-sm text-ink">All Customer Accounts Settled!</p>
                 <p className="text-xs text-muted">You have 0 outstanding credit receivables.</p>
               </div>
             ) : (
@@ -989,24 +983,24 @@ export default function Suppliers() {
                 {receivables.map((s) => (
                   <div
                     key={s.id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-card"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-line bg-card shadow-card"
                   >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                      <div className="flex items-center gap-2 font-heading">
+                        <span className="font-mono text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                           {s.invoice_number || `INV-${s.id}`}
                         </span>
-                        <h4 className="font-bold text-sm text-ink">{s.customer_name || "Customer"}</h4>
+                        <h4 className="font-black text-sm text-ink">{s.customer_name || "Customer"}</h4>
                       </div>
-                      <p className="text-xs text-muted mt-1">
+                      <p className="text-xs text-muted mt-1 font-body">
                         Sale Date: {formatDate(s.created_at)} &bull; Total Sale: {rwf(s.total_amount)} RWF
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200">
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-line font-heading">
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] font-bold text-muted uppercase block">Amount Owed</span>
-                        <span className="text-base font-extrabold text-amber-800 tabnum">
+                        <span className="text-base font-black text-ink tabnum">
                           {rwf(s.amount_owed || s.total_amount)} RWF
                         </span>
                       </div>
@@ -1016,7 +1010,7 @@ export default function Suppliers() {
                           setPayModalSale(s);
                           setPayAmount(String(s.amount_owed || s.total_amount));
                         }}
-                        className="px-4 py-2 rounded-xl bg-primary text-xs font-extrabold text-white shadow-sm hover:bg-primary-lt transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-primary text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer"
                       >
                         Record Repayment
                       </button>
@@ -1030,21 +1024,21 @@ export default function Suppliers() {
 
         {/* TAB 3: PAYABLES & SUPPLIERS */}
         {activeTab === "payables" && (
-          <div className="space-y-3">
+          <div className="space-y-3 font-body">
             {suppliers.filter((s) => !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-900 shadow-sm">
-                  <Truck size={36} className="text-gray-800" />
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-2xl border border-dashed border-line bg-card shadow-card space-y-4 max-w-lg mx-auto">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card-hover border border-line text-primary shadow-sm">
+                  <Truck size={32} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900">No Stock Suppliers Listed Yet</h3>
-                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                  <h3 className="text-lg font-heading font-black text-ink">No Stock Suppliers Listed Yet</h3>
+                  <p className="mt-1.5 text-xs text-muted font-body leading-relaxed max-w-xs mx-auto">
                     Add your stock suppliers to manage invoice payables and restock orders.
                   </p>
                 </div>
                 <button
                   onClick={() => setAddSupOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-6 py-3 text-xs font-black text-white hover:bg-gray-800 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-heading font-black text-white hover:bg-primary-hover active:scale-95 transition shadow-orange-sm cursor-pointer mt-2"
                 >
                   <Plus size={16} />
                   <span>+ Add Stock Supplier Account</span>
@@ -1057,41 +1051,37 @@ export default function Suppliers() {
                   .map((s) => (
                     <div
                       key={s.id}
-                      className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-red-400 transition"
+                      className="flex flex-col justify-between rounded-2xl border border-line bg-card p-5 shadow-card hover:border-primary/40 transition font-body"
                     >
                       <div className="flex items-start gap-3.5">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-800 font-heading font-extrabold text-base shrink-0">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-card-hover border border-line text-primary font-heading font-black text-base shrink-0">
                           <Truck size={22} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-heading text-sm font-extrabold text-ink truncate">{s.name}</h3>
+                          <h3 className="font-heading text-sm font-black text-ink truncate">{s.name}</h3>
                           <p className="text-xs text-muted mt-0.5">{s.phone || "No phone"}</p>
                           <p className="text-xs text-muted mt-1 italic truncate">
                             Products: {s.products_supplied || "General Supplies"}
                           </p>
 
-                          <div className="mt-3 pt-3 border-t border-line/60 space-y-1.5 text-xs">
+                          <div className="mt-3 pt-3 border-t border-line space-y-1.5 text-xs">
                             <div className="flex justify-between">
                               <span className="text-muted font-medium">We Owe Supplier:</span>
-                              <span
-                                className={`font-extrabold tabnum ${
-                                  s.amount_we_owe_rwf > 0 ? "text-red-700" : "text-emerald-700"
-                                }`}
-                              >
-                                {s.amount_we_owe_rwf > 0 ? `${rwf(s.amount_we_owe_rwf)} RWF` : "Paid in Full 🎉"}
+                              <span className="font-heading font-black tabnum text-ink">
+                                {s.amount_we_owe_rwf > 0 ? `${rwf(s.amount_we_owe_rwf)} RWF` : "Paid in Full"}
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-2">
+                      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-2 font-heading">
                         {s.phone && s.phone !== "N/A" ? (
                           <a
                             href={`tel:${s.phone}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-paper text-xs font-bold text-ink hover:bg-card transition"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-ink transition"
                           >
-                            <Phone size={13} /> Call
+                            <Phone size={13} className="text-primary" /> Call
                           </a>
                         ) : (
                           <div />
@@ -1103,13 +1093,13 @@ export default function Suppliers() {
                               setPoSupplierId(String(s.id));
                               setCreatePoOpen(true);
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-black transition cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm"
                           >
                             Order Stock
                           </button>
                           <button
                             onClick={() => handlePaySupplier(s.id, s.amount_we_owe_rwf)}
-                            className="px-3.5 py-1.5 rounded-xl bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-xl bg-card hover:bg-card-hover border border-line text-xs font-bold text-ink transition cursor-pointer"
                           >
                             Mark Paid
                           </button>
@@ -1131,7 +1121,7 @@ export default function Suppliers() {
               <PackagePlus size={15} className="text-primary" />
               <span>WhatsApp Supplier Restocking</span>
             </div>
-            <p className="text-[11px] text-muted leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed font-body">
               Assemble your purchase order lines. Once created, you can instantly dispatch the pre-formatted order directly to the supplier via WhatsApp with 1 tap.
             </p>
           </div>
@@ -1141,7 +1131,7 @@ export default function Suppliers() {
               required
               value={poSupplierId}
               onChange={(e) => setPoSupplierId(e.target.value)}
-              className="w-full rounded-2xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink focus:border-purple-600 focus:outline-none shadow-sm"
+              className="w-full rounded-2xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink focus:border-primary focus:outline-none shadow-sm"
             >
               <option value="">Select a supplier…</option>
               {suppliers.map((s) => (
@@ -1171,15 +1161,15 @@ export default function Suppliers() {
           </div>
 
           {/* DYNAMIC LINE ITEMS BUILDER */}
-          <div className="space-y-2 pt-2 border-t border-line/60">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black uppercase tracking-wider text-gray-700">
+          <div className="space-y-2 pt-2 border-t border-line font-body">
+            <div className="flex items-center justify-between font-heading">
+              <label className="text-xs font-black uppercase tracking-wider text-ink">
                 Order Items ({poItems.length})
               </label>
               <button
                 type="button"
                 onClick={handleAddPoItemRow}
-                className="text-xs font-black text-purple-600 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Plus size={13} /> Add Product
               </button>
@@ -1187,14 +1177,14 @@ export default function Suppliers() {
 
             <div className="space-y-2.5">
               {poItems.map((item, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Item #{idx + 1}</span>
+                <div key={idx} className="p-3 rounded-2xl bg-card-hover border border-line space-y-2">
+                  <div className="flex items-center justify-between gap-2 font-heading">
+                    <span className="text-[10px] font-black text-muted uppercase">Item #{idx + 1}</span>
                     {poItems.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemovePoItemRow(idx)}
-                        className="text-gray-400 hover:text-red-600 transition p-0.5"
+                        className="text-muted hover:text-ink transition p-0.5"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -1204,11 +1194,11 @@ export default function Suppliers() {
                   {/* Product Catalog Picker / Custom Item Name */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Pick from Catalog</label>
+                      <label className="text-[10px] font-heading font-bold text-muted block mb-0.5">Pick from Catalog</label>
                       <select
                         value={item.stock_item_id || ""}
                         onChange={(e) => handleItemStockChange(idx, e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-semibold outline-none"
+                        className="w-full rounded-xl border border-line bg-card p-2 text-xs font-semibold text-ink outline-none"
                       >
                         <option value="">-- Custom Item --</option>
                         {(catalogItems.length > 0 ? catalogItems : (stock || [])).map((stk) => (
@@ -1220,14 +1210,14 @@ export default function Suppliers() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Item Name *</label>
+                      <label className="text-[10px] font-heading font-bold text-muted block mb-0.5">Item Name *</label>
                       <input
                         required
                         type="text"
                         placeholder="e.g. Inyange Milk 500ml"
                         value={item.item_name}
                         onChange={(e) => handleItemFieldChange(idx, "item_name", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-semibold outline-none"
+                        className="w-full rounded-xl border border-line bg-card p-2 text-xs font-semibold text-ink outline-none"
                       />
                     </div>
                   </div>
@@ -1235,7 +1225,7 @@ export default function Suppliers() {
                   {/* Quantity & Unit Cost */}
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Quantity</label>
+                      <label className="text-[10px] font-heading font-bold text-muted block mb-0.5">Quantity</label>
                       <input
                         required
                         type="number"
@@ -1243,12 +1233,12 @@ export default function Suppliers() {
                         placeholder="10"
                         value={item.quantity}
                         onChange={(e) => handleItemFieldChange(idx, "quantity", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-extrabold outline-none"
+                        className="w-full rounded-xl border border-line bg-card p-2 text-xs font-heading font-black text-ink outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Unit Cost (RWF)</label>
+                      <label className="text-[10px] font-heading font-bold text-muted block mb-0.5">Unit Cost (RWF)</label>
                       <input
                         required
                         type="number"
@@ -1256,13 +1246,13 @@ export default function Suppliers() {
                         placeholder="600"
                         value={item.unit_cost_rwf}
                         onChange={(e) => handleItemFieldChange(idx, "unit_cost_rwf", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold outline-none"
+                        className="w-full rounded-xl border border-line bg-card p-2 text-xs font-heading font-bold text-ink outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Subtotal</label>
-                      <div className="p-2 rounded-xl bg-gray-100 text-xs font-black text-gray-800 truncate">
+                      <label className="text-[10px] font-heading font-bold text-muted block mb-0.5">Subtotal</label>
+                      <div className="p-2 rounded-xl bg-card border border-line text-xs font-heading font-black text-ink tabnum truncate">
                         {rwf((Number(item.quantity) || 1) * (Number(item.unit_cost_rwf) || 0))}
                       </div>
                     </div>
@@ -1272,9 +1262,9 @@ export default function Suppliers() {
             </div>
 
             {/* Total Order Preview */}
-            <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-between">
-              <span className="text-xs font-extrabold text-purple-950">Total Estimated Order:</span>
-              <span className="text-base font-black text-purple-900 tabnum">{rwf(poCalculatedTotal)} RWF</span>
+            <div className="p-3.5 rounded-2xl bg-card border border-line flex items-center justify-between font-heading">
+              <span className="text-xs font-bold text-muted">Total Estimated Order:</span>
+              <span className="text-base font-black text-ink tabnum">{rwf(poCalculatedTotal)} RWF</span>
             </div>
           </div>
 
@@ -1286,16 +1276,16 @@ export default function Suppliers() {
             />
           </Field>
 
-          <div className="pt-3 flex gap-2">
+          <div className="pt-3 flex gap-2 font-heading">
             <Button type="button" variant="paper" onClick={() => setCreatePoOpen(false)} className="flex-1">
               Cancel
             </Button>
 
             <Button
               type="submit"
-              variant="green"
+              variant="primary"
               disabled={poSaving}
-              className="flex-1 font-bold shadow-sm bg-purple-600 hover:bg-purple-700 text-white"
+              className="flex-1 font-black shadow-orange-sm"
             >
               {poSaving ? "Creating Order…" : "Create & Send Order"}
             </Button>
@@ -1305,7 +1295,7 @@ export default function Suppliers() {
 
       {/* ADD CUSTOMER MODAL SHEET */}
       <Sheet open={addCustOpen} onClose={() => setAddCustOpen(false)} title="Add Customer Account">
-        <form onSubmit={handleAddCustomer} className="space-y-4 pt-2 font-manrope pb-6">
+        <form onSubmit={handleAddCustomer} className="space-y-4 pt-2 font-body pb-6">
           <Field label="Customer Full Name *">
             <TextInput
               required
@@ -1345,12 +1335,12 @@ export default function Suppliers() {
             />
           </Field>
 
-          <div className="pt-2 flex gap-2">
+          <div className="pt-2 flex gap-2 font-heading">
             <Button type="button" variant="paper" onClick={() => setAddCustOpen(false)} className="flex-1">
               Cancel
             </Button>
 
-            <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+            <Button type="submit" variant="primary" className="flex-1 font-black shadow-orange-sm">
               Save Customer
             </Button>
           </div>
@@ -1359,7 +1349,7 @@ export default function Suppliers() {
 
       {/* ADD SUPPLIER MODAL SHEET */}
       <Sheet open={addSupOpen} onClose={() => setAddSupOpen(false)} title="Add Stock Supplier Account">
-        <form onSubmit={handleAddSupplier} className="space-y-4 pt-2 font-manrope pb-6">
+        <form onSubmit={handleAddSupplier} className="space-y-4 pt-2 font-body pb-6">
           <Field label="Supplier / Company Name *">
             <TextInput
               required
@@ -1398,12 +1388,12 @@ export default function Suppliers() {
             />
           </Field>
 
-          <div className="pt-2 flex gap-2">
+          <div className="pt-2 flex gap-2 font-heading">
             <Button type="button" variant="paper" onClick={() => setAddSupOpen(false)} className="flex-1">
               Cancel
             </Button>
 
-            <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+            <Button type="submit" variant="primary" className="flex-1 font-black shadow-orange-sm">
               Save Supplier
             </Button>
           </div>
@@ -1413,13 +1403,13 @@ export default function Suppliers() {
       {/* RECORD DEBT REPAYMENT MODAL SHEET */}
       <Sheet open={!!payModalSale} onClose={() => setPayModalSale(null)} title="Record Customer Debt Repayment">
         {payModalSale && (
-          <form onSubmit={handleRecordDebtPaymentSubmit} className="space-y-4 pt-2 font-manrope pb-6">
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+          <form onSubmit={handleRecordDebtPaymentSubmit} className="space-y-4 pt-2 font-body pb-6">
+            <div className="p-4 rounded-2xl bg-card-hover border border-line text-xs text-ink space-y-1 font-heading">
               <div className="flex justify-between font-bold">
                 <span>Invoice: {payModalSale.invoice_number || `INV-${payModalSale.id}`}</span>
-                <span>Owed: {rwf(payModalSale.amount_owed || payModalSale.total_amount)} RWF</span>
+                <span className="tabnum text-primary">Owed: {rwf(payModalSale.amount_owed || payModalSale.total_amount)} RWF</span>
               </div>
-              <div>Customer: <strong>{payModalSale.customer_name}</strong></div>
+              <div className="font-body text-muted">Customer: <strong className="text-ink font-heading">{payModalSale.customer_name}</strong></div>
             </div>
 
             <Field label="Repayment Amount (RWF) *">
@@ -1439,7 +1429,7 @@ export default function Suppliers() {
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold outline-none"
+                className="w-full rounded-2xl border border-line bg-paper p-3 text-xs font-semibold text-ink outline-none"
               >
                 <option value="cash">Cash</option>
                 <option value="momo">MTN Mobile Money</option>
@@ -1455,11 +1445,11 @@ export default function Suppliers() {
               />
             </Field>
 
-            <div className="pt-2 flex gap-2">
+            <div className="pt-2 flex gap-2 font-heading">
               <Button type="button" variant="paper" onClick={() => setPayModalSale(null)} className="flex-1">
                 Cancel
               </Button>
-              <Button type="submit" variant="green" className="flex-1 font-bold shadow-sm">
+              <Button type="submit" variant="primary" className="flex-1 font-black shadow-orange-sm">
                 Save Repayment
               </Button>
             </div>

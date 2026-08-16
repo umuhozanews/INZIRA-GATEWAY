@@ -540,58 +540,58 @@ export default function FinancialBooks() {
 
         {/* ================= TAB 1: GENERAL JOURNAL ================= */}
         {(activeTab === "journal" || window.matchMedia?.("print")?.matches) && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="space-y-4 font-body">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-heading">
               <div>
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
+                <h3 className="text-sm font-black text-ink uppercase tracking-wider">
                   Double-Entry General Journal Log
                 </h3>
-                <p className="text-xs text-gray-500 font-semibold">
+                <p className="text-xs text-muted font-medium font-body">
                   Showing {searchedJournals.length} verified transaction entries for {dateRangeLabel}
                 </p>
               </div>
 
               <div className="print-hidden relative">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Filter entries…"
-                  className="rounded-full border border-gray-200 bg-white pl-9 pr-4 py-1.5 text-xs font-semibold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#D4F06B] shadow-sm"
+                  className="rounded-xl border border-line bg-card pl-9 pr-4 py-1.5 text-xs font-semibold text-ink placeholder:text-muted outline-none focus:border-primary shadow-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 font-body">
               {searchedJournals.length === 0 ? (
-                <div className="p-10 text-center text-xs text-gray-400 font-semibold bg-white rounded-3xl border border-dashed border-gray-200">
+                <div className="p-10 text-center text-xs text-muted font-medium bg-card rounded-2xl border border-dashed border-line">
                   No journal entries found in {dateRangeLabel}. Record daily sales or expenses to view live double-entry records.
                 </div>
               ) : (
                 searchedJournals.map((e) => (
-                  <div key={e.id} className="rounded-3xl border border-gray-200/80 bg-white p-4.5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] space-y-2.5 report-card">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <div key={e.id} className="rounded-2xl border border-line bg-card p-4.5 shadow-card space-y-2.5 report-card">
+                    <div className="flex items-center justify-between border-b border-line pb-2 font-heading">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-black text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-lg">
+                        <span className="font-mono text-xs font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
                           {e.reference}
                         </span>
-                        <span className="text-xs font-bold text-gray-900">{e.description}</span>
+                        <span className="text-xs font-bold text-ink">{e.description}</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-gray-400">{formatDate(e.entry_date)}</span>
+                      <span className="text-[11px] font-semibold text-muted">{formatDate(e.entry_date)}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2.5 text-xs">
-                      <div className="rounded-2xl bg-emerald-50/70 p-3 border border-emerald-200/80">
-                        <span className="text-[10px] font-black text-emerald-800 uppercase block">DR (Debit Account)</span>
-                        <span className="font-bold text-gray-900">[{e.debit_code}] {e.debit_account}</span>
-                        <span className="font-black text-emerald-700 block mt-1 tabnum">{rwf(e.amount)}</span>
+                      <div className="rounded-xl bg-card-hover p-3 border border-line">
+                        <span className="text-[10px] font-heading font-black text-primary uppercase block">DR (Debit Account)</span>
+                        <span className="font-bold text-ink">[{e.debit_code}] {e.debit_account}</span>
+                        <span className="font-heading font-black text-ink block mt-1 tabnum">{rwf(e.amount)} RWF</span>
                       </div>
 
-                      <div className="rounded-2xl bg-blue-50/70 p-3 border border-blue-200/80">
-                        <span className="text-[10px] font-black text-blue-800 uppercase block">CR (Credit Account)</span>
-                        <span className="font-bold text-gray-900">[{e.credit_code}] {e.credit_account}</span>
-                        <span className="font-black text-blue-700 block mt-1 tabnum">{rwf(e.amount)}</span>
+                      <div className="rounded-xl bg-card-hover p-3 border border-line">
+                        <span className="text-[10px] font-heading font-black text-muted uppercase block">CR (Credit Account)</span>
+                        <span className="font-bold text-ink">[{e.credit_code}] {e.credit_account}</span>
+                        <span className="font-heading font-black text-ink block mt-1 tabnum">{rwf(e.amount)} RWF</span>
                       </div>
                     </div>
                   </div>
@@ -603,38 +603,34 @@ export default function FinancialBooks() {
 
         {/* ================= TAB 2: GENERAL LEDGER ================= */}
         {activeTab === "ledger" && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
+          <div className="space-y-4 font-body">
+            <div className="font-heading">
+              <h3 className="text-sm font-black text-ink uppercase tracking-wider">
                 Account Ledgers & Net Balances
               </h3>
-              <p className="text-xs text-gray-500 font-semibold">
+              <p className="text-xs text-muted font-medium font-body">
                 Derived directly from {realJournalEntries.length} verified entries in {dateRangeLabel}
               </p>
             </div>
 
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-3 report-card">
-              <div className="flex items-center justify-between text-[11px] border-b border-gray-200 pb-2 font-black text-gray-400 uppercase">
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-3 report-card">
+              <div className="flex items-center justify-between text-[11px] border-b border-line pb-2 font-heading font-black text-muted uppercase">
                 <span>Account Title & Code</span>
                 <span>Type</span>
                 <span className="text-right">Net Closing Balance (RWF)</span>
               </div>
 
               {ledgerAccounts.accounts.map((acc, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs py-3 border-b border-gray-100 last:border-0">
+                <div key={idx} className="flex items-center justify-between text-xs py-3 border-b border-line last:border-0 font-body">
                   <div>
-                    <span className="font-mono font-bold text-purple-700 mr-2">[{acc.code}]</span>
-                    <span className="font-bold text-gray-900">{acc.name}</span>
+                    <span className="font-mono font-bold text-primary mr-2">[{acc.code}]</span>
+                    <span className="font-bold text-ink">{acc.name}</span>
                   </div>
-                  <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                    acc.type === "Asset" ? "bg-emerald-100 text-emerald-800" :
-                    acc.type === "Revenue" ? "bg-blue-100 text-blue-800" :
-                    acc.type === "Expense" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
-                  }`}>
+                  <span className="text-[10px] font-heading font-black px-2.5 py-0.5 rounded-md bg-card-hover text-ink border border-line">
                     {acc.type}
                   </span>
-                  <span className="font-black text-gray-900 tabnum text-right">
-                    {rwf(acc.balance)}
+                  <span className="font-heading font-black text-ink tabnum text-right">
+                    {rwf(acc.balance)} RWF
                   </span>
                 </div>
               ))}
@@ -644,49 +640,49 @@ export default function FinancialBooks() {
 
         {/* ================= TAB 3: CASH & MOMO BOOK ================= */}
         {activeTab === "cashbook" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-[28px] border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm report-card">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Cash in Till Balance</span>
-                <div className="mt-1 text-xl md:text-2xl font-black text-emerald-700 tabnum">
-                  {rwf(ledgerAccounts.netCashBalance)}
+          <div className="space-y-4 font-body">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-heading">
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Cash in Till Balance</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">
+                  {rwf(ledgerAccounts.netCashBalance)} RWF
                 </div>
-                <span className="text-[11px] font-semibold text-emerald-800 mt-1 block">Physical drawer cash</span>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">Physical drawer cash</span>
               </div>
-              <div className="rounded-[28px] border border-blue-200 bg-blue-50/60 p-5 shadow-sm report-card">
-                <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Mobile Money / Bank Balance</span>
-                <div className="mt-1 text-xl md:text-2xl font-black text-blue-700 tabnum">
-                  {rwf(ledgerAccounts.netMomoBalance)}
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Mobile Money / Bank Balance</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">
+                  {rwf(ledgerAccounts.netMomoBalance)} RWF
                 </div>
-                <span className="text-[11px] font-semibold text-blue-800 mt-1 block">MTN MoMo & Airtel</span>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">MTN MoMo & Airtel</span>
               </div>
-              <div className="rounded-[28px] border border-gray-200/80 bg-white p-5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] report-card">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Liquid Funds</span>
-                <div className="mt-1 text-xl md:text-2xl font-black text-gray-900 tabnum">
-                  {rwf(ledgerAccounts.totalLiquidFunds)}
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Liquid Funds</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">
+                  {rwf(ledgerAccounts.totalLiquidFunds)} RWF
                 </div>
-                <span className="text-[11px] font-semibold text-purple-600 mt-1 block">Available working capital</span>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">Available working capital</span>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-3 report-card">
-              <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+            <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-3 report-card">
+              <h4 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
                 Chronological Cash Movements Log
               </h4>
               {realJournalEntries.length === 0 ? (
-                <p className="text-xs text-gray-400 italic py-3">No cash or MoMo transactions recorded in this period.</p>
+                <p className="text-xs text-muted italic py-3">No cash or MoMo transactions recorded in this period.</p>
               ) : (
-                <div className="space-y-2 text-xs divide-y divide-gray-100">
+                <div className="space-y-2 text-xs divide-y divide-line font-body">
                   {realJournalEntries.map((e) => (
                     <div key={e.id} className="flex items-center justify-between py-2.5">
                       <div>
-                        <span className="font-bold text-gray-900">{e.description}</span>
-                        <span className="text-gray-400 block text-[11px]">
+                        <span className="font-bold text-ink">{e.description}</span>
+                        <span className="text-muted block text-[11px]">
                           {formatDate(e.entry_date)} · {e.debit_account}
                         </span>
                       </div>
-                      <span className={`font-black tabnum ${e.type === "Sale" ? "text-emerald-700" : "text-red-600"}`}>
-                        {e.type === "Sale" ? `+${rwf(e.amount)}` : `-${rwf(e.amount)}`}
+                      <span className="font-heading font-black tabnum text-ink">
+                        {e.type === "Sale" ? `+${rwf(e.amount)}` : `-${rwf(e.amount)}`} RWF
                       </span>
                     </div>
                   ))}
@@ -698,48 +694,44 @@ export default function FinancialBooks() {
 
         {/* ================= TAB 4: TRIAL BALANCE SHEET ================= */}
         {activeTab === "trial" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 font-body">
+            <div className="flex items-center justify-between font-heading">
               <div>
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
+                <h3 className="text-sm font-black text-ink uppercase tracking-wider">
                   Trial Balance Sheet
                 </h3>
-                <p className="text-xs text-gray-500 font-semibold">
+                <p className="text-xs text-muted font-medium font-body">
                   Complete equilibrium of Debits (DR) and Credits (CR)
                 </p>
               </div>
 
               <div
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-sm ${
-                  isBalanced
-                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                    : "bg-red-100 text-red-800 border border-red-300"
-                }`}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm bg-card border border-line text-ink"
               >
-                {isBalanced ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                {isBalanced ? <CheckCircle2 size={15} className="text-primary" /> : <AlertCircle size={15} className="text-primary" />}
                 <span>{isBalanced ? "Balanced (DR = CR)" : "Unbalanced"}</span>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm overflow-hidden report-card">
-              <div className="grid grid-cols-12 text-[10px] font-black text-gray-400 border-b border-gray-200 pb-2 uppercase tracking-wider">
+            <div className="rounded-2xl border border-line bg-card p-6 shadow-card overflow-hidden report-card">
+              <div className="grid grid-cols-12 text-[10px] font-heading font-black text-muted border-b border-line pb-2 uppercase tracking-wider">
                 <span className="col-span-6">Account Code & Title</span>
                 <span className="col-span-3 text-right">Debit (DR)</span>
                 <span className="col-span-3 text-right">Credit (CR)</span>
               </div>
 
-              <div className="divide-y divide-gray-100 text-xs">
+              <div className="divide-y divide-line text-xs font-body">
                 {trialBalanceRows.map((row, idx) => (
                   <div key={idx} className="grid grid-cols-12 py-3 items-center">
                     <div className="col-span-6">
-                      <span className="font-mono text-purple-700 font-bold mr-1.5">[{row.code}]</span>
-                      <span className="font-bold text-gray-900">{row.name}</span>
-                      <span className="text-[10px] text-gray-400 block font-semibold">{row.type}</span>
+                      <span className="font-mono text-primary font-bold mr-1.5">[{row.code}]</span>
+                      <span className="font-bold text-ink">{row.name}</span>
+                      <span className="text-[10px] text-muted block font-medium">{row.type}</span>
                     </div>
-                    <span className="col-span-3 text-right font-black text-emerald-700 tabnum">
+                    <span className="col-span-3 text-right font-heading font-black text-ink tabnum">
                       {row.debit > 0 ? rwf(row.debit) : "—"}
                     </span>
-                    <span className="col-span-3 text-right font-black text-blue-700 tabnum">
+                    <span className="col-span-3 text-right font-heading font-black text-ink tabnum">
                       {row.credit > 0 ? rwf(row.credit) : "—"}
                     </span>
                   </div>
@@ -747,25 +739,25 @@ export default function FinancialBooks() {
               </div>
 
               {/* Grand Totals Footer */}
-              <div className="grid grid-cols-12 pt-4 mt-3 border-t-2 border-gray-900 text-xs font-black text-gray-900">
+              <div className="grid grid-cols-12 pt-4 mt-3 border-t-2 border-line text-xs font-heading font-black text-ink">
                 <span className="col-span-6 uppercase">Total Equilibrium Summary</span>
-                <span className="col-span-3 text-right text-emerald-700 tabnum">{rwf(grandTotalDebit)}</span>
-                <span className="col-span-3 text-right text-blue-700 tabnum">{rwf(grandTotalCredit)}</span>
+                <span className="col-span-3 text-right text-ink tabnum">{rwf(grandTotalDebit)} RWF</span>
+                <span className="col-span-3 text-right text-ink tabnum">{rwf(grandTotalCredit)} RWF</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Printable Footer Stamp */}
-        <div className="hidden print:block pt-8 border-t border-gray-300 text-xs text-gray-600">
+        <div className="hidden print:block pt-8 border-t border-line text-xs text-muted font-body">
           <div className="flex justify-between items-end">
             <div>
-              <p className="font-bold text-gray-800">Accountant / Manager: {user?.name || "Business Owner"}</p>
-              <p className="text-[10px] text-gray-400">Official INZIRA Business Records · Kigali, Rwanda</p>
+              <p className="font-bold text-ink">Accountant / Manager: {user?.name || "Business Owner"}</p>
+              <p className="text-[10px] text-muted">Official INZIRA Business Records · Kigali, Rwanda</p>
             </div>
             <div className="text-right">
-              <div className="w-48 border-b border-gray-400 mb-1"></div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase">Authorized Signature & Stamp</p>
+              <div className="w-48 border-b border-line mb-1"></div>
+              <p className="text-[10px] font-bold text-muted uppercase">Authorized Signature & Stamp</p>
             </div>
           </div>
         </div>

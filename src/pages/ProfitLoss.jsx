@@ -108,11 +108,7 @@ export default function ProfitLoss() {
               </h2>
             </div>
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl border ${
-                isNetPositive
-                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                  : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-              }`}
+              className="flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-card-hover text-primary"
             >
               {isNetPositive ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
             </div>
@@ -127,7 +123,7 @@ export default function ProfitLoss() {
             </div>
             <div className="text-right">
               <span className="text-xs text-muted font-bold uppercase tracking-wider">Margin:</span>
-              <div className={`text-xl font-black tabnum mt-1 ${isNetPositive ? "text-emerald-400" : "text-rose-400"}`}>
+              <div className="text-xl font-black tabnum mt-1 text-ink">
                 {p.marginPct}%
               </div>
             </div>
@@ -145,7 +141,7 @@ export default function ProfitLoss() {
                 style={{ width: `${Math.min(100, Math.max(10, (p.grossProfit / (p.grossRevenue || 1)) * 100))}%` }}
               />
               <div
-                className="bg-amber-500 h-full rounded-full transition-all duration-500 ml-0.5"
+                className="bg-muted h-full rounded-full transition-all duration-500 ml-0.5"
                 style={{ width: `${Math.min(100, Math.max(10, (p.operatingExpenses / (p.grossRevenue || 1)) * 100))}%` }}
               />
             </div>

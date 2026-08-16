@@ -65,48 +65,48 @@ export default function AdminAnalytics() {
   const maxDailyVolume = Math.max(...dailyTrends.map((d) => d.volume || 1), 1);
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body text-ink">
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between font-heading">
         <div>
-          <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
+          <span className="text-[10px] sm:text-xs font-bold text-muted uppercase tracking-widest">
             PLATFORM INTELLIGENCE
           </span>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight font-heading">
+          <h1 className="text-lg md:text-2xl font-black text-ink flex items-center gap-1.5 leading-tight">
             Macro Analytics & Trends
           </h1>
         </div>
       </div>
 
       {/* ─── 7-Day Sales Volume Velocity Chart ─── */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
+        <div className="flex items-center justify-between font-heading">
           <div>
-            <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+            <h3 className="text-xs font-black text-ink uppercase tracking-wider">
               7-Day Combined Sales GMV Velocity
             </h3>
-            <p className="text-[11px] text-gray-500">Gross transaction turnover across all active stores</p>
+            <p className="text-[11px] text-muted font-medium font-body">Gross transaction turnover across all active stores</p>
           </div>
-          <span className="px-3 py-1 rounded-full text-xs font-black bg-[#F4FBE4] text-purple-950 border border-[#D4F06B]">
+          <span className="px-3 py-1 rounded-md text-xs font-black bg-primary/10 text-primary border border-primary/20">
             All Rwandan SMEs
           </span>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end pt-6 pb-2 h-44">
+        <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end pt-6 pb-2 h-44 font-heading">
           {dailyTrends.map((d, i) => {
             const pct = Math.round((d.volume / maxDailyVolume) * 100);
             return (
               <div key={i} className="flex flex-col items-center gap-2 h-full justify-end group">
-                <span className="text-[9px] font-bold text-gray-400 group-hover:text-purple-600 transition">
+                <span className="text-[9px] font-bold text-muted group-hover:text-primary transition tabnum">
                   {rwfCompact(d.volume)}
                 </span>
-                <div className="w-full bg-gray-100 rounded-2xl h-full flex items-end overflow-hidden">
+                <div className="w-full bg-card-hover rounded-xl h-full flex items-end overflow-hidden border border-line">
                   <div
                     style={{ height: `${pct}%` }}
-                    className="w-full bg-[#D4F06B] group-hover:bg-[#C5E456] rounded-2xl transition-all duration-300 shadow-sm"
+                    className="w-full bg-primary group-hover:bg-primary-hover rounded-xl transition-all duration-300 shadow-orange-sm"
                   />
                 </div>
-                <span className="text-[9px] font-bold text-gray-500">
+                <span className="text-[9px] font-bold text-muted">
                   {d?.day ? String(d.day).split("-").slice(1).join("/") : ""}
                 </span>
               </div>
@@ -116,17 +116,17 @@ export default function AdminAnalytics() {
       </div>
 
       {/* ─── Top Performing SMEs Leaderboard ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xs font-black text-gray-900 uppercase">Top 10 Performing SME Merchants</h3>
-            <span className="text-xs font-bold text-gray-400">By Sales Volume</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 font-body">
+        <div className="lg:col-span-8 bg-card rounded-2xl border border-line shadow-card overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
+            <h3 className="text-xs font-black text-ink uppercase">Top 10 Performing SME Merchants</h3>
+            <span className="text-xs font-bold text-muted">By Sales Volume</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
                   <th className="py-3 px-4 sm:px-6">Rank & Shop</th>
                   <th className="py-3 px-4">Sector</th>
                   <th className="py-3 px-4">Transactions</th>
@@ -134,32 +134,32 @@ export default function AdminAnalytics() {
                   <th className="py-3 px-4 sm:px-6 text-right">GMV Turnover</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {topSmes.map((sme, idx) => (
-                  <tr key={sme.id} className="hover:bg-gray-50">
+                  <tr key={sme.id} className="hover:bg-card-hover transition">
                     <td className="py-3.5 px-4 sm:px-6">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-6 w-6 rounded-full bg-[#F4FBE4] text-purple-950 font-black text-[11px] items-center justify-center">
+                        <span className="flex h-6 w-6 rounded-lg bg-primary/10 text-primary border border-primary/20 font-heading font-black text-[11px] items-center justify-center">
                           #{idx + 1}
                         </span>
                         <div>
-                          <h4 className="font-black text-gray-900">{sme.shop_name || sme.name}</h4>
-                          <p className="text-[10px] text-gray-400">{sme.district || "Kigali"}</p>
+                          <h4 className="font-heading font-black text-ink">{sme.shop_name || sme.name}</h4>
+                          <p className="text-[10px] text-muted">{sme.district || "Kigali"}</p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-gray-600">{sme.sector}</td>
-                    <td className="py-3.5 px-4 font-bold text-gray-800">{sme.total_transactions || 0}</td>
+                    <td className="py-3.5 px-4 text-muted font-medium">{sme.sector}</td>
+                    <td className="py-3.5 px-4 font-heading font-bold text-ink tabnum">{sme.total_transactions || 0}</td>
 
                     <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-heading font-black bg-card-hover text-ink border border-line tabnum">
                         {sme.health_score || 80}/100
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 sm:px-6 text-right font-black text-gray-900">
-                      {rwf(sme.total_volume || 0)}
+                    <td className="py-3.5 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">
+                      {rwf(sme.total_volume || 0)} RWF
                     </td>
                   </tr>
                 ))}
@@ -169,25 +169,25 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Sector Market Share */}
-        <div className="lg:col-span-4 bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
-          <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+        <div className="lg:col-span-4 bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
+          <h3 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
             Sector Market Share
           </h3>
 
           <div className="space-y-3">
             {sectorShares.map((sec, idx) => (
               <div key={idx} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-gray-800">{sec.sector}</span>
-                  <span className="font-black text-gray-900">{rwfCompact(sec.total_sales || 0)}</span>
+                <div className="flex items-center justify-between text-xs font-heading">
+                  <span className="font-bold text-ink">{sec.sector}</span>
+                  <span className="font-black text-ink tabnum">{rwfCompact(sec.total_sales || 0)}</span>
                 </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-card-hover border border-line rounded-full overflow-hidden">
                   <div
                     style={{ width: `${Math.min(100, Math.max(15, (sec.merchant_count / 5) * 100))}%` }}
-                    className="h-full bg-[#D4F06B] rounded-full"
+                    className="h-full bg-primary rounded-full"
                   />
                 </div>
-                <span className="text-[10px] text-gray-400">{sec.merchant_count} stores registered</span>
+                <span className="text-[10px] text-muted">{sec.merchant_count} stores registered</span>
               </div>
             ))}
           </div>

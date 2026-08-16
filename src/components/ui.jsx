@@ -11,7 +11,8 @@ export function Button({ children, variant = "primary", full, className = "", ..
     dark: "bg-charcoal-800 text-white hover:bg-charcoal-700 border border-charcoal-700",
     secondary: "bg-card border border-line text-ink hover:bg-card-hover hover:border-primary/40",
     ghost: "bg-card-hover text-ink border border-line hover:border-primary/40",
-    danger: "bg-danger text-white hover:bg-red-600 shadow-sm",
+    danger: "bg-card border border-line text-ink hover:bg-card-hover hover:border-line hover:text-white",
+    paper: "bg-card-hover text-ink border border-line hover:border-primary/40",
   };
 
   return (

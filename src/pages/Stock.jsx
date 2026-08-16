@@ -21,10 +21,10 @@ function StockCard({ item, t, onRestock, onDelete }) {
   const st = statusOf(item);
   const color =
     st === "out"
-      ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+      ? "bg-card text-muted border border-line"
       : st === "low"
-      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-      : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
+      ? "bg-card-hover text-ink border border-line"
+      : "bg-primary/10 text-primary border border-primary/20";
   const th = Number(item.low_stock_threshold) || 5;
   const pct = Math.max(6, Math.min(100, (Number(item.quantity) / (th * 3)) * 100));
 
@@ -33,8 +33,8 @@ function StockCard({ item, t, onRestock, onDelete }) {
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-heading font-extrabold text-ink truncate group-hover:text-primary transition">{item.name}</h3>
-            <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-heading font-extrabold uppercase shrink-0 ${color}`}>
+            <h3 className="text-sm font-heading font-black text-ink truncate group-hover:text-primary transition">{item.name}</h3>
+            <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-heading font-black uppercase shrink-0 ${color}`}>
               {st === "out" ? "Out of Stock" : st === "low" ? "Low Stock" : "In Stock"}
             </span>
           </div>
@@ -60,9 +60,7 @@ function StockCard({ item, t, onRestock, onDelete }) {
           </div>
           <div className="h-1.5 w-full rounded-full bg-card-hover border border-line overflow-hidden mb-3">
             <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                st === "out" ? "bg-rose-500" : st === "low" ? "bg-amber-400" : "bg-primary"
-              }`}
+              className="h-full bg-primary rounded-full transition-all duration-300"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -72,7 +70,7 @@ function StockCard({ item, t, onRestock, onDelete }) {
             <button
               type="button"
               onClick={() => onRestock(item)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-heading font-bold transition active:scale-95 cursor-pointer shadow-orange-sm"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-heading font-black transition active:scale-95 cursor-pointer shadow-orange-sm"
             >
               <Plus size={14} strokeWidth={2.5} className="shrink-0" />
               <span>Restock (+Qty)</span>
@@ -80,7 +78,7 @@ function StockCard({ item, t, onRestock, onDelete }) {
             <button
               type="button"
               onClick={() => onDelete(item)}
-              className="p-2 rounded-xl text-muted hover:text-rose-500 hover:bg-rose-500/10 transition active:scale-95 cursor-pointer"
+              className="p-2 rounded-xl text-muted hover:text-ink hover:bg-card-hover border border-line transition active:scale-95 cursor-pointer"
               title="Delete Product (Logged)"
             >
               <Trash2 size={15} />
@@ -363,7 +361,7 @@ export default function Stock() {
         </div>
 
         <div className="rounded-2xl border border-line bg-card p-4 shadow-card flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-card-hover border border-line text-primary shrink-0">
             <AlertTriangle size={20} />
           </div>
           <div>
@@ -399,8 +397,8 @@ export default function Stock() {
       )}
 
       {lowCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-2.5 text-xs font-heading font-bold text-amber-400">
-          <AlertTriangle size={16} className="shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-xl bg-card-hover border border-line px-4 py-2.5 text-xs font-heading font-bold text-ink">
+          <AlertTriangle size={16} className="shrink-0 text-primary" />
           <span>
             {lowCount} {t("running_low")}
           </span>
@@ -594,9 +592,9 @@ export default function Stock() {
               className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-heading font-extrabold text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-sm placeholder:text-muted"
             />
             {matchingExisting && (
-              <div className="mt-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3 animate-fadeIn">
+              <div className="mt-2.5 p-3 rounded-xl bg-card-hover border border-line flex items-center justify-between gap-3 animate-fadeIn">
                 <div>
-                  <p className="text-xs font-heading font-black text-amber-400">"{matchingExisting.name}" is already in stock!</p>
+                  <p className="text-xs font-heading font-black text-primary">"{matchingExisting.name}" is already in stock!</p>
                   <p className="text-[11px] text-muted font-heading tabnum">
                     Current: {matchingExisting.quantity} {matchingExisting.unit || "units"}
                   </p>

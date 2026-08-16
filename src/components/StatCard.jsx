@@ -31,9 +31,9 @@ export default function StatCard({ label, value, sub, tone, onClick, icon: Icon 
       {sub && (
         <div className="mt-1 flex items-center gap-1.5">
           {tone === "up" ? (
-            <TrendingUp size={12} className="text-emerald-500 shrink-0" />
+            <TrendingUp size={12} className="text-primary shrink-0" />
           ) : tone === "down" ? (
-            <TrendingDown size={12} className="text-rose-500 shrink-0" />
+            <TrendingDown size={12} className="text-muted shrink-0" />
           ) : null}
           <span className="text-[11px] font-semibold text-muted">{sub}</span>
         </div>

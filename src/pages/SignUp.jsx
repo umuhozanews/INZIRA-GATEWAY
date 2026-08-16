@@ -21,6 +21,7 @@ import {
   Briefcase,
   CheckCircle2,
   HelpCircle,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
@@ -99,10 +100,11 @@ export default function SignUp() {
   // Step 3: Financial Setup & Localization
   const [currency, setCurrency] = useState("RWF");
   const [teamSize, setTeamSize] = useState("1 (Just Me)");
-  const [needEbm, setNeedEbm] = useState("Yes");
+  const [needEbm, setNeedEbm] = useState("No");
   const [tinNumber, setTinNumber] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
+  // Google Sign-Up Dynamic Script & Handler
   useEffect(() => {
     const GOOGLE_CLIENT_ID =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -162,37 +164,32 @@ export default function SignUp() {
             type: "standard",
             text: "signup_with",
             shape: "pill",
-            width: "320",
+            width: "340",
           });
         }
         return true;
       } catch (err) {
-        console.error("[GIS] Google Identity Services init error:", err);
+        console.warn("Google Sign-up init error:", err);
         return false;
       }
     };
 
-    if (initGIS()) return;
+    if (!initGIS()) {
+      const interval = setInterval(() => {
+        if (initGIS()) clearInterval(interval);
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [loginWithGoogle, navigate]);
 
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (initGIS() || attempts > 40) {
-        clearInterval(interval);
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [loginWithGoogle, navigate, resetData]);
-
-  // Validation before going to Step 2
+  // Step 1 Validation
   const validateStep1 = () => {
     if (!fullName.trim()) {
       toast.error("Please enter your full name.");
       return false;
     }
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid personal email address.");
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
       return false;
     }
     if (!phone.trim()) {
@@ -200,24 +197,29 @@ export default function SignUp() {
       return false;
     }
     if (!password || password.length < 6) {
-      toast.error("Please set a password of at least 6 characters.");
+      toast.error("Password must be at least 6 characters long.");
       return false;
     }
     return true;
   };
 
-  // Validation before going to Step 3
+  // Step 2 Validation
   const validateStep2 = () => {
     if (!shopName.trim()) {
       toast.error("Please enter your business or shop name.");
       return false;
     }
     if (!location.trim()) {
-      toast.error("Please specify your business location or city.");
+      toast.error("Please enter your business address or district.");
       return false;
     }
-    if (!businessType) {
-      toast.error("Please select what type of business you run.");
+    return true;
+  };
+
+  // Step 3 Validation
+  const validateStep3 = () => {
+    if (needEbm === "Yes" && !tinNumber.trim()) {
+      toast.error("Please enter your 9-digit RRA TIN Number, or select 'No'.");
       return false;
     }
     return true;
@@ -234,39 +236,51 @@ export default function SignUp() {
 
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
-    if (!validateStep1() || !validateStep2()) return;
+    if (!validateStep1() || !validateStep2() || !validateStep3()) return;
 
     setBusy(true);
-    try {
-      const formattedPhone = `${countryCode} ${phone.replace(/^0+/, "")}`.trim();
+    const fullPhone = `${countryCode} ${phone.trim()}`;
 
+    try {
       const payload = {
         name: fullName.trim(),
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
+        phone: fullPhone,
         shop_name: shopName.trim(),
-        business_email: (businessEmail || email).trim(),
+        business_email: businessEmail.trim() || email.trim().toLowerCase(),
         location: location.trim(),
+        district: location.trim(),
+        sector: businessType,
         currency,
-        phone: formattedPhone,
-        referralCode: referralCode.trim() || "DIRECT_WEB",
-        businessType,
-        teamSize,
-        needEbm,
-        tin_number: tinNumber.trim(),
+        team_size: teamSize,
+        need_ebm: needEbm === "Yes",
+        tin_number: needEbm === "Yes" ? tinNumber.trim() : null,
+        referral_code: referralCode.trim() || null,
+        profile_complete: true,
       };
 
-      await registerUser(payload);
+      const loggedUser = await registerUser(payload);
       resetData();
-      toast.success(`🎉 Welcome to INZIRA! "${shopName}" is ready.`);
-      navigate("/", { replace: true });
+      toast.success(`Welcome to INZIRA, ${fullName}! Your store is ready.`);
+
+      const isAdmin =
+        loggedUser?.role === "pulse_admin" ||
+        loggedUser?.role === "admin" ||
+        loggedUser?.email?.includes("creator");
+
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err) {
-      const msg = errorMessage(err, "Registration failed. Please try again.");
-      toast.error(msg, { duration: 5000 });
-      // If error is about email or phone already registered, take user back to Step 1 to edit or log in
-      const code = err?.response?.data?.code;
-      const field = err?.response?.data?.field;
-      if (code === "EMAIL_EXISTS" || code === "PHONE_EXISTS" || code === "ACCOUNT_EXISTS" || field === "email" || field === "phone") {
+      console.error("Registration error:", err);
+      toast.error(errorMessage(err, "Registration failed. Please try again."));
+      if (
+        err.message?.toLowerCase().includes("email") ||
+        err.message?.toLowerCase().includes("phone")
+      ) {
         setCurrentStep(1);
       }
     } finally {
@@ -275,85 +289,85 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#FFFFFF] font-manrope text-gray-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-[560px] rounded-[36px] bg-white p-6 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-gray-100">
+    <div className="min-h-[100dvh] w-full bg-paper font-body text-ink flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-[560px] rounded-3xl bg-card p-6 sm:p-10 shadow-card border border-line">
         
         {/* Header Branding */}
         <div className="text-center mb-6">
           <div className="mx-auto mb-3 flex items-center justify-center">
-            <Logomark size={56} className="shadow-md border-2 border-white ring-2 ring-[#D4F06B]" />
+            <Logomark size={56} className="shadow-orange-sm border border-line" />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Create Business Account</h1>
-          <p className="text-xs font-semibold text-gray-500 mt-1">
-            Set up your shop in 3 scheduled steps and start tracking your sales.
+          <h1 className="text-2xl font-heading font-black text-ink tracking-tight">Create Business Account</h1>
+          <p className="text-xs font-medium text-muted mt-1 font-body">
+            Set up your shop in 3 simple steps and start tracking your sales.
           </p>
         </div>
 
         {/* Tab Switcher: Sign Up / Log In */}
-        <div className="flex rounded-full bg-gray-100 p-1.5 border border-gray-200/60 mb-6">
+        <div className="flex rounded-xl bg-paper p-1 border border-line mb-6 font-heading">
           <button
             type="button"
-            className="flex-1 rounded-full bg-[#D4F06B] py-2 text-xs font-extrabold text-gray-900 shadow-sm transition-all"
+            className="flex-1 rounded-lg bg-primary py-2 text-xs font-black text-white shadow-orange-sm transition-all"
           >
             Sign Up
           </button>
           <Link
             to="/login"
-            className="flex-1 rounded-full py-2 text-center text-xs font-bold text-gray-500 hover:text-gray-900 transition-all"
+            className="flex-1 rounded-lg py-2 text-center text-xs font-bold text-muted hover:text-ink transition-all"
           >
             Log In
           </Link>
         </div>
 
         {/* SCHEDULED STEP PROGRESS BAR */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider mb-2">
-            <span className={currentStep === 1 ? "text-gray-900 font-black" : "text-gray-400"}>
+        <div className="mb-8 font-heading">
+          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider mb-2">
+            <span className={currentStep === 1 ? "text-primary font-black" : "text-muted"}>
               1. Owner Profile
             </span>
-            <span className={currentStep === 2 ? "text-gray-900 font-black" : "text-gray-400"}>
+            <span className={currentStep === 2 ? "text-primary font-black" : "text-muted"}>
               2. Business Details
             </span>
-            <span className={currentStep === 3 ? "text-gray-900 font-black" : "text-gray-400"}>
+            <span className={currentStep === 3 ? "text-primary font-black" : "text-muted"}>
               3. Currency & Setup
             </span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className={`h-2 rounded-full transition-all duration-300 ${currentStep >= 1 ? "bg-[#D4F06B]" : "bg-gray-200"}`} />
-            <div className={`h-2 rounded-full transition-all duration-300 ${currentStep >= 2 ? "bg-[#D4F06B]" : "bg-gray-200"}`} />
-            <div className={`h-2 rounded-full transition-all duration-300 ${currentStep >= 3 ? "bg-[#D4F06B]" : "bg-gray-200"}`} />
+            <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 1 ? "bg-primary" : "bg-paper border border-line"}`} />
+            <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 2 ? "bg-primary" : "bg-paper border border-line"}`} />
+            <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 3 ? "bg-primary" : "bg-paper border border-line"}`} />
           </div>
         </div>
 
         {/* ================= STEP 1: OWNER PROFILE & SECURITY ================= */}
         {currentStep === 1 && (
-          <form onSubmit={handleNextStep} className="space-y-4">
+          <form onSubmit={handleNextStep} className="space-y-4 font-body">
             
             {/* Google Quick Sign-Up */}
             <div className="mb-4 flex flex-col items-center">
-              <div id="google-signup-button" className="w-full flex justify-center overflow-hidden rounded-full min-h-[44px]"></div>
+              <div id="google-signup-button" className="w-full flex justify-center overflow-hidden rounded-xl min-h-[44px]"></div>
               <div className="relative my-3.5 w-full flex items-center justify-center">
-                <div className="w-full border-t border-gray-100" />
-                <span className="absolute bg-white px-3 text-[11px] font-semibold text-gray-400">
-                  Or enter credentials manually
+                <div className="w-full border-t border-line" />
+                <span className="absolute bg-card px-3 text-[11px] font-heading font-bold text-muted">
+                  Or enter details manually
                 </span>
               </div>
             </div>
 
             {/* Full Name */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Full Name (Owner / Manager)<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Full Name (Owner / Manager)<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <User size={16} className="absolute left-3.5 text-gray-400" />
+                <User size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="text"
                   placeholder="e.g. Jean Paul Ndayisaba"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                   required
                 />
               </div>
@@ -361,17 +375,17 @@ export default function SignUp() {
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Personal / Account Email<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Personal / Account Email<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <Mail size={16} className="absolute left-3.5 text-gray-400" />
+                <Mail size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="email"
                   placeholder="e.g. jeanpaul@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                   required
                 />
               </div>
@@ -379,14 +393,14 @@ export default function SignUp() {
 
             {/* Phone Number with Country Code */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Phone Number<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Phone Number<span className="text-primary">*</span>
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 font-body">
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="w-[125px] rounded-full border border-gray-200 bg-white px-3 py-3 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer shrink-0"
+                  className="w-[125px] rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer shrink-0"
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -396,13 +410,13 @@ export default function SignUp() {
                 </select>
 
                 <div className="relative flex-1 flex items-center">
-                  <Phone size={15} className="absolute left-3.5 text-gray-400" />
+                  <Phone size={15} className="absolute left-3.5 text-muted" />
                   <input
                     type="tel"
                     placeholder="788 123 456"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                    className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                     required
                   />
                 </div>
@@ -411,23 +425,23 @@ export default function SignUp() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Account Password<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Account Password<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <Lock size={16} className="absolute left-3.5 text-gray-400" />
+                <Lock size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a secure password (min. 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-11 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-11 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-3.5 text-muted hover:text-ink transition cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -435,10 +449,10 @@ export default function SignUp() {
             </div>
 
             {/* Step 1 Next Button */}
-            <div className="pt-2">
+            <div className="pt-2 font-heading">
               <button
                 type="submit"
-                className="w-full rounded-full bg-[#D4F06B] py-3.5 text-xs font-extrabold text-gray-900 shadow-md hover:bg-[#c3e450] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full rounded-xl bg-primary py-3 text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Continue to Business Details</span>
                 <ArrowRight size={15} />
@@ -449,21 +463,21 @@ export default function SignUp() {
 
         {/* ================= STEP 2: BUSINESS INFORMATION ================= */}
         {currentStep === 2 && (
-          <form onSubmit={handleNextStep} className="space-y-4">
+          <form onSubmit={handleNextStep} className="space-y-4 font-body">
             
             {/* Business / Shop Name */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Business / Shop Name<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Business / Shop Name<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <Store size={16} className="absolute left-3.5 text-gray-400" />
+                <Store size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="text"
                   placeholder="e.g. Kigali Fresh Supermarket"
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                   required
                   autoFocus
                 />
@@ -472,34 +486,34 @@ export default function SignUp() {
 
             {/* Business Email */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Business Contact Email <span className="text-gray-400 font-normal">(Optional)</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Business Contact Email <span className="text-muted font-normal">(Optional)</span>
               </label>
               <div className="relative flex items-center">
-                <Mail size={16} className="absolute left-3.5 text-gray-400" />
+                <Mail size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="email"
                   placeholder="e.g. info@kigalifresh.rw (defaults to your email)"
                   value={businessEmail}
                   onChange={(e) => setBusinessEmail(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                 />
               </div>
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Business Location / Address<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Business Location / Address<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <MapPin size={16} className="absolute left-3.5 text-gray-400" />
+                <MapPin size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="text"
                   placeholder="e.g. Nyarugenge Market, Kigali, Rwanda"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                   required
                 />
               </div>
@@ -507,15 +521,15 @@ export default function SignUp() {
 
             {/* Business Type / Sector */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Business Sector / Category<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Business Sector / Category<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <Briefcase size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                <Briefcase size={16} className="absolute left-3.5 text-muted pointer-events-none" />
                 <select
                   value={businessType}
                   onChange={(e) => setBusinessType(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-8 py-3 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-8 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
                 >
                   {SECTORS.map((s) => (
                     <option key={s} value={s}>
@@ -527,11 +541,11 @@ export default function SignUp() {
             </div>
 
             {/* Step 2 Actions (Back / Next) */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 font-heading">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="flex-1 rounded-full border border-gray-200 bg-gray-50 py-3.5 text-xs font-bold text-gray-700 hover:bg-gray-100 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 rounded-xl border border-line bg-paper py-3 text-xs font-bold text-ink hover:bg-card-hover transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft size={15} />
                 <span>Back</span>
@@ -539,7 +553,7 @@ export default function SignUp() {
 
               <button
                 type="submit"
-                className="flex-[2] rounded-full bg-[#D4F06B] py-3.5 text-xs font-extrabold text-gray-900 shadow-md hover:bg-[#c3e450] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-[2] rounded-xl bg-primary py-3 text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Continue to Financial Setup</span>
                 <ArrowRight size={15} />
@@ -550,19 +564,19 @@ export default function SignUp() {
 
         {/* ================= STEP 3: FINANCIAL & LOCALIZATION SETUP ================= */}
         {currentStep === 3 && (
-          <form onSubmit={handleFinalSubmit} className="space-y-4">
+          <form onSubmit={handleFinalSubmit} className="space-y-4 font-body">
             
             {/* Currency Dropdown */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Currency Used in Business<span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Currency Used in Business<span className="text-primary">*</span>
               </label>
               <div className="relative flex items-center">
-                <Coins size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                <Coins size={16} className="absolute left-3.5 text-muted pointer-events-none" />
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full rounded-full border-2 border-emerald-500/30 bg-emerald-50/20 pl-10 pr-8 py-3 text-xs font-black text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-8 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
                 >
                   {CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -571,7 +585,7 @@ export default function SignUp() {
                   ))}
                 </select>
               </div>
-              <p className="text-[10px] font-semibold text-gray-400 mt-1 pl-1">
+              <p className="text-[10px] font-medium text-muted mt-1 pl-1 font-body">
                 All daily sales, stock valuations, and financial books will be denominated in this currency.
               </p>
             </div>
@@ -579,15 +593,15 @@ export default function SignUp() {
             {/* Team Size */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-gray-800 mb-1">
+                <label className="block text-xs font-heading font-bold text-ink mb-1">
                   Team / Workers Size
                 </label>
                 <div className="relative flex items-center">
-                  <Users size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                  <Users size={16} className="absolute left-3.5 text-muted pointer-events-none" />
                   <select
                     value={teamSize}
                     onChange={(e) => setTeamSize(e.target.value)}
-                    className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
+                    className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
                   >
                     <option value="1 (Just Me)">1 (Just Me)</option>
                     <option value="2 - 5 People">2 - 5 People</option>
@@ -599,15 +613,15 @@ export default function SignUp() {
 
               {/* Need EBM Integration? */}
               <div>
-                <label className="block text-xs font-bold text-gray-800 mb-1">
+                <label className="block text-xs font-heading font-bold text-ink mb-1">
                   Need EBM Receipt?
                 </label>
                 <div className="relative flex items-center">
-                  <ShieldCheck size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                  <ShieldCheck size={16} className="absolute left-3.5 text-muted pointer-events-none" />
                   <select
                     value={needEbm}
                     onChange={(e) => setNeedEbm(e.target.value)}
-                    className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition cursor-pointer"
+                    className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-bold text-ink outline-none focus:border-primary transition cursor-pointer"
                   >
                     <option value="Yes">Yes (RRA EBM v2)</option>
                     <option value="No">No / Standard Receipts</option>
@@ -618,61 +632,61 @@ export default function SignUp() {
 
             {/* Conditional RRA TIN Number Input */}
             {needEbm === "Yes" && (
-              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5 animate-in fade-in duration-200">
-                <label className="block text-xs font-extrabold text-emerald-950">
-                  RRA Tax Identification Number (TIN) <span className="text-red-500">*</span>
+              <div className="p-3.5 rounded-xl bg-card-hover border border-line space-y-1.5 animate-in fade-in duration-200">
+                <label className="block text-xs font-heading font-black text-ink">
+                  RRA Tax Identification Number (TIN) <span className="text-primary">*</span>
                 </label>
                 <div className="relative flex items-center">
-                  <FileText size={16} className="absolute left-3.5 text-emerald-600" />
+                  <FileText size={16} className="absolute left-3.5 text-primary" />
                   <input
                     type="text"
                     required={needEbm === "Yes"}
                     placeholder="e.g. 102345678 (9-digit TIN)"
                     value={tinNumber}
                     onChange={(e) => setTinNumber(e.target.value)}
-                    className="w-full rounded-full border border-emerald-300 bg-white pl-10 pr-4 py-2.5 text-xs font-extrabold text-gray-900 placeholder:text-gray-400 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-400/30 transition"
+                    className="w-full rounded-xl border border-line bg-card pl-10 pr-4 py-2.5 text-xs font-bold text-ink placeholder:text-muted outline-none focus:border-primary transition"
                   />
                 </div>
-                <p className="text-[10px] text-emerald-800 font-medium pl-1">
-                  💡 This TIN will automatically be printed on all your customer invoices & official EBM fiscal receipts.
+                <p className="text-[10px] text-muted font-medium pl-1">
+                  This TIN will automatically be printed on all your customer invoices & official EBM fiscal receipts.
                 </p>
               </div>
             )}
 
             {/* Referral Code */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
-                Referral Code or Source <span className="text-gray-400 font-normal">(Optional)</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1">
+                Referral Code or Source <span className="text-muted font-normal">(Optional)</span>
               </label>
               <div className="relative flex items-center">
-                <Tag size={16} className="absolute left-3.5 text-gray-400" />
+                <Tag size={16} className="absolute left-3.5 text-muted" />
                 <input
                   type="text"
                   placeholder="e.g. INZIRA2026, Friend, Agent code"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs font-medium text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/30 transition"
+                  className="w-full rounded-xl border border-line bg-paper pl-10 pr-4 py-2.5 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-primary transition"
                 />
               </div>
             </div>
 
             {/* Live Setup Confirmation Card */}
-            <div className="rounded-2xl bg-gray-50 border border-gray-200/80 p-3.5 text-xs space-y-1.5">
-              <div className="flex items-center gap-1.5 text-emerald-800 font-black">
-                <CheckCircle2 size={15} />
+            <div className="rounded-xl bg-card-hover border border-line p-3.5 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 text-ink font-heading font-black">
+                <CheckCircle2 size={15} className="text-primary" />
                 <span>Shop Configuration Ready:</span>
               </div>
-              <div className="text-gray-600 text-[11px] leading-relaxed">
-                Your shop <strong>"{shopName || "My Business"}"</strong> will be initialized in <strong>{location}</strong> with <strong>{currency}</strong> currency and clean inventory tables.
+              <div className="text-muted text-[11px] leading-relaxed font-body">
+                Your shop <strong className="text-ink">"{shopName || "My Business"}"</strong> will be initialized in <strong className="text-ink">{location}</strong> with <strong className="text-ink">{currency}</strong> currency and clean inventory tables.
               </div>
             </div>
 
             {/* Step 3 Actions (Back / Submit) */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 font-heading">
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
-                className="flex-1 rounded-full border border-gray-200 bg-gray-50 py-3.5 text-xs font-bold text-gray-700 hover:bg-gray-100 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 rounded-xl border border-line bg-paper py-3 text-xs font-bold text-ink hover:bg-card-hover transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft size={15} />
                 <span>Back</span>
@@ -681,7 +695,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 disabled={busy}
-                className="flex-[2] rounded-xl bg-primary py-3.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="flex-[2] rounded-xl bg-primary py-3.5 text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <span>{busy ? "Setting Up Shop..." : "Create Account & Launch"}</span>
                 <ArrowRight size={16} />
@@ -691,7 +705,7 @@ export default function SignUp() {
         )}
 
         {/* Footer */}
-        <div className="mt-8 text-center text-[11px] font-semibold text-gray-400 border-t border-gray-100 pt-4">
+        <div className="mt-8 text-center text-[11px] font-medium text-muted border-t border-line pt-4 font-body">
           By registering, you agree to INZIRA's Terms of Service & Privacy Policy.
         </div>
 

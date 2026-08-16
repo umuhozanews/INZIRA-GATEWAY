@@ -61,9 +61,9 @@ export default function ScreenHeader({ title, back, right }) {
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
             {isDark ? (
-              <Sun size={17} className="text-amber-400" strokeWidth={2.2} />
+              <Sun size={17} className="text-primary" strokeWidth={2.2} />
             ) : (
-              <Moon size={17} className="text-charcoal-700" strokeWidth={2.2} />
+              <Moon size={17} className="text-muted" strokeWidth={2.2} />
             )}
           </button>
 

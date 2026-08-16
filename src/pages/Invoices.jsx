@@ -168,13 +168,13 @@ export default function Invoices() {
   // Dedicated Single Page Document View for printing / saving as PDF
   if (selectedInvoice) {
     return (
-      <div className="min-h-screen bg-gray-100 font-manrope text-gray-900 pb-16 pt-4 px-4 sm:px-6">
+      <div className="min-h-screen bg-paper font-body text-ink pb-16 pt-4 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto space-y-4">
           {/* Header Action Bar */}
-          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-sm print:hidden">
+          <div className="flex items-center justify-between bg-card p-4 rounded-2xl border border-line shadow-card print:hidden font-heading">
             <button
               onClick={() => setSelectedInvoice(null)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-gray-50 text-xs font-bold text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-line bg-card text-xs font-bold text-ink hover:bg-card-hover transition cursor-pointer"
             >
               <ArrowLeft size={16} /> <span>Back to Invoices</span>
             </button>
@@ -185,20 +185,20 @@ export default function Invoices() {
                   setVoidTarget(selectedInvoice);
                   setVoidReason("");
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-200 bg-red-50 text-xs font-extrabold text-red-700 hover:bg-red-100 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-line bg-card-hover text-xs font-bold text-ink hover:border-primary/40 transition cursor-pointer"
                 title="Cancel / Void Invoice"
               >
-                <Trash2 size={14} /> <span>Void Invoice</span>
+                <Trash2 size={14} className="text-primary" /> <span>Void Invoice</span>
               </button>
               <button
                 onClick={() => handleDownloadPDF(selectedInvoice)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-xs font-extrabold text-white hover:bg-purple-700 transition cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-line bg-card text-xs font-bold text-ink hover:bg-card-hover transition cursor-pointer shadow-sm"
               >
                 <Download size={15} /> <span>Download PDF</span>
               </button>
               <button
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4F06B] text-xs font-black text-gray-900 hover:bg-[#C5E456] transition cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-xs font-black text-white hover:bg-primary-hover transition cursor-pointer shadow-orange-sm"
               >
                 <Printer size={15} /> <span>Print Invoice</span>
               </button>
@@ -218,20 +218,20 @@ export default function Invoices() {
           title={voidTarget ? `Void Invoice ${voidTarget.invoice_number}` : "Void Invoice"}
         >
           {voidTarget && (
-            <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-manrope pb-6">
-              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
-                <div className="flex items-center gap-1.5 font-black text-red-800">
-                  <AlertTriangle size={15} />
+            <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-body pb-6 text-ink">
+              <div className="p-3.5 rounded-xl bg-card-hover border border-line text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-heading font-black text-ink">
+                  <AlertTriangle size={15} className="text-primary" />
                   <span>Mandatory Cancellation Requirement</span>
                 </div>
-                <p className="text-[11px] leading-relaxed">
-                  Voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore sold items to inventory, and log the reason in the official audit trail.
+                <p className="text-[11px] text-muted leading-relaxed font-body">
+                  Voiding invoice <strong className="text-ink">{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore sold items to inventory, and log the reason in the official audit trail.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                  Reason for Voiding Invoice <span className="text-red-500">*</span>
+                <label className="block text-xs font-heading font-bold text-ink mb-1.5">
+                  Reason for Voiding Invoice <span className="text-primary">*</span>
                 </label>
                 <textarea
                   required
@@ -239,22 +239,22 @@ export default function Invoices() {
                   value={voidReason}
                   onChange={(e) => setVoidReason(e.target.value)}
                   placeholder="e.g. Customer returned items, wrong billing amount, order canceled..."
-                  className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 transition shadow-sm"
+                  className="w-full rounded-xl border border-line bg-paper p-3 text-xs font-medium text-ink placeholder:text-muted outline-none focus:border-primary transition shadow-sm"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-2 font-heading">
                 <button
                   type="button"
                   onClick={() => setVoidTarget(null)}
-                  className="flex-1 py-3 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-extrabold text-gray-700 transition cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-card border border-line hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={voiding || !voidReason.trim()}
-                  className="flex-1 py-3 rounded-full bg-red-600 hover:bg-red-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-xs font-black text-white shadow-orange-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {voiding ? "Voiding…" : "Confirm Void (Logged)"}
                 </button>
@@ -290,11 +290,11 @@ export default function Invoices() {
           </div>
           <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Paid Total</span>
-            <div className="mt-1 text-base md:text-lg font-black text-emerald-400 tabnum">{rwf(totalPaid)} RWF</div>
+            <div className="mt-1 text-base md:text-lg font-black text-ink tabnum">{rwf(totalPaid)} RWF</div>
           </div>
           <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Unpaid / Pending</span>
-            <div className="mt-1 text-base md:text-lg font-black text-amber-400 tabnum">{rwf(totalPending)} RWF</div>
+            <div className="mt-1 text-base md:text-lg font-black text-ink tabnum">{rwf(totalPending)} RWF</div>
           </div>
         </div>
 
@@ -351,12 +351,10 @@ export default function Invoices() {
                         {inv.invoice_number}
                       </span>
                       <span
-                        className={`text-[10px] font-heading font-extrabold px-2.5 py-0.5 rounded-md capitalize ${
+                        className={`text-[10px] font-heading font-black px-2.5 py-0.5 rounded-md capitalize ${
                           inv.status === "paid"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : inv.status === "pending"
-                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                            : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "bg-card-hover text-muted border border-line"
                         }`}
                       >
                         {inv.status}
@@ -386,7 +384,7 @@ export default function Invoices() {
                         setVoidTarget(inv);
                         setVoidReason("");
                       }}
-                      className="p-2 rounded-xl text-muted hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                      className="p-2 rounded-xl text-muted hover:text-ink hover:bg-card-hover transition cursor-pointer"
                       title="Void / Cancel Invoice (Logged)"
                     >
                       <Trash2 size={16} />
@@ -406,20 +404,20 @@ export default function Invoices() {
         title={voidTarget ? `Void Invoice ${voidTarget.invoice_number}` : "Void Invoice"}
       >
         {voidTarget && (
-          <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-body pb-6">
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-ink space-y-1">
-              <div className="flex items-center gap-1.5 font-heading font-black text-rose-400">
-                <AlertTriangle size={15} />
+          <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-body pb-6 text-ink">
+            <div className="p-3.5 rounded-xl bg-card-hover border border-line text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-heading font-black text-ink">
+                <AlertTriangle size={15} className="text-primary" />
                 <span>Are you sure? This action will be logged.</span>
               </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Deleting / voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore all sold items to your inventory, and permanently store a snapshot in the deletion log.
+              <p className="text-[11px] text-muted leading-relaxed font-body">
+                Deleting / voiding invoice <strong className="text-ink">{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore all sold items to your inventory, and permanently store a snapshot in the deletion log.
               </p>
             </div>
 
             <div>
               <label className="block text-xs font-heading font-bold text-ink mb-1.5">
-                Reason for Voiding Invoice <span className="text-rose-500">*</span>
+                Reason for Voiding Invoice <span className="text-primary">*</span>
               </label>
               <textarea
                 required
@@ -427,7 +425,7 @@ export default function Invoices() {
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 placeholder="e.g. Customer returned items, wrong billing amount, order canceled..."
-                className="w-full rounded-xl border border-line bg-paper p-3 text-xs font-medium text-ink placeholder:text-muted outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-paper p-3 text-xs font-medium text-ink placeholder:text-muted outline-none focus:border-primary transition shadow-sm"
               />
             </div>
 
@@ -442,7 +440,7 @@ export default function Invoices() {
               <button
                 type="submit"
                 disabled={voiding || !voidReason.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-xs font-black text-white shadow-orange-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {voiding ? "Voiding…" : "Confirm Void (Logged)"}
               </button>

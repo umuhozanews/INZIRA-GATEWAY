@@ -24,16 +24,12 @@ function FactorRow({ label, positive }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-line bg-card p-4 shadow-card font-body">
       <div className="flex items-center gap-3">
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-            positive ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-          }`}
-        >
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card-hover text-primary border border-line">
           {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
         </div>
         <span className="text-xs md:text-sm font-semibold text-ink">{label}</span>
       </div>
-      <span className={`text-xs font-black font-heading ${positive ? "text-emerald-400" : "text-rose-400"}`}>
+      <span className="text-xs font-black font-heading text-primary">
         {positive ? "▲" : "▼"}
       </span>
     </div>
@@ -150,7 +146,7 @@ export default function HealthScore() {
           </p>
           {score != null && trend !== 0 && (
             <span
-              className={`mt-2 text-xs font-heading font-black ${trend > 0 ? "text-emerald-400" : "text-rose-400"}`}
+              className="mt-2 text-xs font-heading font-black text-ink"
             >
               {trend > 0 ? "+" : ""}
               {trend} pts {t("vs_last_month")}

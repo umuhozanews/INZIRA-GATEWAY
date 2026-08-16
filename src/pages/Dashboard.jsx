@@ -155,7 +155,7 @@ export default function Dashboard() {
             aria-label="Toggle Theme"
           >
             {isDark ? (
-              <Sun size={16} className="text-amber-400" />
+              <Sun size={16} className="text-primary" />
             ) : (
               <Moon size={16} className="text-charcoal-700" />
             )}
@@ -179,7 +179,7 @@ export default function Dashboard() {
           {/* Logout Button with Confirmation Guard */}
           <button
             onClick={() => setConfirmLogoutOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-red-500/40 hover:text-red-500 text-muted active:scale-95 transition-all duration-150 cursor-pointer shadow-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 hover:text-primary text-muted active:scale-95 transition-all duration-150 cursor-pointer shadow-sm"
             title="Log out"
             aria-label="Log out"
           >
@@ -284,11 +284,11 @@ export default function Dashboard() {
           {lowAlert && (
             <button
               onClick={() => navigate("/stock")}
-              className="w-full flex items-center gap-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-left hover:border-amber-500/60 transition cursor-pointer active:scale-[0.98]"
+              className="w-full flex items-center gap-3 rounded-2xl bg-primary/10 border border-primary/20 p-3.5 text-left hover:border-primary/40 transition cursor-pointer active:scale-[0.98]"
             >
-              <AlertTriangle size={18} className="text-amber-500 shrink-0" />
+              <AlertTriangle size={18} className="text-primary shrink-0" />
               <span className="flex-1 text-xs font-heading font-bold text-ink truncate">{lowAlert.message}</span>
-              <ChevronRight size={15} className="text-amber-500 shrink-0" />
+              <ChevronRight size={15} className="text-primary shrink-0" />
             </button>
           )}
 
@@ -345,15 +345,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition ${
-                            isSale
-                              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                              : isExp
-                              ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                              : isStock
-                              ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                              : "bg-primary/10 text-primary border-primary/20"
-                          }`}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border border-line bg-card-hover text-primary transition"
                         >
                           {isSale ? (
                             <ShoppingCart size={14} />
@@ -400,7 +392,7 @@ export default function Dashboard() {
                     className="w-full flex items-center justify-between rounded-xl border border-line bg-card-hover/60 p-2.5 text-left hover:border-primary/40 hover:bg-card-hover transition cursor-pointer active:scale-[0.98] group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
                         <ShoppingCart size={14} />
                       </div>
                       <div>
@@ -440,7 +432,7 @@ export default function Dashboard() {
           />
           <div className="relative w-full max-w-sm rounded-2xl border border-line bg-card p-5 shadow-2xl space-y-4 kinetic-fade-in font-body">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-500 border border-red-500/20">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <LogOut size={20} strokeWidth={2.2} />
               </div>
               <div>
@@ -463,7 +455,7 @@ export default function Dashboard() {
                   setConfirmLogoutOpen(false);
                   await logout();
                 }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 text-xs font-black text-white hover:bg-red-700 transition active:scale-95 shadow-sm cursor-pointer"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-primary text-xs font-black text-white hover:bg-primary-hover transition active:scale-95 shadow-orange-sm cursor-pointer"
               >
                 Log out
               </button>

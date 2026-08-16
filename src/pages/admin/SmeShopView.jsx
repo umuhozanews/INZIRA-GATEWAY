@@ -42,7 +42,6 @@ export default function SmeShopView() {
       setData(res.data);
     } catch (err) {
       console.warn("Falling back to local SME inspection data:", err);
-      // Fallback inspection snapshot
       setData({
         readOnly: true,
         auditedAccess: true,
@@ -117,7 +116,7 @@ export default function SmeShopView() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs font-bold text-gray-400 font-manrope">
+      <div className="p-12 text-center text-xs font-bold text-muted font-body">
         Loading Shop Monitoring View...
       </div>
     );
@@ -132,116 +131,116 @@ export default function SmeShopView() {
   const expenses = data?.expenses || [];
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body text-ink">
       {/* ─── Top Bar & Navigation ─── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between font-heading">
         <button
           onClick={() => navigate("/admin/smes")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200/80 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-card text-xs font-bold text-ink hover:bg-card-hover shadow-sm transition cursor-pointer"
         >
           <ArrowLeft size={14} />
           <span>Back to SME Directory</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase bg-[#F4FBE4] text-purple-950 border border-[#D4F06B] flex items-center gap-1">
-            <Lock size={12} className="text-purple-700" />
+          <span className="px-3 py-1 rounded-xl text-[11px] font-black uppercase bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+            <Lock size={12} className="text-primary" />
             <span>Audited Read-Only Inspection</span>
           </span>
         </div>
       </div>
 
       {/* ─── Mandatory Security Audit Banner ─── */}
-      <div className="rounded-3xl bg-[#F4FBE4] border border-[#D4F06B] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+      <div className="rounded-2xl bg-card border border-line p-4 sm:p-5 shadow-card font-body">
         <div className="flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-full bg-[#D4F06B] flex items-center justify-center text-gray-900 shrink-0 shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
             <ShieldCheck size={20} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-wide">
-              🔒 READ-ONLY SME AUDIT & MONITORING VIEW
+            <h3 className="text-xs sm:text-sm font-heading font-black text-ink uppercase tracking-wide">
+              READ-ONLY SME AUDIT & MONITORING VIEW
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed font-medium">
-              You are inspecting <strong className="text-gray-900">{settings.shop_name || sme.name}</strong> as Platform Administrator. All merchant financial and inventory data displayed below is strictly <strong className="text-purple-700">READ-ONLY</strong> and cannot be mutated. This monitoring session has been recorded in the platform security audit trail.
+            <p className="text-xs text-muted leading-relaxed font-medium">
+              You are inspecting <strong className="text-ink font-bold">{settings.shop_name || sme.name}</strong> as Platform Administrator. All merchant financial and inventory data displayed below is strictly <strong className="text-primary font-black">READ-ONLY</strong> and cannot be mutated. This monitoring session has been recorded in the platform security audit trail.
             </p>
           </div>
         </div>
       </div>
 
       {/* ─── SME Profile Header Card ─── */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+      <div className="bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line font-heading">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-[#D4F06B] text-gray-900 font-black text-xl flex items-center justify-center shrink-0 shadow-md shadow-[#D4F06B]/20">
+            <div className="h-12 w-12 rounded-xl bg-primary text-white font-black text-lg flex items-center justify-center shrink-0 shadow-orange-sm">
               {(settings.shop_name || sme.name || "S")[0].toUpperCase()}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-gray-900">
+                <h2 className="text-base sm:text-lg font-black text-ink">
                   {settings.shop_name || `${sme.name}'s Shop`}
                 </h2>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
                     sme.is_active !== false
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "bg-card-hover text-muted border border-line"
                   }`}
                 >
                   {sme.is_active !== false ? "Active Store" : "Suspended"}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
-                Owner: <strong className="text-gray-800">{sme.name}</strong> • Joined {new Date(sme.created_at || Date.now()).toLocaleDateString()}
+              <p className="text-xs text-muted font-medium mt-0.5 font-body">
+                Owner: <strong className="text-ink font-bold">{sme.name}</strong> • Joined {new Date(sme.created_at || Date.now()).toLocaleDateString()}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-center">
+          <div className="flex items-center gap-3 self-end sm:self-center font-heading">
             <div className="text-right">
-              <span className="text-[10px] font-bold text-gray-400 uppercase">Health Score</span>
-              <p className="text-lg font-black text-emerald-700">82/100</p>
+              <span className="text-[10px] font-bold text-muted uppercase">Health Score</span>
+              <p className="text-lg font-black text-ink tabnum">82/100</p>
             </div>
           </div>
         </div>
 
         {/* Store Metadata Pills */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div className="p-3 rounded-2xl bg-gray-50 flex items-center gap-2.5">
-            <Phone size={14} className="text-purple-600 shrink-0" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-body">
+          <div className="p-3 rounded-xl bg-card-hover border border-line flex items-center gap-2.5">
+            <Phone size={14} className="text-primary shrink-0" />
             <div className="truncate">
-              <p className="text-[10px] text-gray-400 font-bold uppercase">Phone</p>
-              <p className="font-bold text-gray-800 truncate">{sme.phone || "—"}</p>
+              <p className="text-[10px] text-muted font-bold uppercase font-heading">Phone</p>
+              <p className="font-bold text-ink truncate">{sme.phone || "—"}</p>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-gray-50 flex items-center gap-2.5">
-            <Mail size={14} className="text-purple-600 shrink-0" />
+          <div className="p-3 rounded-xl bg-card-hover border border-line flex items-center gap-2.5">
+            <Mail size={14} className="text-primary shrink-0" />
             <div className="truncate">
-              <p className="text-[10px] text-gray-400 font-bold uppercase">Email</p>
-              <p className="font-bold text-gray-800 truncate">{sme.email || "—"}</p>
+              <p className="text-[10px] text-muted font-bold uppercase font-heading">Email</p>
+              <p className="font-bold text-ink truncate">{sme.email || "—"}</p>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-gray-50 flex items-center gap-2.5">
-            <MapPin size={14} className="text-purple-600 shrink-0" />
+          <div className="p-3 rounded-xl bg-card-hover border border-line flex items-center gap-2.5">
+            <MapPin size={14} className="text-primary shrink-0" />
             <div className="truncate">
-              <p className="text-[10px] text-gray-400 font-bold uppercase">Location</p>
-              <p className="font-bold text-gray-800 truncate">{settings.shop_address || sme.district || "Kigali, Rwanda"}</p>
+              <p className="text-[10px] text-muted font-bold uppercase font-heading">Location</p>
+              <p className="font-bold text-ink truncate">{settings.shop_address || sme.district || "Kigali, Rwanda"}</p>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-gray-50 flex items-center gap-2.5">
-            <Building2 size={14} className="text-purple-600 shrink-0" />
+          <div className="p-3 rounded-xl bg-card-hover border border-line flex items-center gap-2.5">
+            <Building2 size={14} className="text-primary shrink-0" />
             <div className="truncate">
-              <p className="text-[10px] text-gray-400 font-bold uppercase">Sector & TIN</p>
-              <p className="font-bold text-gray-800 truncate">{sme.sector || "Retail"} • TIN {settings.tin || "N/A"}</p>
+              <p className="text-[10px] text-muted font-bold uppercase font-heading">Sector & TIN</p>
+              <p className="font-bold text-ink truncate">{sme.sector || "Retail"} • TIN {settings.tin || "N/A"}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* ─── Inspection Tabs ─── */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-heading">
         {[
           { key: "overview", label: "Financial Snapshot & P&L", icon: TrendingUp },
           { key: "stock", label: `Stock Items (${stock.length})`, icon: Package },
@@ -252,10 +251,10 @@ export default function SmeShopView() {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
               activeTab === key
-                ? "bg-[#D4F06B] text-gray-900 shadow-md shadow-[#D4F06B]/20 font-black"
-                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200/80"
+                ? "bg-primary text-white shadow-orange-sm font-black"
+                : "bg-card text-muted hover:text-ink hover:bg-card-hover border border-line"
             }`}
           >
             <Icon size={14} />
@@ -266,49 +265,49 @@ export default function SmeShopView() {
 
       {/* ─── Tab Content ─── */}
       {activeTab === "overview" && (
-        <div className="space-y-4">
+        <div className="space-y-4 font-body">
           {/* P&L 4 Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <span className="text-[10px] font-black text-gray-400 uppercase">Gross Revenue</span>
-              <p className="text-xl font-black text-gray-900 mt-1">{rwf(fin.grossRevenue || 0)}</p>
-              <p className="text-[11px] text-gray-500 mt-1">{fin.totalTransactions || 0} recorded sales</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-heading">
+            <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
+              <span className="text-[10px] font-bold text-muted uppercase">Gross Revenue</span>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.grossRevenue || 0)} RWF</p>
+              <p className="text-[11px] text-muted mt-1 font-body">{fin.totalTransactions || 0} recorded sales</p>
             </div>
 
-            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <span className="text-[10px] font-black text-gray-400 uppercase">Cost of Goods (COGS)</span>
-              <p className="text-xl font-black text-gray-900 mt-1">{rwf(fin.cogs || 0)}</p>
-              <p className="text-[11px] text-gray-500 mt-1">Inventory acquisition cost</p>
+            <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
+              <span className="text-[10px] font-bold text-muted uppercase">Cost of Goods (COGS)</span>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.cogs || 0)} RWF</p>
+              <p className="text-[11px] text-muted mt-1 font-body">Inventory acquisition cost</p>
             </div>
 
-            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <span className="text-[10px] font-black text-gray-400 uppercase">Gross Margin</span>
-              <p className="text-xl font-black text-purple-900 mt-1">{fin.grossMarginPct || 0}%</p>
-              <p className="text-[11px] text-gray-500 mt-1">{rwf(fin.grossProfit || 0)} profit</p>
+            <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
+              <span className="text-[10px] font-bold text-muted uppercase">Gross Margin</span>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{fin.grossMarginPct || 0}%</p>
+              <p className="text-[11px] text-muted mt-1 font-body">{rwf(fin.grossProfit || 0)} profit</p>
             </div>
 
-            <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <span className="text-[10px] font-black text-gray-400 uppercase">Net Profit</span>
-              <p className="text-xl font-black text-emerald-700 mt-1">{rwf(fin.netProfit || 0)}</p>
-              <p className="text-[11px] text-gray-500 mt-1">After expenses ({rwf(fin.operatingExpenses || 0)})</p>
+            <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
+              <span className="text-[10px] font-bold text-muted uppercase">Net Profit</span>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.netProfit || 0)} RWF</p>
+              <p className="text-[11px] text-muted mt-1 font-body">After expenses ({rwf(fin.operatingExpenses || 0)})</p>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === "stock" && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xs font-black text-gray-900 uppercase">Inventory Stock List (Read-Only)</h3>
-            <span className="text-xs font-bold text-gray-400">{stock.length} Products</span>
+        <div className="bg-card rounded-2xl border border-line shadow-card overflow-hidden font-body">
+          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
+            <h3 className="text-xs font-black text-ink uppercase">Inventory Stock List (Read-Only)</h3>
+            <span className="text-xs font-bold text-muted">{stock.length} Products</span>
           </div>
           {stock.length === 0 ? (
-            <div className="p-8 text-center text-xs text-gray-400">No stock items registered for this merchant.</div>
+            <div className="p-8 text-center text-xs text-muted">No stock items registered for this merchant.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                  <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
                     <th className="py-3 px-4 sm:px-6">Item Name</th>
                     <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4">In Stock</th>
@@ -317,15 +316,15 @@ export default function SmeShopView() {
                     <th className="py-3 px-4 sm:px-6 text-right">Margin</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-line">
                   {stock.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-gray-900">{item.name}</td>
-                      <td className="py-3 px-4 text-gray-500">{item.category || "General"}</td>
-                      <td className="py-3 px-4 font-black text-gray-900">{item.quantity}</td>
-                      <td className="py-3 px-4 text-gray-600">{rwf(item.cost_price || 0)}</td>
-                      <td className="py-3 px-4 font-bold text-emerald-700">{rwf(item.price || 0)}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-black text-purple-900">
+                    <tr key={item.id} className="hover:bg-card-hover transition">
+                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{item.name}</td>
+                      <td className="py-3 px-4 text-muted">{item.category || "General"}</td>
+                      <td className="py-3 px-4 font-heading font-black text-ink tabnum">{item.quantity}</td>
+                      <td className="py-3 px-4 font-heading font-semibold text-ink tabnum">{rwf(item.cost_price || 0)}</td>
+                      <td className="py-3 px-4 font-heading font-black text-ink tabnum">{rwf(item.price || 0)}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">
                         {item.price > 0 ? Math.round(((item.price - (item.cost_price || 0)) / item.price) * 100) : 0}%
                       </td>
                     </tr>
@@ -338,18 +337,18 @@ export default function SmeShopView() {
       )}
 
       {activeTab === "sales" && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xs font-black text-gray-900 uppercase">Recorded Sales & Invoices</h3>
-            <span className="text-xs font-bold text-gray-400">{sales.length} Transactions</span>
+        <div className="bg-card rounded-2xl border border-line shadow-card overflow-hidden font-body">
+          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
+            <h3 className="text-xs font-black text-ink uppercase">Recorded Sales & Invoices</h3>
+            <span className="text-xs font-bold text-muted">{sales.length} Transactions</span>
           </div>
           {sales.length === 0 ? (
-            <div className="p-8 text-center text-xs text-gray-400">No sales transactions found.</div>
+            <div className="p-8 text-center text-xs text-muted">No sales transactions found.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                  <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
                     <th className="py-3 px-4 sm:px-6">Invoice #</th>
                     <th className="py-3 px-4">Date & Time</th>
                     <th className="py-3 px-4">Customer</th>
@@ -357,14 +356,14 @@ export default function SmeShopView() {
                     <th className="py-3 px-4 sm:px-6 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-line">
                   {sales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-purple-700">{sale.invoice_number || `INV-${sale.id}`}</td>
-                      <td className="py-3 px-4 text-gray-500">{new Date(sale.created_at).toLocaleString()}</td>
-                      <td className="py-3 px-4 text-gray-800 font-medium">{sale.customer_name || "Walk-in"}</td>
-                      <td className="py-3 px-4 uppercase font-bold text-[10px] text-gray-600">{sale.payment_method || "cash"}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-black text-gray-900">{rwf(sale.total || 0)}</td>
+                    <tr key={sale.id} className="hover:bg-card-hover transition">
+                      <td className="py-3 px-4 sm:px-6 font-heading font-bold text-primary">{sale.invoice_number || `INV-${sale.id}`}</td>
+                      <td className="py-3 px-4 text-muted">{new Date(sale.created_at).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-ink font-medium">{sale.customer_name || "Walk-in"}</td>
+                      <td className="py-3 px-4 uppercase font-heading font-bold text-[10px] text-muted">{sale.payment_method || "cash"}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(sale.total || 0)} RWF</td>
                     </tr>
                   ))}
                 </tbody>
@@ -375,31 +374,31 @@ export default function SmeShopView() {
       )}
 
       {activeTab === "customers" && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xs font-black text-gray-900 uppercase">Customer Directory & Debts</h3>
-            <span className="text-xs font-bold text-gray-400">{customers.length} Customers</span>
+        <div className="bg-card rounded-2xl border border-line shadow-card overflow-hidden font-body">
+          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
+            <h3 className="text-xs font-black text-ink uppercase">Customer Directory & Debts</h3>
+            <span className="text-xs font-bold text-muted">{customers.length} Customers</span>
           </div>
           {customers.length === 0 ? (
-            <div className="p-8 text-center text-xs text-gray-400">No customers registered.</div>
+            <div className="p-8 text-center text-xs text-muted">No customers registered.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                  <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
                     <th className="py-3 px-4 sm:px-6">Customer Name</th>
                     <th className="py-3 px-4">Phone</th>
                     <th className="py-3 px-4">Orders Count</th>
                     <th className="py-3 px-4 sm:px-6 text-right">Lifetime Spent</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-line">
                   {customers.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-gray-900">{c.name}</td>
-                      <td className="py-3 px-4 text-gray-500">{c.phone || "—"}</td>
-                      <td className="py-3 px-4 font-bold text-gray-800">{c.total_orders || 1}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-black text-emerald-700">{rwf(c.total_spent || 0)}</td>
+                    <tr key={c.id} className="hover:bg-card-hover transition">
+                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{c.name}</td>
+                      <td className="py-3 px-4 text-muted">{c.phone || "—"}</td>
+                      <td className="py-3 px-4 font-heading font-bold text-ink tabnum">{c.total_orders || 1}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(c.total_spent || 0)} RWF</td>
                     </tr>
                   ))}
                 </tbody>
@@ -410,31 +409,31 @@ export default function SmeShopView() {
       )}
 
       {activeTab === "expenses" && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-xs font-black text-gray-900 uppercase">Store Operating Expenses</h3>
-            <span className="text-xs font-bold text-gray-400">{expenses.length} Records</span>
+        <div className="bg-card rounded-2xl border border-line shadow-card overflow-hidden font-body">
+          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
+            <h3 className="text-xs font-black text-ink uppercase">Store Operating Expenses</h3>
+            <span className="text-xs font-bold text-muted">{expenses.length} Records</span>
           </div>
           {expenses.length === 0 ? (
-            <div className="p-8 text-center text-xs text-gray-400">No expenses recorded for this store.</div>
+            <div className="p-8 text-center text-xs text-muted">No expenses recorded for this store.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50 text-[10px] font-black text-gray-400 uppercase">
+                  <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
                     <th className="py-3 px-4 sm:px-6">Description</th>
                     <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4">Date</th>
                     <th className="py-3 px-4 sm:px-6 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-line">
                   {expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-gray-900">{e.description || e.name}</td>
-                      <td className="py-3 px-4 text-gray-500">{e.category || "General"}</td>
-                      <td className="py-3 px-4 text-gray-500">{new Date(e.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-black text-red-600">{rwf(e.amount || 0)}</td>
+                    <tr key={e.id} className="hover:bg-card-hover transition">
+                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{e.description || e.name}</td>
+                      <td className="py-3 px-4 text-muted">{e.category || "General"}</td>
+                      <td className="py-3 px-4 text-muted">{new Date(e.created_at).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(e.amount || 0)} RWF</td>
                     </tr>
                   ))}
                 </tbody>
