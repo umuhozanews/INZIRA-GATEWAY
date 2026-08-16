@@ -610,7 +610,7 @@ export default function Suppliers() {
                 <Truck size={16} />
               </div>
             </div>
-            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{rwf(totalWeOweSuppliers)} RWF</div>
+            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{rwf(totalPayables)} RWF</div>
             <span className="text-[10.5px] font-medium text-muted block mt-0.5">{suppliers.length} saved suppliers</span>
           </div>
 
