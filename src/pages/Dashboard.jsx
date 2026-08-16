@@ -192,36 +192,6 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
         {/* Left Column (Key Financial Metrics & Actions) */}
         <div className="md:col-span-7 space-y-4">
-          
-          {/* Primary Quick POS Action Hero Banner */}
-          <div className="relative overflow-hidden rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-card">
-            {/* Subtle kinetic orange gradient trace in dark background */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10" />
-
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider text-primary block">
-                  Quick POS Counter
-                </span>
-                <h2 className="text-lg font-heading font-black text-ink mt-0.5 tracking-tight">
-                  Ready for Next Sale
-                </h2>
-                <p className="text-xs text-muted mt-1 leading-relaxed max-w-xs">
-                  Ring up items with barcode or quick taps and generate instant customer invoices.
-                </p>
-              </div>
-
-              <button
-                onClick={() => navigate("/sell")}
-                className="btn-kinetic flex items-center justify-center gap-2 px-6 py-3.5 text-xs sm:text-sm font-heading font-black tracking-wide shrink-0 cursor-pointer select-none"
-              >
-                <ShoppingCart size={17} strokeWidth={2.5} />
-                <span>{t("record_sale")}</span>
-                <ArrowUpRight size={16} strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-
           {/* Financial Performance Stat Cards (High Contrast, Bold, Authoritative) */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
             <StatCard
