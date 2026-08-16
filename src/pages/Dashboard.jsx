@@ -41,18 +41,23 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [shopName, setShopName] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [statsRes, settingsRes] = await Promise.allSettled([
+      const [statsRes, settingsRes, actRes] = await Promise.allSettled([
         api.get("/dashboard/stats"),
         api.get("/settings"),
+        api.get("/dashboard/activity-feed"),
       ]);
       if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
       if (settingsRes.status === "fulfilled")
         setShopName(settingsRes.value.data?.settings?.shop_name || "");
+      if (actRes.status === "fulfilled" && Array.isArray(actRes.value.data)) {
+        setActivities(actRes.value.data);
+      }
     } catch (e) {
       /* ignore */
     }
@@ -61,6 +66,42 @@ export default function Dashboard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleActivityClick = (act) => {
+    const type = act.entity_type || (
+      act.action?.includes("SALE") ? "sales" :
+      act.action?.includes("EXPENSE") ? "expenses" :
+      act.action?.includes("STOCK") ? "stock_items" :
+      act.action?.includes("INVOICE") ? "invoices" :
+      act.action?.includes("WORKER") || act.action?.includes("USER") ? "users" : "sales"
+    );
+
+    switch (type) {
+      case "sales":
+      case "sale":
+        navigate("/invoices");
+        break;
+      case "expenses":
+      case "expense":
+        navigate("/expenses");
+        break;
+      case "stock_items":
+      case "stock":
+        navigate("/stock");
+        break;
+      case "invoices":
+      case "invoice":
+        navigate("/invoices");
+        break;
+      case "users":
+      case "team":
+        navigate("/settings");
+        break;
+      default:
+        navigate("/sell");
+        break;
+    }
+  };
 
   if (loading) return <Loading label={t("loading")} />;
 
@@ -243,20 +284,113 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="space-y-2">
-              {!recent || recent.length === 0 ? (
+              {(!activities || activities.length === 0) && (!recent || recent.length === 0) ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-5 text-center text-xs text-gray-400 font-semibold">
-                  No sales recorded yet. Click 'Record Sale' to start!
+                  No activity recorded yet. Click 'Record Sale' to start!
                 </div>
+              ) : activities && activities.length > 0 ? (
+                activities.slice(0, 6).map((act) => {
+                  const isSale = act.entity_type === "sales" || act.action?.includes("SALE");
+                  const isExp = act.entity_type === "expenses" || act.action?.includes("EXPENSE");
+                  const isStock = act.entity_type === "stock_items" || act.action?.includes("STOCK");
+                  const isInv = act.entity_type === "invoices" || act.action?.includes("INVOICE");
+                  const isUser = act.entity_type === "users" || act.action?.includes("USER") || act.action?.includes("WORKER");
+
+                  let label = act.action?.replace(/_/g, " ") || "Activity";
+                  let amountStr = null;
+                  let isPositive = false;
+
+                  if (isSale) {
+                    label = act.details?.invoice_number || (act.details?.total_amount ? `Sale ${rwf(act.details.total_amount)}` : "Sale Processed");
+                    if (act.details?.total_amount) {
+                      amountStr = `+${rwf(act.details.total_amount)}`;
+                      isPositive = true;
+                    }
+                  } else if (isExp) {
+                    label = act.details?.category || act.details?.description || "Expense Logged";
+                    if (act.details?.amount) {
+                      amountStr = `-${rwf(act.details.amount)}`;
+                      isPositive = false;
+                    }
+                  } else if (isStock) {
+                    label = act.details?.name || act.details?.item_name ? `Stock: ${act.details.name || act.details.item_name}` : "Stock Adjusted";
+                  } else if (isInv) {
+                    label = act.details?.invoice_number ? `Invoice: ${act.details.invoice_number}` : "Invoice Generated";
+                  } else if (isUser) {
+                    label = `${act.user_name || "Team Member"} signed in`;
+                  }
+
+                  return (
+                    <button
+                      key={act.id}
+                      onClick={() => handleActivityClick(act)}
+                      className="w-full flex items-center justify-between rounded-2xl border border-gray-200/70 bg-gray-50/60 p-2.5 sm:p-3 text-left hover:bg-purple-50/40 hover:border-purple-200 transition cursor-pointer active:scale-[0.99] group shadow-[0_1px_4px_rgba(0,0,0,0.02)]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition shadow-sm ${
+                            isSale
+                              ? "bg-emerald-100 text-emerald-800 group-hover:scale-105"
+                              : isExp
+                              ? "bg-red-100 text-red-800 group-hover:scale-105"
+                              : isStock
+                              ? "bg-amber-100 text-amber-800 group-hover:scale-105"
+                              : isInv
+                              ? "bg-blue-100 text-blue-800 group-hover:scale-105"
+                              : "bg-gray-900 text-white group-hover:scale-105"
+                          }`}
+                        >
+                          {isSale ? (
+                            <ShoppingCart size={14} />
+                          ) : isExp ? (
+                            <Wallet size={14} />
+                          ) : isStock ? (
+                            <Package size={14} />
+                          ) : (
+                            <Activity size={14} />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1 pr-2">
+                          <div className="text-xs font-bold text-gray-900 group-hover:text-purple-700 transition truncate capitalize">
+                            {label}
+                          </div>
+                          <div className="text-[10px] font-semibold text-gray-400 flex items-center gap-1.5 mt-0.5">
+                            <span>{clockTime(act.created_at)}</span>
+                            {act.user_name && (
+                              <span className="text-purple-600 font-bold truncate">
+                                &bull; {act.user_name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {amountStr && (
+                          <span
+                            className={`text-xs font-black tabnum px-2 py-0.5 rounded-md ${
+                              isPositive ? "text-emerald-700 bg-emerald-50" : "text-red-700 bg-red-50"
+                            }`}
+                          >
+                            {amountStr}
+                          </span>
+                        )}
+                        <ChevronRight size={14} className="text-gray-400 group-hover:text-purple-600 transition group-hover:translate-x-0.5" />
+                      </div>
+                    </button>
+                  );
+                })
               ) : (
                 recent.map((sale) => (
                   <button
                     key={sale.id}
-                    onClick={() => navigate("/sell")}
-                    className="w-full flex items-center justify-between rounded-xl border border-gray-200/60 bg-gray-50/60 p-2.5 text-left hover:bg-gray-100 transition cursor-pointer active:scale-[0.99] group"
+                    onClick={() => navigate("/invoices")}
+                    className="w-full flex items-center justify-between rounded-2xl border border-gray-200/70 bg-gray-50/60 p-2.5 text-left hover:bg-gray-100 transition cursor-pointer active:scale-[0.99] group shadow-[0_1px_4px_rgba(0,0,0,0.02)]"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-white shrink-0 group-hover:scale-105 transition shadow-sm">
-                        <Activity size={14} />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0 group-hover:scale-105 transition shadow-sm">
+                        <ShoppingCart size={14} />
                       </div>
                       <div>
                         <div className="text-xs font-bold text-gray-900 group-hover:text-purple-600 transition">
@@ -266,9 +400,12 @@ export default function Dashboard() {
                         <div className="text-[10px] font-semibold text-gray-400">{clockTime(sale.created_at)}</div>
                       </div>
                     </div>
-                    <span className="text-xs font-black tabnum text-emerald-600">
-                      +{rwf(sale.total_amount)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black tabnum text-emerald-600">
+                        +{rwf(sale.total_amount)}
+                      </span>
+                      <ChevronRight size={14} className="text-gray-400 group-hover:text-purple-600 transition" />
+                    </div>
                   </button>
                 ))
               )}

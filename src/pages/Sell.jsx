@@ -10,7 +10,6 @@ import {
   Clock,
   Trash2,
   ShoppingCart,
-  Edit3,
   Tag,
   History,
   FileText,
@@ -58,12 +57,12 @@ export default function Sell() {
     const inv = sale.invoice_number || `REC-${sale.id}`;
     if (
       window.confirm(
-        `Are you sure you want to delete / void sale ${inv} (${rwf(sale.total_amount)} RWF)?\n\n- All sold items will be returned to your inventory.\n- This deletion will be permanently recorded in audit logs.`
+        `Are you sure? This action will be logged.\n\nDelete / void sale ${inv} (${rwf(sale.total_amount)} RWF)?\n\n- All sold items will be returned to your inventory.\n- This deletion will be permanently recorded in deletion logs.`
       )
     ) {
       try {
         await (deleteSale || voidSale)(sale.id);
-        toast.success(`Sale ${inv} deleted and inventory restored.`);
+        toast.success(`Sale ${inv} deleted, inventory restored, and recorded in deletion logs.`);
       } catch (err) {
         toast.error("Failed to delete sale.");
       }
@@ -86,12 +85,6 @@ export default function Sell() {
     return new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
   });
   const [saleNotes, setSaleNotes] = useState("");
-
-  // Manual Custom Item Modal State
-  const [customOpen, setCustomOpen] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [customPrice, setCustomPrice] = useState("");
-  const [customQty, setCustomQty] = useState("1");
 
   // Debt Payment Modal State
   const [repayTarget, setRepayTarget] = useState(null);
@@ -240,37 +233,7 @@ export default function Sell() {
 
   const clearCart = () => setCart({});
 
-  // Handle adding custom manual text item
-  const handleAddCustom = (e) => {
-    e.preventDefault();
-    if (!customName.trim()) {
-      toast.error("Please enter a product or service name.");
-      return;
-    }
-    const priceNum = Number(customPrice);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      toast.error("Please enter a valid price in RWF.");
-      return;
-    }
 
-    const id = `custom_${Date.now()}`;
-    const item = {
-      id,
-      name: customName.trim(),
-      sell_price_rwf: priceNum,
-      is_custom: true,
-      category: "Custom Item",
-    };
-    const qty = Math.max(1, Number(customQty) || 1);
-
-    setCart((c) => ({ ...c, [id]: { item, qty } }));
-    toast.success(`Added "${customName.trim()}" to cart`);
-
-    setCustomName("");
-    setCustomPrice("");
-    setCustomQty("1");
-    setCustomOpen(false);
-  };
 
   async function handleComplete() {
     if (!lines.length) return;
@@ -432,15 +395,6 @@ export default function Sell() {
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
-
-              <button
-                onClick={() => setCustomOpen(true)}
-                className="flex items-center gap-1.5 rounded-full bg-gray-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-gray-800 active:scale-95 transition cursor-pointer shrink-0 shadow-sm"
-              >
-                <Edit3 size={15} />
-                <span className="hidden sm:inline">{t("add_custom_item_manually")}</span>
-                <span className="sm:hidden">{t("plus_manual")}</span>
-              </button>
             </div>
 
             {/* Category chips */}
@@ -463,14 +417,9 @@ export default function Sell() {
             {/* Product grid */}
             <div className="flex-1 overflow-y-auto px-4 md:px-0 pb-36 md:pb-6 font-manrope">
               {visibleProducts.length === 0 ? (
-                <div className="mt-12 text-center text-xs md:text-sm text-gray-400 space-y-3 font-semibold">
+                <div className="mt-12 text-center text-xs md:text-sm text-gray-400 space-y-2 font-semibold">
                   <p>{t("no_products_found")}</p>
-                  <button
-                    onClick={() => setCustomOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800"
-                  >
-                    <Plus size={14} /> {t("add_custom_item_manually")}
-                  </button>
+                  <p className="text-[11px] text-gray-400">All sales must be selected directly from available stock inventory.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -1412,67 +1361,7 @@ export default function Sell() {
         )}
       </Sheet>
 
-      {/* MANUAL CUSTOM ITEM INPUT MODAL SHEET */}
-      <Sheet open={customOpen} onClose={() => setCustomOpen(false)} title="Add Custom Item Manually">
-        <form onSubmit={handleAddCustom} className="space-y-4 pt-2 pb-6">
-          <p className="text-xs text-muted">
-            Enter item or service details to add a custom text item directly to the current sale cart.
-          </p>
 
-          <Field label="Item / Service Name">
-            <TextInput
-              required
-              placeholder="e.g., Tailoring Repair, Special Delivery, Service Fee"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              autoFocus
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Unit Price (RWF)">
-              <TextInput
-                required
-                type="number"
-                min="1"
-                placeholder="e.g., 5000"
-                value={customPrice}
-                onChange={(e) => setCustomPrice(e.target.value)}
-              />
-            </Field>
-
-            <Field label="Quantity">
-              <TextInput
-                required
-                type="number"
-                min="1"
-                placeholder="1"
-                value={customQty}
-                onChange={(e) => setCustomQty(e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div className="pt-2 flex gap-2">
-            <Button
-              type="button"
-              variant="paper"
-              onClick={() => setCustomOpen(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              variant="green"
-              className="flex-1 font-bold shadow-sm"
-            >
-              Add to Sale Cart
-            </Button>
-          </div>
-        </form>
-      </Sheet>
 
       {/* SELECTED RECEIPT DETAILS MODAL SHEET */}
       <Sheet open={!!selectedReceipt} onClose={() => setSelectedReceipt(null)} title="RRA EBM v2 Fiscal Receipt Preview">

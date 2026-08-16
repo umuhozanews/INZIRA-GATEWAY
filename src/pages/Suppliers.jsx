@@ -14,11 +14,22 @@ import {
   UserPlus,
   Truck,
   FileText,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  Package,
+  PackageCheck,
+  PackagePlus,
+  Send,
+  Share2,
+  ExternalLink,
+  Trash2,
+  Boxes,
+  Sparkles,
+  ChevronRight
 } from "lucide-react";
 import api, { errorMessage } from "../lib/api";
 import { useLang } from "../lib/i18n.jsx";
-import { rwf, initials, formatDate } from "../lib/format";
+import { rwf, initials, formatDate, clockTime } from "../lib/format";
 import ScreenHeader from "../components/ScreenHeader";
 import Sheet from "../components/Sheet";
 import Loading from "../components/Loading";
@@ -29,7 +40,7 @@ import { useAuth } from "../context/AuthContext";
 export default function Suppliers() {
   const { t } = useLang();
   const { user } = useAuth();
-  const { sales, recordDebtPayment } = useData();
+  const { sales, recordDebtPayment, stock, reload: reloadData } = useData();
   const [params, setParams] = useSearchParams();
 
   // User-scoped keys so new signups start at clean NULL state
@@ -41,11 +52,12 @@ export default function Suppliers() {
   const CUST_KEY = `db_customers_${userKey}`;
   const SUPP_KEY = `db_suppliers_${userKey}`;
 
-  const [activeTab, setActiveTab] = useState("customers"); // 'customers' | 'owed' | 'payables'
+  const [activeTab, setActiveTab] = useState("customers"); // 'customers' | 'owed' | 'payables' | 'orders'
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all"); // 'all' | 'ordered' | 'in_transit' | 'received' | 'stocked'
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Local Customers State (Starts [] for new signups)
+  // Local Customers State
   const [customers, setCustomers] = useState(() => {
     try {
       const saved = localStorage.getItem(`db_customers_${userKey}`);
@@ -55,7 +67,7 @@ export default function Suppliers() {
     }
   });
 
-  // Local Suppliers State (Starts [] for new signups)
+  // Local Suppliers State
   const [suppliers, setSuppliers] = useState(() => {
     try {
       const saved = localStorage.getItem(`db_suppliers_${userKey}`);
@@ -65,17 +77,63 @@ export default function Suppliers() {
     }
   });
 
-  // Fetch remote backend customers on mount
-  useEffect(() => {
-    api.get("/customers")
-      .then((res) => {
-        const data = res.data?.data || res.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setCustomers(data);
-        }
-      })
-      .catch(() => {});
+  // Purchase Orders State
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Catalog Stock items for PO autocomplete
+  const [catalogItems, setCatalogItems] = useState([]);
+
+  // Fetch remote backend suppliers & customers on mount
+  const fetchSuppliers = useCallback(async () => {
+    try {
+      const res = await api.get("/suppliers");
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setSuppliers(data);
+      }
+    } catch {}
   }, []);
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const res = await api.get("/customers");
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setCustomers(data);
+      }
+    } catch {}
+  }, []);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setOrdersLoading(true);
+      const res = await api.get("/purchase-orders");
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) {
+        setOrders(data);
+      }
+    } catch {} finally {
+      setOrdersLoading(false);
+    }
+  }, []);
+
+  const fetchStock = useCallback(async () => {
+    try {
+      const res = await api.get("/stock");
+      const data = res.data?.items || res.data || [];
+      if (Array.isArray(data)) {
+        setCatalogItems(data);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchCustomers();
+    fetchSuppliers();
+    fetchOrders();
+    fetchStock();
+  }, [fetchCustomers, fetchSuppliers, fetchOrders, fetchStock]);
 
   // Re-sync local state whenever active user account changes
   useEffect(() => {
@@ -123,11 +181,26 @@ export default function Suppliers() {
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
 
+  // Create Purchase Order Form State
+  const [createPoOpen, setCreatePoOpen] = useState(false);
+  const [poSupplierId, setPoSupplierId] = useState("");
+  const [poOrderDate, setPoOrderDate] = useState(new Date().toISOString().slice(0, 10));
+  const [poArrivalDate, setPoArrivalDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().slice(0, 10);
+  });
+  const [poNotes, setPoNotes] = useState("");
+  const [poStatus, setPoStatus] = useState("ordered");
+  const [poItems, setPoItems] = useState([
+    { stock_item_id: "", item_name: "", quantity: 10, unit_cost_rwf: 0 }
+  ]);
+  const [poSaving, setPoSaving] = useState(false);
+
   // Dynamically compile Customer accounts merging DB/manual entries with POS Sales records
   const allCustomers = useMemo(() => {
     const map = new Map();
 
-    // 1. Add explicitly saved/backend customers
     (customers || []).forEach((c) => {
       if (!c || !c.name) return;
       const key = c.name.trim().toLowerCase();
@@ -144,7 +217,6 @@ export default function Suppliers() {
       });
     });
 
-    // 2. Automatically derive customer records from live sales recorded at POS
     (sales || []).forEach((s) => {
       const rawName = s.customer_name?.trim();
       if (!rawName || rawName === "Walk-in Customer") return;
@@ -177,7 +249,6 @@ export default function Suppliers() {
     return Array.from(map.values());
   }, [customers, sales]);
 
-  // Derived Owed to Us (Receivables) from live sales
   const receivables = useMemo(() => {
     return (sales || []).filter((s) => (Number(s.amount_owed) || 0) > 0 || s.payment_status === "pending" || s.payment_status === "partial");
   }, [sales]);
@@ -192,23 +263,210 @@ export default function Suppliers() {
     return suppliers.reduce((sum, s) => sum + (Number(s.amount_we_owe_rwf) || 0), 0);
   }, [suppliers]);
 
-  // Handlers
-  const handleAddCustomer = (e) => {
+  // WhatsApp Helpers
+  const sanitizeWhatsAppPhone = (phone) => {
+    if (!phone) return "";
+    let clean = String(phone).replace(/[^0-9+]/g, "");
+    if (clean.startsWith("+")) clean = clean.slice(1);
+    if (clean.startsWith("07") && clean.length === 10) clean = "250" + clean.slice(1);
+    else if (clean.startsWith("7") && clean.length === 9) clean = "250" + clean;
+    return clean;
+  };
+
+  const formatWhatsAppOrderText = (order, shopName) => {
+    const lines = [];
+    lines.push(`📦 *PURCHASE ORDER: PO-${order.id}*`);
+    if (shopName) lines.push(`🏪 *From:* ${shopName}`);
+    lines.push(`👤 *Supplier:* ${order.supplier_name || "Supplier"}`);
+    lines.push(`📅 *Order Date:* ${formatDate(order.order_date || order.created_at)}`);
+    if (order.arrival_date) lines.push(`🚚 *Expected Delivery:* ${formatDate(order.arrival_date)}`);
+    lines.push("");
+    lines.push(`*Items Ordered:*`);
+
+    const items = order.items && order.items.length > 0 ? order.items : [];
+    items.forEach((it, idx) => {
+      const itemTotal = (Number(it.quantity) || 1) * (Number(it.unit_cost_rwf) || 0);
+      lines.push(`${idx + 1}. *${it.item_name}* — ${it.quantity} units @ ${rwf(it.unit_cost_rwf)} RWF (= ${rwf(itemTotal)} RWF)`);
+    });
+
+    lines.push("--------------------------------");
+    lines.push(`💰 *Estimated Total:* ${rwf(order.total_cost_rwf || 0)} RWF`);
+    if (order.notes) {
+      lines.push("");
+      lines.push(`📝 *Notes:* ${order.notes}`);
+    }
+    lines.push("");
+    lines.push(`_Sent via Inzira DataBridge_`);
+    return lines.join("\n");
+  };
+
+  const handleSendToWhatsApp = (order) => {
+    const rawPhone = order.supplier_phone || (suppliers.find((s) => s.id === order.supplier_id)?.phone);
+    const cleanPhone = sanitizeWhatsAppPhone(rawPhone);
+
+    const message = formatWhatsAppOrderText(order, user?.shop_name || user?.name || "Merchant");
+    const encoded = encodeURIComponent(message);
+
+    const url = cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+
+    window.open(url, "_blank");
+    toast.success("Opening WhatsApp with pre-filled Purchase Order!");
+  };
+
+  // PO Line Item Handlers
+  const handleItemStockChange = (index, stockId) => {
+    const stk = (catalogItems.length > 0 ? catalogItems : (stock || [])).find((s) => String(s.id) === String(stockId));
+    setPoItems((prev) => {
+      const copy = [...prev];
+      if (stk) {
+        copy[index] = {
+          ...copy[index],
+          stock_item_id: stk.id,
+          item_name: stk.name,
+          unit_cost_rwf: stk.cost_price_rwf || 0,
+        };
+      } else {
+        copy[index] = {
+          ...copy[index],
+          stock_item_id: "",
+        };
+      }
+      return copy;
+    });
+  };
+
+  const handleItemFieldChange = (index, field, value) => {
+    setPoItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
+  const handleAddPoItemRow = () => {
+    setPoItems((prev) => [
+      ...prev,
+      { stock_item_id: "", item_name: "", quantity: 10, unit_cost_rwf: 0 }
+    ]);
+  };
+
+  const handleRemovePoItemRow = (index) => {
+    if (poItems.length === 1) return;
+    setPoItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const poCalculatedTotal = useMemo(() => {
+    return poItems.reduce((sum, it) => sum + ((Number(it.quantity) || 0) * (Number(it.unit_cost_rwf) || 0)), 0);
+  }, [poItems]);
+
+  const handleCreatePoSubmit = async (e) => {
+    e.preventDefault();
+    if (!poSupplierId) return toast.error("Please select a supplier.");
+    if (poItems.length === 0 || !poItems[0].item_name.trim()) {
+      return toast.error("Please add at least one item to order.");
+    }
+
+    setPoSaving(true);
+    try {
+      const payload = {
+        supplier_id: poSupplierId,
+        order_date: poOrderDate,
+        arrival_date: poArrivalDate || null,
+        notes: poNotes.trim() || null,
+        status: poStatus,
+        items: poItems.map((it) => ({
+          stock_item_id: it.stock_item_id || null,
+          item_name: it.item_name.trim() || "Item",
+          quantity: parseInt(it.quantity, 10) || 1,
+          unit_cost_rwf: parseInt(it.unit_cost_rwf, 10) || 0,
+        }))
+      };
+
+      const res = await api.post("/purchase-orders", payload);
+      const createdOrder = res.data;
+      toast.success(`Purchase Order PO-${createdOrder.id} created!`);
+
+      // Reset form
+      setCreatePoOpen(false);
+      setPoNotes("");
+      setPoItems([{ stock_item_id: "", item_name: "", quantity: 10, unit_cost_rwf: 0 }]);
+      fetchOrders();
+
+      // Offer instant WhatsApp dispatch
+      const sup = suppliers.find((s) => String(s.id) === String(poSupplierId));
+      if (sup && sup.phone && confirm(`Would you like to send this Purchase Order to ${sup.name} on WhatsApp now?`)) {
+        handleSendToWhatsApp({
+          ...createdOrder,
+          supplier_name: sup.name,
+          supplier_phone: sup.phone,
+          total_cost_rwf: poCalculatedTotal,
+          items: payload.items
+        });
+      }
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to create purchase order."));
+    } finally {
+      setPoSaving(false);
+    }
+  };
+
+  const handleUpdatePoStatus = async (po, nextStatus) => {
+    try {
+      await api.put(`/purchase-orders/${po.id}/status`, { status: nextStatus });
+      if (nextStatus === "stocked") {
+        toast.success(`🎉 Purchase Order PO-${po.id} marked as Stocked! Items added to live inventory.`);
+        if (reloadData) reloadData();
+      } else if (nextStatus === "received") {
+        toast.success(`📦 Purchase Order PO-${po.id} marked as Received at store.`);
+      } else {
+        toast.success(`Status updated to ${nextStatus.replace(/_/g, " ")}.`);
+      }
+      fetchOrders();
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to update order status."));
+    }
+  };
+
+  const handleDeletePo = async (po) => {
+    if (!confirm(`Are you sure you want to delete Purchase Order PO-${po.id}?`)) return;
+    try {
+      await api.delete(`/purchase-orders/${po.id}`);
+      toast.success(`Purchase Order PO-${po.id} deleted.`);
+      fetchOrders();
+    } catch (err) {
+      toast.error(errorMessage(err, "Failed to delete purchase order."));
+    }
+  };
+
+  // Customers & Suppliers Handlers
+  const handleAddCustomer = async (e) => {
     e.preventDefault();
     if (!custName.trim()) return toast.error("Please enter customer name.");
 
-    const created = {
-      id: Date.now(),
-      name: custName.trim(),
-      phone: custPhone.trim() || "N/A",
-      email: custEmail.trim() || "",
-      credit_limit_rwf: Number(custLimit) || 200000,
-      owed_to_us_rwf: 0,
-      total_spent_rwf: 0,
-    };
-
-    setCustomers((prev) => [created, ...prev]);
-    toast.success(`Added customer "${custName.trim()}"`);
+    try {
+      const res = await api.post("/customers", {
+        name: custName.trim(),
+        phone: custPhone.trim() || undefined,
+        credit_limit: Number(custLimit) || 200000,
+        notes: custEmail.trim() ? `Email: ${custEmail.trim()}` : undefined
+      });
+      toast.success(`Added customer "${custName.trim()}"`);
+      fetchCustomers();
+    } catch {
+      const created = {
+        id: Date.now(),
+        name: custName.trim(),
+        phone: custPhone.trim() || "N/A",
+        email: custEmail.trim() || "",
+        credit_limit_rwf: Number(custLimit) || 200000,
+        owed_to_us_rwf: 0,
+        total_spent_rwf: 0,
+      };
+      setCustomers((prev) => [created, ...prev]);
+      toast.success(`Saved customer locally.`);
+    }
 
     setCustName("");
     setCustPhone("");
@@ -217,20 +475,30 @@ export default function Suppliers() {
     setAddCustOpen(false);
   };
 
-  const handleAddSupplier = (e) => {
+  const handleAddSupplier = async (e) => {
     e.preventDefault();
     if (!supName.trim()) return toast.error("Please enter supplier name.");
 
-    const created = {
-      id: Date.now(),
-      name: supName.trim(),
-      phone: supPhone.trim() || "N/A",
-      products_supplied: supProducts.trim() || "General Goods",
-      amount_we_owe_rwf: Number(supOwed) || 0,
-    };
-
-    setSuppliers((prev) => [created, ...prev]);
-    toast.success(`Added supplier "${supName.trim()}"`);
+    try {
+      await api.post("/suppliers", {
+        name: supName.trim(),
+        phone: supPhone.trim() || undefined,
+        products_supplied: supProducts.trim() || undefined,
+        outstanding_balance: Number(supOwed) || 0,
+      });
+      toast.success(`Added supplier "${supName.trim()}"`);
+      fetchSuppliers();
+    } catch {
+      const created = {
+        id: Date.now(),
+        name: supName.trim(),
+        phone: supPhone.trim() || "N/A",
+        products_supplied: supProducts.trim() || "General Goods",
+        amount_we_owe_rwf: Number(supOwed) || 0,
+      };
+      setSuppliers((prev) => [created, ...prev]);
+      toast.success(`Saved supplier locally.`);
+    }
 
     setSupName("");
     setSupPhone("");
@@ -268,79 +536,97 @@ export default function Suppliers() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
       <ScreenHeader
-        title="Suppliers & Debtors"
+        title="Suppliers & Ordering"
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
-              onClick={() => setAddCustOpen(true)}
-              className="flex items-center gap-1 rounded-full bg-[#D4F06B] px-3.5 py-1.5 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition cursor-pointer"
+              onClick={() => setCreatePoOpen(true)}
+              className="flex items-center gap-1.5 rounded-full bg-purple-600 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-purple-700 transition cursor-pointer active:scale-95"
             >
-              <UserPlus size={14} />
-              <span>Customer</span>
+              <PackagePlus size={14} />
+              <span>+ New Order</span>
             </button>
+
             <button
               onClick={() => setAddSupOpen(true)}
-              className="flex items-center gap-1 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
+              className="flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
             >
               <Plus size={14} />
-              <span>Supplier</span>
+              <span className="hidden sm:inline">Supplier</span>
             </button>
           </div>
         }
       />
 
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-        {/* KPI Strip: Customers, Owed to Us, Payables */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* KPI Strip: Customers, Owed to Us, Payables, Active Orders */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: Total Customers */}
           <div
             onClick={() => setActiveTab("customers")}
-            className={`p-5 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
               activeTab === "customers" ? "border-primary ring-2 ring-primary/20" : "border-line"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted uppercase tracking-wider">Customers</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-xlt text-primary">
-                <Users size={20} />
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Customers</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-xlt text-primary">
+                <Users size={16} />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-ink tabnum">{allCustomers.length}</div>
-            <span className="text-[11px] font-semibold text-muted block mt-0.5">Active Client Accounts</span>
+            <div className="mt-1 text-xl font-extrabold text-ink tabnum">{allCustomers.length}</div>
+            <span className="text-[10.5px] font-semibold text-muted block mt-0.5">Active Clients</span>
           </div>
 
           {/* Card 2: Owed to Us (Receivables) */}
           <div
             onClick={() => setActiveTab("owed")}
-            className={`p-5 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
               activeTab === "owed" ? "border-amber-500 ring-2 ring-amber-500/20" : "border-line"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Owed to Us</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-                <CreditCard size={20} />
+              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Owed to Us</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+                <CreditCard size={16} />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-amber-700 tabnum">{rwf(totalOwedToUs)} RWF</div>
-            <span className="text-[11px] font-semibold text-amber-800 block mt-0.5">Customer Credit Sales Owed</span>
+            <div className="mt-1 text-xl font-extrabold text-amber-700 tabnum">{rwf(totalOwedToUs)} RWF</div>
+            <span className="text-[10.5px] font-semibold text-amber-800 block mt-0.5">Receivables</span>
           </div>
 
           {/* Card 3: Payables (Owed to Suppliers) */}
           <div
             onClick={() => setActiveTab("payables")}
-            className={`p-5 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
               activeTab === "payables" ? "border-red-500 ring-2 ring-red-500/20" : "border-line"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Payables</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 text-red-800">
-                <Truck size={20} />
+              <span className="text-[11px] font-bold text-red-700 uppercase tracking-wider">Payables</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100 text-red-800">
+                <Truck size={16} />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-extrabold text-red-700 tabnum">{rwf(totalPayables)} RWF</div>
-            <span className="text-[11px] font-semibold text-red-800 block mt-0.5">Owed to Stock Suppliers</span>
+            <div className="mt-1 text-xl font-extrabold text-red-700 tabnum">{rwf(totalPayables)} RWF</div>
+            <span className="text-[10.5px] font-semibold text-red-800 block mt-0.5">Owed to Suppliers</span>
+          </div>
+
+          {/* Card 4: Supplier Orders */}
+          <div
+            onClick={() => setActiveTab("orders")}
+            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+              activeTab === "orders" ? "border-purple-600 ring-2 ring-purple-600/20 bg-purple-50/20" : "border-line"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Supplier Orders</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800">
+                <Boxes size={16} />
+              </div>
+            </div>
+            <div className="mt-1 text-xl font-extrabold text-purple-900 tabnum">{orders.length}</div>
+            <span className="text-[10.5px] font-semibold text-purple-700 block mt-0.5">WhatsApp Ordering</span>
           </div>
         </div>
 
@@ -348,21 +634,22 @@ export default function Suppliers() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-2xl border border-line shadow-sm overflow-x-auto">
             {[
+              { id: "orders", label: "Supplier Orders (WhatsApp)", count: orders.length, highlight: true },
+              { id: "payables", label: "Suppliers & Payables", count: suppliers.length },
               { id: "customers", label: "Customers", count: allCustomers.length },
               { id: "owed", label: "Owed to Us (Receivables)", count: receivables.length },
-              { id: "payables", label: "Payables (Suppliers)", count: suppliers.length },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-primary text-white shadow-sm"
+                    ? tab.highlight ? "bg-purple-600 text-white shadow-sm" : "bg-primary text-white shadow-sm"
                     : "text-muted hover:text-ink hover:bg-paper"
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-[10px] font-extrabold">
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${activeTab === tab.id ? "bg-white/20" : "bg-gray-100 text-gray-700"}`}>
                   {tab.count}
                 </span>
               </button>
@@ -375,13 +662,240 @@ export default function Suppliers() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search name, phone, invoice…"
+              placeholder="Search supplier, item, PO…"
               className="w-full rounded-xl border border-line bg-card pl-9 pr-3 py-2 text-xs font-semibold text-ink placeholder:text-muted focus:border-primary focus:outline-none shadow-sm"
             />
           </div>
         </div>
 
-        {/* Tab 1: Customers Directory */}
+        {/* TAB: SUPPLIER ORDERS (WHATSAPP & ARRIVAL TRACKING) */}
+        {activeTab === "orders" && (
+          <div className="space-y-4">
+            {/* Status Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              {[
+                { id: "all", label: "All Orders" },
+                { id: "ordered", label: "Ordered" },
+                { id: "in_transit", label: "In Transit" },
+                { id: "received", label: "Received (Arrived)" },
+                { id: "stocked", label: "Stocked in Inventory" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setOrderStatusFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer whitespace-nowrap ${
+                    orderStatusFilter === f.id
+                      ? "bg-gray-900 text-white shadow-sm"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {ordersLoading ? (
+              <div className="p-12 text-center text-xs font-bold text-gray-400">Loading purchase orders…</div>
+            ) : orders.length === 0 ? (
+              <div className="mt-4 flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[32px] border border-dashed border-gray-300 bg-white shadow-sm space-y-4 max-w-lg mx-auto">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-purple-50 text-purple-600 border border-purple-100 shadow-sm">
+                  <Boxes size={36} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900">No Supplier Orders Yet</h3>
+                  <p className="mt-1.5 text-xs text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                    Create purchase orders to restock products from your suppliers, send orders via WhatsApp with 1 tap, and track arrival through to inventory stocking.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCreatePoOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-6 py-3 text-xs font-black text-white hover:bg-purple-700 active:scale-95 transition shadow-md cursor-pointer mt-2"
+                >
+                  <PackagePlus size={16} />
+                  <span>+ Create First Purchase Order</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {orders
+                  .filter((o) => {
+                    if (orderStatusFilter !== "all") {
+                      if (orderStatusFilter === "received") return o.status === "received" || o.status === "arrived";
+                      return o.status === orderStatusFilter;
+                    }
+                    return true;
+                  })
+                  .filter((o) => {
+                    if (!searchQuery) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      String(o.id).includes(q) ||
+                      o.supplier_name?.toLowerCase().includes(q) ||
+                      o.notes?.toLowerCase().includes(q) ||
+                      (o.items || []).some((it) => it.item_name?.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((o) => {
+                    const isStocked = o.status === "stocked";
+                    const isReceived = o.status === "received" || o.status === "arrived";
+                    const isInTransit = o.status === "in_transit";
+                    const isOrdered = o.status === "ordered" || o.status === "draft";
+
+                    const statusColor = isStocked
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                      : isReceived
+                      ? "bg-purple-100 text-purple-900 border-purple-300"
+                      : isInTransit
+                      ? "bg-blue-100 text-blue-900 border-blue-300"
+                      : "bg-amber-100 text-amber-900 border-amber-300";
+
+                    return (
+                      <div
+                        key={o.id}
+                        className={`flex flex-col justify-between rounded-3xl border bg-white p-5 shadow-sm transition space-y-4 ${
+                          isStocked ? "border-gray-200" : "border-purple-200/80 hover:border-purple-400"
+                        }`}
+                      >
+                        {/* Order Header */}
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                  PO-{o.id}
+                                </span>
+                                <h3 className="font-extrabold text-sm text-gray-900">{o.supplier_name || "Supplier"}</h3>
+                              </div>
+                              <p className="text-[11px] text-gray-400 mt-1">
+                                Ordered: {formatDate(o.order_date || o.created_at)}
+                                {o.arrival_date ? ` · Delivery: ${formatDate(o.arrival_date)}` : ""}
+                              </p>
+                            </div>
+
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border ${statusColor}`}>
+                              {o.status?.replace(/_/g, " ")}
+                            </span>
+                          </div>
+
+                          {/* Items List Preview */}
+                          <div className="mt-3.5 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 space-y-1.5 text-xs">
+                            <div className="font-bold text-gray-700 flex justify-between text-[11px] uppercase tracking-wider text-gray-400">
+                              <span>Line Items ({o.items_count || (o.items || []).length})</span>
+                              <span>Subtotal</span>
+                            </div>
+                            {(o.items || []).slice(0, 4).map((it, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-gray-800">
+                                <span className="truncate pr-2 font-medium">
+                                  <strong className="text-gray-900">{it.quantity}x</strong> {it.item_name}
+                                </span>
+                                <span className="font-mono text-gray-600 font-bold tabnum shrink-0">
+                                  {rwf((Number(it.quantity) || 1) * (Number(it.unit_cost_rwf) || 0))} RWF
+                                </span>
+                              </div>
+                            ))}
+                            {(o.items || []).length > 4 && (
+                              <div className="text-[10px] text-purple-600 font-bold">
+                                + {(o.items || []).length - 4} more items…
+                              </div>
+                            )}
+
+                            <div className="mt-2 pt-2 border-t border-gray-200/80 flex justify-between items-center font-extrabold text-gray-900">
+                              <span>Total Estimated Cost:</span>
+                              <span className="text-emerald-700 tabnum text-sm">
+                                {rwf(o.total_cost_rwf || 0)} RWF
+                              </span>
+                            </div>
+                          </div>
+
+                          {o.notes && (
+                            <p className="text-[11px] text-gray-500 italic mt-2">
+                              Notes: {o.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Action Buttons Toolbar */}
+                        <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                          {/* WhatsApp Click-to-Chat Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleSendToWhatsApp(o)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm active:scale-95 transition cursor-pointer"
+                            title="Send Purchase Order to Supplier on WhatsApp"
+                          >
+                            <MessageSquare size={14} />
+                            <span>WhatsApp Order</span>
+                          </button>
+
+                          {/* Lifecycle Steppers */}
+                          <div className="flex items-center gap-2">
+                            {isOrdered && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePoStatus(o, "in_transit")}
+                                  className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold transition cursor-pointer"
+                                >
+                                  Mark In Transit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePoStatus(o, "received")}
+                                  className="px-3 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-bold transition cursor-pointer"
+                                >
+                                  Mark Received
+                                </button>
+                              </>
+                            )}
+
+                            {isInTransit && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdatePoStatus(o, "received")}
+                                className="px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-black transition cursor-pointer shadow-sm"
+                              >
+                                Mark Received
+                              </button>
+                            )}
+
+                            {isReceived && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdatePoStatus(o, "stocked")}
+                                className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black transition cursor-pointer shadow-sm active:scale-95"
+                              >
+                                <PackageCheck size={14} />
+                                <span>Mark as Stocked</span>
+                              </button>
+                            )}
+
+                            {isStocked && (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                                <CheckCircle2 size={13} /> In Stock
+                              </span>
+                            )}
+
+                            {!isStocked && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePo(o)}
+                                className="p-2 text-gray-400 hover:text-red-600 transition cursor-pointer"
+                                title="Delete Order"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 1: CUSTOMERS DIRECTORY */}
         {activeTab === "customers" && (
           <div className="space-y-3">
             {allCustomers.filter((c) => !searchQuery || c.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
@@ -453,61 +967,48 @@ export default function Suppliers() {
           </div>
         )}
 
-        {/* Tab 2: Owed to Us (Receivables / Customer Credit Sales) */}
+        {/* TAB 2: RECEIVABLES */}
         {activeTab === "owed" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading text-sm font-extrabold text-ink uppercase tracking-wider">
-                Unpaid Customer Credit Invoices
-              </h3>
-              <span className="text-xs text-muted">{receivables.length} active credit records</span>
-            </div>
-
-            <div className="space-y-3">
-              {receivables.length === 0 ? (
-                <div className="p-10 text-center text-xs text-muted bg-card rounded-2xl border border-dashed border-line">
-                  🎉 All customer sales are fully paid! No outstanding receivables.
+          <div className="space-y-3">
+            {receivables.length === 0 ? (
+              <div className="p-12 text-center text-xs text-muted bg-card rounded-3xl border border-line space-y-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                  <CheckCircle2 size={24} />
                 </div>
-              ) : (
-                receivables.map((s) => (
+                <p className="font-extrabold text-sm text-ink">All Customer Accounts Settled!</p>
+                <p className="text-xs text-muted">You have 0 outstanding credit receivables.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {receivables.map((s) => (
                   <div
                     key={s.id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50/40 shadow-card hover:border-amber-400 transition"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-card"
                   >
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shrink-0">
-                        <CreditCard size={20} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                          {s.invoice_number || `INV-${s.id}`}
+                        </span>
+                        <h4 className="font-bold text-sm text-ink">{s.customer_name || "Customer"}</h4>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-heading text-sm font-extrabold text-ink">
-                            {s.invoice_number || `INV-${s.id}`}
-                          </h4>
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase">
-                            {s.payment_status === "partial" ? "Partially Paid" : "Unpaid Credit"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted mt-0.5">
-                          Customer: <strong className="text-ink">{s.customer_name}</strong>
-                          {s.customer_phone ? ` (${s.customer_phone})` : ""}
-                          <span> &bull; </span>
-                          Due: <strong className="text-amber-800">{s.due_date || "No due date"}</strong>
-                        </p>
-                      </div>
+                      <p className="text-xs text-muted mt-1">
+                        Sale Date: {formatDate(s.created_at)} &bull; Total Sale: {rwf(s.total_amount)} RWF
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200/60">
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-amber-200">
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] font-bold text-muted uppercase block">Amount Owed</span>
                         <span className="text-base font-extrabold text-amber-800 tabnum">
-                          {rwf(s.amount_owed)} RWF
+                          {rwf(s.amount_owed || s.total_amount)} RWF
                         </span>
                       </div>
 
                       <button
                         onClick={() => {
                           setPayModalSale(s);
-                          setPayAmount(String(s.amount_owed));
+                          setPayAmount(String(s.amount_owed || s.total_amount));
                         }}
                         className="px-4 py-2 rounded-xl bg-primary text-xs font-extrabold text-white shadow-sm hover:bg-primary-lt transition cursor-pointer"
                       >
@@ -515,13 +1016,13 @@ export default function Suppliers() {
                       </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Tab 3: Payables (Suppliers We Owe Money) */}
+        {/* TAB 3: PAYABLES & SUPPLIERS */}
         {activeTab === "payables" && (
           <div className="space-y-3">
             {suppliers.filter((s) => !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
@@ -590,12 +1091,23 @@ export default function Suppliers() {
                           <div />
                         )}
 
-                        <button
-                          onClick={() => handlePaySupplier(s.id, s.amount_we_owe_rwf)}
-                          className="px-3.5 py-1.5 rounded-xl bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
-                        >
-                          Mark Paid
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setPoSupplierId(String(s.id));
+                              setCreatePoOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-black transition cursor-pointer"
+                          >
+                            Order Stock
+                          </button>
+                          <button
+                            onClick={() => handlePaySupplier(s.id, s.amount_we_owe_rwf)}
+                            className="px-3.5 py-1.5 rounded-xl bg-gray-900 text-xs font-extrabold text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
+                          >
+                            Mark Paid
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -604,6 +1116,186 @@ export default function Suppliers() {
           </div>
         )}
       </div>
+
+      {/* CREATE PURCHASE ORDER MODAL SHEET */}
+      <Sheet open={createPoOpen} onClose={() => setCreatePoOpen(false)} title="New Supplier Purchase Order">
+        <form onSubmit={handleCreatePoSubmit} className="space-y-4 pt-2 font-manrope pb-6">
+          <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-xs text-purple-950 space-y-1">
+            <div className="flex items-center gap-1.5 font-black text-purple-900">
+              <Sparkles size={14} className="text-purple-600" />
+              <span>WhatsApp Supplier Restocking</span>
+            </div>
+            <p className="text-[11px] text-purple-800 leading-relaxed">
+              Assemble your purchase order lines. Once created, you can instantly dispatch the pre-formatted order directly to the supplier via WhatsApp with 1 tap.
+            </p>
+          </div>
+
+          <Field label="Stock Supplier *">
+            <select
+              required
+              value={poSupplierId}
+              onChange={(e) => setPoSupplierId(e.target.value)}
+              className="w-full rounded-2xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink focus:border-purple-600 focus:outline-none shadow-sm"
+            >
+              <option value="">Select a supplier…</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.phone ? `(${s.phone})` : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Order Date">
+              <TextInput
+                type="date"
+                value={poOrderDate}
+                onChange={(e) => setPoOrderDate(e.target.value)}
+              />
+            </Field>
+
+            <Field label="Expected Delivery Date">
+              <TextInput
+                type="date"
+                value={poArrivalDate}
+                onChange={(e) => setPoArrivalDate(e.target.value)}
+              />
+            </Field>
+          </div>
+
+          {/* DYNAMIC LINE ITEMS BUILDER */}
+          <div className="space-y-2 pt-2 border-t border-line/60">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-gray-700">
+                Order Items ({poItems.length})
+              </label>
+              <button
+                type="button"
+                onClick={handleAddPoItemRow}
+                className="text-xs font-black text-purple-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Plus size={13} /> Add Product
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {poItems.map((item, idx) => (
+                <div key={idx} className="p-3 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Item #{idx + 1}</span>
+                    {poItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePoItemRow(idx)}
+                        className="text-gray-400 hover:text-red-600 transition p-0.5"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Product Catalog Picker / Custom Item Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Pick from Catalog</label>
+                      <select
+                        value={item.stock_item_id || ""}
+                        onChange={(e) => handleItemStockChange(idx, e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-semibold outline-none"
+                      >
+                        <option value="">-- Custom Item --</option>
+                        {(catalogItems.length > 0 ? catalogItems : (stock || [])).map((stk) => (
+                          <option key={stk.id} value={stk.id}>
+                            {stk.name} ({rwf(stk.cost_price_rwf || 0)} RWF)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Item Name *</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Inyange Milk 500ml"
+                        value={item.item_name}
+                        onChange={(e) => handleItemFieldChange(idx, "item_name", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quantity & Unit Cost */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Quantity</label>
+                      <input
+                        required
+                        type="number"
+                        min="1"
+                        placeholder="10"
+                        value={item.quantity}
+                        onChange={(e) => handleItemFieldChange(idx, "quantity", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-extrabold outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Unit Cost (RWF)</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        placeholder="600"
+                        value={item.unit_cost_rwf}
+                        onChange={(e) => handleItemFieldChange(idx, "unit_cost_rwf", e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Subtotal</label>
+                      <div className="p-2 rounded-xl bg-gray-100 text-xs font-black text-gray-800 truncate">
+                        {rwf((Number(item.quantity) || 1) * (Number(item.unit_cost_rwf) || 0))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total Order Preview */}
+            <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-between">
+              <span className="text-xs font-extrabold text-purple-950">Total Estimated Order:</span>
+              <span className="text-base font-black text-purple-900 tabnum">{rwf(poCalculatedTotal)} RWF</span>
+            </div>
+          </div>
+
+          <Field label="Special Delivery Instructions / Notes">
+            <TextInput
+              placeholder="e.g. Please deliver before 10:00 AM at the Nyarugenge store"
+              value={poNotes}
+              onChange={(e) => setPoNotes(e.target.value)}
+            />
+          </Field>
+
+          <div className="pt-3 flex gap-2">
+            <Button type="button" variant="paper" onClick={() => setCreatePoOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              variant="green"
+              disabled={poSaving}
+              className="flex-1 font-bold shadow-sm bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {poSaving ? "Creating Order…" : "Create & Send Order"}
+            </Button>
+          </div>
+        </form>
+      </Sheet>
 
       {/* ADD CUSTOMER MODAL SHEET */}
       <Sheet open={addCustOpen} onClose={() => setAddCustOpen(false)} title="Add Customer Account">
@@ -719,7 +1411,7 @@ export default function Suppliers() {
             <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
               <div className="flex justify-between font-bold">
                 <span>Invoice: {payModalSale.invoice_number || `INV-${payModalSale.id}`}</span>
-                <span>Owed: {rwf(payModalSale.amount_owed)} RWF</span>
+                <span>Owed: {rwf(payModalSale.amount_owed || payModalSale.total_amount)} RWF</span>
               </div>
               <div>Customer: <strong>{payModalSale.customer_name}</strong></div>
             </div>
@@ -729,7 +1421,7 @@ export default function Suppliers() {
                 required
                 type="number"
                 min="1"
-                max={payModalSale.amount_owed}
+                max={payModalSale.amount_owed || payModalSale.total_amount}
                 placeholder="Enter amount paid"
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}

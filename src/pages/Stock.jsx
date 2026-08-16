@@ -62,10 +62,10 @@ function StockCard({ item, t, onRestock, onDelete }) {
             <button
               type="button"
               onClick={() => onRestock(item)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gray-100 hover:bg-[#D4F06B] text-gray-900 text-xs font-black transition active:scale-95 cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-sm"
             >
-              <Plus size={13} className="shrink-0" />
-              <span>+ Add Quantity</span>
+              <Plus size={13} className="shrink-0 text-[#D4F06B]" />
+              <span>Restock (+Qty)</span>
             </button>
             <button
               type="button"
@@ -152,10 +152,10 @@ export default function Stock() {
   };
 
   const handleDeleteStockClick = async (item) => {
-    if (window.confirm(`Are you sure you want to delete "${item.name}" from inventory?\n\n(This action will be permanently recorded in audit logs).`)) {
+    if (window.confirm(`Are you sure? This action will be logged.\n\nDelete "${item.name}" from inventory?`)) {
       try {
         await deleteStockItem(item.id);
-        toast.success(`"${item.name}" removed from stock and recorded in audit logs.`);
+        toast.success(`"${item.name}" removed from stock and recorded in permanent deletion logs.`);
       } catch {
         toast.error("Failed to delete stock item.");
       }
@@ -179,6 +179,12 @@ export default function Stock() {
       return !query || cleanName.includes(query.toLowerCase());
     });
   }, [items, query]);
+
+  const matchingExisting = useMemo(() => {
+    const clean = form.name.trim().toLowerCase();
+    if (!clean) return null;
+    return items.find((i) => (i.name || "").toLowerCase().trim() === clean) || null;
+  }, [items, form.name]);
 
   const lowCount = items.filter((i) => statusOf(i) !== "ok").length;
   const totalValue = items.reduce(
@@ -208,7 +214,10 @@ export default function Stock() {
       (i) => (i.name || "").toLowerCase().trim() === cleanPresetName
     );
     if (existing) {
-      return toast.error(`"${preset.name}" is already in your stock!`);
+      // Prompt quick restock instead of hard error
+      setRestockTarget(existing);
+      setRestockQty(String(preset.default_qty || 10));
+      return toast(`"${preset.name}" is already in stock. Opening restock modal!`, { icon: "📦" });
     }
 
     try {
@@ -269,7 +278,23 @@ export default function Stock() {
       (i) => (i.name || "").toLowerCase().trim() === cleanName.toLowerCase()
     );
     if (existing) {
-      return toast.error(`Product "${cleanName}" is already in your stock!`);
+      const qtyToAdd = Number(form.quantity) || 0;
+      if (qtyToAdd > 0) {
+        setSaving(true);
+        try {
+          await addStockQuantity(existing.id, qtyToAdd);
+          toast.success(`🎉 Added +${qtyToAdd} ${existing.unit || "units"} to existing "${existing.name}"!`);
+          setForm(EMPTY);
+          setSelectedPresetName("");
+          setOpen(false);
+          return;
+        } catch {
+          toast.error("Failed to add quantity to existing product.");
+        } finally {
+          setSaving(false);
+        }
+      }
+      return toast.error(`"${cleanName}" already exists in stock. Enter a quantity to restock.`);
     }
 
     setSaving(true);
@@ -477,11 +502,11 @@ export default function Stock() {
               </div>
             </div>
 
-            {/* Quick Preset Buttons (+5, +10, +25, +50, +100) */}
+            {/* Quick Preset Buttons (+5, +10, +20, +50, +100, +500) */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-2">Quick Add Amount:</label>
-              <div className="grid grid-cols-5 gap-2">
-                {[5, 10, 25, 50, 100].map((preset) => (
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                {[5, 10, 20, 50, 100, 500].map((preset) => (
                   <button
                     key={preset}
                     type="button"
@@ -558,6 +583,29 @@ export default function Stock() {
               placeholder="Write product name (e.g. Amata, Sugar 1kg)..."
               className="w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-[#D4F06B] focus:ring-2 focus:ring-[#D4F06B]/40 transition shadow-sm placeholder:text-gray-400"
             />
+            {matchingExisting && (
+              <div className="mt-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                <div>
+                  <p className="text-xs font-black text-amber-900">"{matchingExisting.name}" is already in stock!</p>
+                  <p className="text-[11px] text-amber-700 font-medium">
+                    Current: {matchingExisting.quantity} {matchingExisting.unit || "units"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const itemToRestock = matchingExisting;
+                    const enteredQty = form.quantity || "10";
+                    setOpen(false);
+                    setRestockTarget(itemToRestock);
+                    setRestockQty(String(enteredQty));
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-black transition cursor-pointer shrink-0 shadow-sm"
+                >
+                  Restock Item →
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

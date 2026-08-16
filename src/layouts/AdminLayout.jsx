@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Grid,
+  Trash2,
 } from "lucide-react";
 import { useAuth, checkIsAdmin } from "../context/AuthContext";
 import { useLang } from "../lib/i18n.jsx";
@@ -26,6 +27,7 @@ const ADMIN_NAV_LINKS = [
   { to: "/admin/smes", label: "SME Directory", icon: Users },
   { to: "/admin/analytics", label: "Platform Analytics", icon: TrendingUp },
   { to: "/admin/audit", label: "Security Audit Logs", icon: FileText },
+  { to: "/admin/deletion-logs", label: "Deletion Logs", icon: Trash2 },
   { to: "/admin/settings", label: "Settings & Backups", icon: Settings },
 ];
 

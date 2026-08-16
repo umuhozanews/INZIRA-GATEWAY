@@ -23,7 +23,7 @@ export default function EbmReceipt({ sale, shopSettings }) {
   const cashierTin = hasEbm ? (shopSettings?.cashier_tin || tinNumber) : null;
 
   // Client Details
-  const clientTin = sale.customer_tin || "N/A";
+  const clientTin = sale.customer_tin && String(sale.customer_tin).trim().length > 0 ? String(sale.customer_tin).trim() : null;
   const clientName = sale.customer_name || "Walk-in Customer";
 
   // Items & Amounts
@@ -145,7 +145,7 @@ export default function EbmReceipt({ sale, shopSettings }) {
 
       {/* Client Details Section */}
       <div className="my-2 pt-2 border-t border-dashed border-black">
-        {hasEbm && <p className="font-bold">CLIENT TIN: {clientTin}</p>}
+        {hasEbm && <p className="font-bold">CLIENT TIN: {clientTin || "Not provided"}</p>}
         <p className="font-bold uppercase">CLIENT NAME: {clientName}</p>
         {sale.customer_phone && <p className="font-bold text-[11px]">CLIENT TEL: {sale.customer_phone}</p>}
       </div>

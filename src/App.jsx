@@ -54,6 +54,7 @@ const SmeDirectory = lazyWithRetry(() => import("./pages/admin/SmeDirectory"));
 const SmeShopView = lazyWithRetry(() => import("./pages/admin/SmeShopView"));
 const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics"));
 const AdminAudit = lazyWithRetry(() => import("./pages/admin/AdminAudit"));
+const AdminDeletionLogs = lazyWithRetry(() => import("./pages/admin/AdminDeletionLogs"));
 const AdminSettings = lazyWithRetry(() => import("./pages/admin/AdminSettings"));
 
 export default function App() {
@@ -85,6 +86,7 @@ export default function App() {
           <Route path="smes/:id" element={<SmeShopView />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="audit" element={<AdminAudit />} />
+          <Route path="deletion-logs" element={<AdminDeletionLogs />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 

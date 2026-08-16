@@ -391,10 +391,10 @@ export default function Invoices() {
             <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
               <div className="flex items-center gap-1.5 font-black text-red-800">
                 <AlertTriangle size={15} />
-                <span>Mandatory Cancellation Requirement</span>
+                <span>Are you sure? This action will be logged.</span>
               </div>
               <p className="text-[11px] leading-relaxed">
-                Voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore sold items to inventory, and log the reason in the official audit trail.
+                Deleting / voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore all sold items to your inventory, and permanently store a snapshot in the deletion log.
               </p>
             </div>
 
