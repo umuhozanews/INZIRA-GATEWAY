@@ -190,12 +190,16 @@ export default function Sell() {
     setCart((c) => {
       const cur = c[item.id];
       const max = item.is_custom ? 9999 : Number(item.quantity) || 0;
-      const nextQty = Math.min((cur?.qty || 0) + 1, max);
-      if (nextQty === 0 && !item.is_custom) {
-        toast.error(t("out_of_stock"));
+      if (!item.is_custom && max <= 0) {
+        toast.error(`"${item.name}" is out of stock (0 available).`);
         return c;
       }
-      return { ...c, [item.id]: { item, qty: nextQty } };
+      const currentQty = cur?.qty || 0;
+      if (!item.is_custom && currentQty + 1 > max) {
+        toast.error(`Cannot add more. Only ${max} ${item.unit || "units"} of "${item.name}" available in stock.`);
+        return c;
+      }
+      return { ...c, [item.id]: { item, qty: currentQty + 1 } };
     });
   };
 
@@ -222,21 +226,38 @@ export default function Sell() {
       return;
     }
 
-    const max = item.is_custom ? 9999 : (Number(item.quantity) || 9999);
-    const finalQty = Math.min(parsed, max);
+    const max = item.is_custom ? 9999 : (Number(item.quantity) || 0);
+    if (!item.is_custom && parsed > max) {
+      toast.error(`Cannot sell ${parsed}. Only ${max} ${item.unit || "units"} of "${item.name}" available in stock.`);
+      const finalQty = Math.max(1, max);
+      setCart((c) => ({
+        ...c,
+        [item.id]: { item, qty: finalQty },
+      }));
+      return;
+    }
 
     setCart((c) => ({
       ...c,
-      [item.id]: { item, qty: finalQty },
+      [item.id]: { item, qty: parsed },
     }));
   };
 
   const clearCart = () => setCart({});
 
-
-
   async function handleComplete() {
     if (!lines.length) return;
+
+    // Strict client-side check before submitting sale
+    for (const l of lines) {
+      if (!l.item.is_custom) {
+        const available = Number(l.item.quantity) || 0;
+        if (l.qty > available) {
+          toast.error(`Insufficient stock for "${l.item.name}". Available: ${available} ${l.item.unit || "units"}, Requested: ${l.qty}.`);
+          return;
+        }
+      }
+    }
 
     // Validate Debt Requirement: If customer owes money, require customer name & phone number
     const isDebtSale = method === "credit" || (payMode === "split" && splitRemainingDebt > 0);
