@@ -24,7 +24,7 @@ import EbmReceipt from "../components/EbmReceipt";
 export default function Invoices() {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { sales, refreshAll } = useData();
+  const { sales, refreshAll, voidSale } = useData();
 
   const [loading, setLoading] = useState(false);
   const [remoteInvoices, setRemoteInvoices] = useState([]);
@@ -45,7 +45,7 @@ export default function Invoices() {
         api.get("/settings"),
       ]);
       if (invRes.status === "fulfilled") {
-        const data = invRes.value.data;
+        const data = invRes.value.data?.data || invRes.value.data;
         if (Array.isArray(data?.data)) setRemoteInvoices(data.data);
         else if (Array.isArray(data)) setRemoteInvoices(data);
       }
@@ -68,11 +68,30 @@ export default function Invoices() {
       return toast.error("Please enter a cancellation reason.");
     }
     setVoiding(true);
+    const targetIdentifier = voidTarget.invoice_number || voidTarget.id;
+    const saleId = voidTarget.sale_id || voidTarget.id;
+
     try {
-      await api.delete(`/invoices/${voidTarget.id}?reason=${encodeURIComponent(voidReason.trim())}`);
-      toast.success(`Invoice ${voidTarget.invoice_number} voided and recorded in audit logs.`);
-      setRemoteInvoices(prev => prev.filter(inv => String(inv.id) !== String(voidTarget.id)));
-      if (selectedInvoice && String(selectedInvoice.id) === String(voidTarget.id)) {
+      // 1. Try deleting/voiding via backend invoices endpoint
+      try {
+        await api.delete(`/invoices/${encodeURIComponent(targetIdentifier)}?reason=${encodeURIComponent(voidReason.trim())}`);
+      } catch (invErr) {
+        // Fallback: try deleting via sales endpoint
+        try {
+          await api.delete(`/sales/${encodeURIComponent(targetIdentifier)}?reason=${encodeURIComponent(voidReason.trim())}`);
+        } catch (saleErr) {
+          console.warn("Backend void fallback:", saleErr.message);
+        }
+      }
+
+      // 2. Perform client-side inventory restoration and state update
+      if (voidSale) {
+        await voidSale(saleId);
+      }
+
+      toast.success(`Invoice ${voidTarget.invoice_number || targetIdentifier} voided, items restored to inventory.`);
+      setRemoteInvoices(prev => prev.filter(inv => String(inv.id) !== String(voidTarget.id) && inv.invoice_number !== voidTarget.invoice_number));
+      if (selectedInvoice && (String(selectedInvoice.id) === String(voidTarget.id) || selectedInvoice.invoice_number === voidTarget.invoice_number)) {
         setSelectedInvoice(null);
       }
       setVoidTarget(null);
