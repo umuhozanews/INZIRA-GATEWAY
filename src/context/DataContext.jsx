@@ -246,26 +246,40 @@ export function DataProvider({ children }) {
         });
       }
 
-      if (expRes.status === "fulfilled" && Array.isArray(expRes.value.data?.data)) {
-        const serverExpenses = expRes.value.data.data;
+      const rawExpList = expRes.status === "fulfilled"
+        ? (Array.isArray(expRes.value.data?.data)
+            ? expRes.value.data.data
+            : Array.isArray(expRes.value.data?.expenses)
+            ? expRes.value.data.expenses
+            : Array.isArray(expRes.value.data)
+            ? expRes.value.data
+            : null)
+        : null;
+
+      if (rawExpList) {
+        const serverExpenses = rawExpList.map(e => ({
+          ...e,
+          amount_rwf: Number(e.amount_rwf || e.amount) || 0,
+          amount: Number(e.amount || e.amount_rwf) || 0,
+        }));
         setExpenses(prev => {
-          const serverIds = new Set(serverExpenses.map(e => e.id));
+          const serverIds = new Set(serverExpenses.map(e => String(e.id)));
           const unsavedLocal = prev.filter(e => {
             const isLocal = typeof e.id === "number" && e.id > 1000000000000;
-            if (!isLocal || serverIds.has(e.id)) return false;
+            if (!isLocal || serverIds.has(String(e.id))) return false;
             // Prevent duplicate double entry if server already has this exact expense
             const isAlreadyOnServer = serverExpenses.some(se => 
               se.category === e.category && 
-              Number(se.amount) === Number(e.amount) &&
-              String(se.expense_date).slice(0, 10) === String(e.expense_date).slice(0, 10)
+              Number(se.amount || se.amount_rwf) === Number(e.amount || e.amount_rwf) &&
+              String(se.expense_date || se.created_at).slice(0, 10) === String(e.expense_date || e.created_at).slice(0, 10)
             );
             return !isAlreadyOnServer;
           });
           const combined = [...serverExpenses, ...unsavedLocal];
           const seen = new Set();
           return combined.filter(e => {
-            if (!e || !e.id || seen.has(e.id)) return false;
-            seen.add(e.id);
+            if (!e || !e.id || seen.has(String(e.id))) return false;
+            seen.add(String(e.id));
             return true;
           });
         });

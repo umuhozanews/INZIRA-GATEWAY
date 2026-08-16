@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
@@ -15,7 +15,8 @@ import {
   FileText,
   Filter,
   ArrowUpRight,
-  BarChart2
+  BarChart2,
+  Wallet
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -25,13 +26,28 @@ import ScreenHeader from "../components/ScreenHeader";
 import Loading from "../components/Loading";
 import { useData } from "../context/DataContext";
 
+function parseSafeDate(dInput) {
+  if (!dInput) return null;
+  if (dInput instanceof Date) return isNaN(dInput.getTime()) ? null : dInput;
+  if (typeof dInput === "number") return new Date(dInput);
+  if (typeof dInput === "string") {
+    const trimmed = dInput.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split("-").map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0); // local noon to safely stay inside the day
+    }
+    const parsed = new Date(trimmed);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
 export default function Reports() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLang();
-  const { sales, stock, expenses } = useData();
+  const { sales, stock, expenses, loading: dataLoading } = useData();
 
-  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("sales"); // 'sales' | 'expenses' | 'stock' | 'tax' | 'intelligence'
   const [shopSettings, setShopSettings] = useState(null);
 
@@ -52,25 +68,33 @@ export default function Reports() {
       .catch(() => {});
   }, []);
 
-  // Compute active date boundaries
+  // Compute active date boundaries in local time
   const dateRange = useMemo(() => {
     const now = new Date();
-    let start = new Date(0);
-    let end = new Date();
-    end.setHours(23, 59, 59, 999);
+    let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     if (datePreset === "today") {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     } else if (datePreset === "this_week") {
-      const day = now.getDay() || 7;
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0);
+      const day = now.getDay() === 0 ? 7 : now.getDay();
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0);
     } else if (datePreset === "this_month") {
-      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     } else if (datePreset === "this_year") {
-      start = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+      start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     } else if (datePreset === "custom") {
-      if (customStart) start = new Date(customStart + "T00:00:00");
-      if (customEnd) end = new Date(customEnd + "T23:59:59");
+      if (customStart) {
+        const [sy, sm, sd] = customStart.split("-").map(Number);
+        start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+      }
+      if (customEnd) {
+        const [ey, em, ed] = customEnd.split("-").map(Number);
+        end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+      }
+    } else if (datePreset === "all") {
+      start = new Date(0);
+      end = new Date(3000, 0, 1);
     }
 
     return { start, end };
@@ -79,7 +103,7 @@ export default function Reports() {
   // Format human-readable date interval string for print / display
   const dateRangeLabel = useMemo(() => {
     if (datePreset === "today") return `Today (${formatDate(new Date())})`;
-    if (datePreset === "this_week") return `This Week (from ${formatDate(dateRange.start)} to ${formatDate(dateRange.end)})`;
+    if (datePreset === "this_week") return `This Week (${formatDate(dateRange.start)} – ${formatDate(dateRange.end)})`;
     if (datePreset === "this_month") return `This Month (${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })})`;
     if (datePreset === "this_year") return `This Year (${new Date().getFullYear()})`;
     if (datePreset === "all") return "All Time (Complete History)";
@@ -89,19 +113,22 @@ export default function Reports() {
   // Filter real sales by date range (exclude voided)
   const filteredSales = useMemo(() => {
     return (sales || []).filter((s) => {
-      if (s.is_voided) return false;
-      const sDate = new Date(s.created_at || s.sale_date || Date.now());
+      if (!s || s.is_voided) return false;
       if (datePreset === "all") return true;
-      return sDate >= dateRange.start && sDate <= dateRange.end;
+      const sDate = parseSafeDate(s.created_at || s.sale_date || s.date) || new Date();
+      return sDate.getTime() >= dateRange.start.getTime() && sDate.getTime() <= dateRange.end.getTime();
     });
   }, [sales, dateRange, datePreset]);
 
   // Filter real expenses by date range
   const filteredExpenses = useMemo(() => {
     return (expenses || []).filter((e) => {
-      const eDate = new Date(e.expense_date || e.created_at || Date.now());
+      if (!e) return false;
+      const amt = Number(e.amount_rwf || e.amount || 0);
+      if (amt <= 0) return false;
       if (datePreset === "all") return true;
-      return eDate >= dateRange.start && eDate <= dateRange.end;
+      const eDate = parseSafeDate(e.expense_date || e.created_at || e.date) || new Date();
+      return eDate.getTime() >= dateRange.start.getTime() && eDate.getTime() <= dateRange.end.getTime();
     });
   }, [expenses, dateRange, datePreset]);
 
@@ -176,7 +203,7 @@ export default function Reports() {
   // 3. Stock Report Calculations
   const stockReport = useMemo(() => {
     const totalSellValuation = (stock || []).reduce(
-      (sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.sell_price_rwf) || 0),
+      (sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.sell_price_rwf || i.unit_price) || 0),
       0
     );
     const totalCostValuation = (stock || []).reduce(
@@ -190,7 +217,7 @@ export default function Reports() {
     const catCount = {};
     (stock || []).forEach((i) => {
       const c = i.category || "General";
-      const val = (Number(i.quantity) || 0) * (Number(i.sell_price_rwf) || 0);
+      const val = (Number(i.quantity) || 0) * (Number(i.sell_price_rwf || i.unit_price) || 0);
       catVal[c] = (catVal[c] || 0) + val;
       catCount[c] = (catCount[c] || 0) + 1;
     });
@@ -279,7 +306,7 @@ export default function Reports() {
     <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <div className="print-hidden">
         <ScreenHeader
-          title={t("nav_reports")}
+          title={t("nav_reports") || "Reports & Books"}
           right={
             <button
               onClick={handlePrintReport}
@@ -292,9 +319,9 @@ export default function Reports() {
         />
       </div>
 
-      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
         
-        {/* Printable Official Header (Visible on print or PDF export) */}
+        {/* Printable Official Header */}
         <div className="hidden print:block border-b-2 border-line pb-4 mb-4">
           <div className="flex justify-between items-start">
             <div>
@@ -316,8 +343,8 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Date Range Selector Bar (Screen Only) */}
-        <div className="print-hidden rounded-2xl bg-card p-4.5 border border-line shadow-card space-y-3 font-body">
+        {/* Date Range Selector Bar */}
+        <div className="print-hidden rounded-2xl bg-card p-4 border border-line shadow-card space-y-3 font-body">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
@@ -342,10 +369,10 @@ export default function Reports() {
                 <button
                   key={p.id}
                   onClick={() => setDatePreset(p.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                     datePreset === p.id
                       ? "bg-primary text-white shadow-orange-sm font-black"
-                      : "bg-card-hover text-muted hover:text-ink"
+                      : "bg-card-hover text-muted hover:text-ink border border-line"
                   }`}
                 >
                   {p.label}
@@ -356,7 +383,7 @@ export default function Reports() {
 
           {/* Custom Date Range Inputs */}
           {datePreset === "custom" && (
-            <div className="pt-2 border-t border-line flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
+            <div className="pt-2 border-t border-line flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-muted">From:</span>
                 <input
@@ -379,21 +406,21 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Navigation Tabs (Screen Only) */}
-        <div className="print-hidden flex items-center gap-1.5 bg-card p-1.5 rounded-xl border border-line shadow-sm overflow-x-auto font-heading">
+        {/* Navigation Tabs */}
+        <div className="print-hidden flex items-center gap-1.5 bg-card p-1.5 rounded-2xl border border-line shadow-sm overflow-x-auto font-heading">
           {[
-            { id: "sales", label: "Sales Report", icon: TrendingUp },
-            { id: "expenses", label: "Expenses Report", icon: DollarSign },
+            { id: "sales", label: "Sales & Cashflow", icon: TrendingUp },
+            { id: "expenses", label: `Expenses (${expensesReport.count})`, icon: DollarSign },
             { id: "stock", label: "Stock Valuation", icon: Package },
             { id: "tax", label: "Tax & EBM (18%)", icon: Receipt },
-            { id: "intelligence", label: "Analytics", icon: BarChart2 },
+            { id: "intelligence", label: "P&L Analytics", icon: BarChart2 },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
                     ? "bg-primary text-white shadow-orange-sm font-black"
                     : "text-muted hover:text-ink hover:bg-card-hover"
@@ -406,27 +433,27 @@ export default function Reports() {
           })}
         </div>
 
-        {/* ================= TAB 1: SALES REPORT ================= */}
-        {(activeTab === "sales" || window.matchMedia?.("print")?.matches) && (
+        {/* ================= TAB 1: SALES & CASHFLOW ================= */}
+        {activeTab === "sales" && (
           <div className="space-y-5 font-body">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-heading">
               <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
                 <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Gross Sales Revenue</span>
                 <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(salesReport.totalRevenue)} RWF</div>
-                <span className="text-[11px] font-medium text-muted mt-1 block font-body">In {dateRangeLabel}</span>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">{salesReport.totalSalesCount} completed sales</span>
               </div>
               <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Completed Transactions</span>
-                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{salesReport.totalSalesCount} sales</div>
-                <span className="text-[11px] font-medium text-muted mt-1 block font-body">Avg ticket: {rwf(salesReport.avgTicket)} RWF</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Recorded Expenses</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(expensesReport.totalExpenses)} RWF</div>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">{expensesReport.count} expense entries in period</span>
               </div>
               <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Net Cash Flow (Sales - Expenses)</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Net Cash Position</span>
                 <div className="mt-1 text-xl md:text-2xl font-black tabnum text-ink">
                   {rwf(salesReport.totalRevenue - expensesReport.totalExpenses)} RWF
                 </div>
-                <span className="text-[11px] font-medium text-muted mt-1 block font-body">Period Operating Margin</span>
+                <span className="text-[11px] font-medium text-primary mt-1 block font-body">Gross Receipts &minus; Operating Costs</span>
               </div>
             </div>
 
@@ -497,7 +524,7 @@ export default function Reports() {
                     <tbody className="divide-y divide-line text-ink">
                       {filteredSales.slice(0, 50).map((s) => (
                         <tr key={s.id} className="hover:bg-card-hover transition">
-                          <td className="py-2.5 px-3 text-muted">{formatDate(s.created_at)}</td>
+                          <td className="py-2.5 px-3 text-muted">{formatDate(s.created_at || s.sale_date)}</td>
                           <td className="py-2.5 px-3 font-heading font-bold text-primary">{s.invoice_number || `SALE-${s.id}`}</td>
                           <td className="py-2.5 px-3">{s.customer_name || "Walk-in Customer"}</td>
                           <td className="py-2.5 px-3 capitalize text-muted">{s.payment_method?.replace("_", " ") || "Cash"}</td>
@@ -517,7 +544,7 @@ export default function Reports() {
           <div className="space-y-5 font-body">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-heading">
               <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Expenses</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Expenses in Period</span>
                 <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(expensesReport.totalExpenses)} RWF</div>
                 <span className="text-[11px] font-medium text-muted mt-1 block font-body">{expensesReport.count} recorded entries in {dateRangeLabel}</span>
               </div>
@@ -527,7 +554,7 @@ export default function Reports() {
                   {expensesReport.categories[0]?.category || "None"}
                 </div>
                 <span className="text-[11px] font-medium text-muted mt-1 block font-body">
-                  {expensesReport.categories[0] ? `${rwf(expensesReport.categories[0].total)} RWF (${expensesReport.categories[0].pct}%)` : "No expenses"}
+                  {expensesReport.categories[0] ? `${rwf(expensesReport.categories[0].total)} RWF (${expensesReport.categories[0].pct}%)` : "No expenses recorded"}
                 </span>
               </div>
             </div>
@@ -538,7 +565,9 @@ export default function Reports() {
                 Expenses by Category
               </h3>
               {expensesReport.categories.length === 0 ? (
-                <p className="text-xs text-muted italic py-2">No expenses recorded in this period.</p>
+                <div className="p-6 text-center text-xs text-muted">
+                  No expenses recorded in this period. Use the <button onClick={() => navigate("/expenses?new=1")} className="text-primary font-bold hover:underline">Record Expense</button> screen to log business expenses.
+                </div>
               ) : (
                 <div className="space-y-2.5 text-xs font-body">
                   {expensesReport.categories.map((c, idx) => (
@@ -561,11 +590,20 @@ export default function Reports() {
 
             {/* Detailed Expenses Log */}
             <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-3 report-card">
-              <h3 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
-                Recorded Expenses Log ({filteredExpenses.length})
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
+                  Recorded Expenses Log ({filteredExpenses.length})
+                </h3>
+                <button
+                  onClick={() => navigate("/expenses?new=1")}
+                  className="text-xs font-heading font-extrabold text-primary hover:underline"
+                >
+                  + Add Expense
+                </button>
+              </div>
+
               {filteredExpenses.length === 0 ? (
-                <p className="text-xs text-muted italic py-2">No expenses found for this date range.</p>
+                <p className="text-xs text-muted italic py-4 text-center">No expenses found for this date range.</p>
               ) : (
                 <div className="overflow-x-auto font-body">
                   <table className="w-full text-left text-xs">
@@ -582,7 +620,7 @@ export default function Reports() {
                         <tr key={e.id} className="hover:bg-card-hover transition">
                           <td className="py-2.5 px-3 text-muted">{formatDate(e.expense_date || e.created_at)}</td>
                           <td className="py-2.5 px-3 font-bold text-ink">{e.category}</td>
-                          <td className="py-2.5 px-3 text-muted">{e.description || "—"}</td>
+                          <td className="py-2.5 px-3 text-muted">{e.description || e.notes || "—"}</td>
                           <td className="py-2.5 px-3 text-right font-heading font-black text-ink tabnum">{rwf(e.amount_rwf || e.amount)}</td>
                         </tr>
                       ))}
@@ -653,21 +691,18 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line text-ink">
-                    {(stock || []).map((i) => {
-                      const totalVal = (Number(i.quantity) || 0) * (Number(i.sell_price_rwf) || 0);
-                      return (
-                        <tr key={i.id} className="hover:bg-card-hover transition">
-                          <td className="py-2.5 px-3 font-bold text-ink">{i.name}</td>
-                          <td className="py-2.5 px-3 text-muted">{i.category || "General"}</td>
-                          <td className="py-2.5 px-3 text-right font-heading font-black text-ink tabnum">
-                            {i.quantity} {i.unit || "pcs"}
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-muted tabnum">{rwf(i.cost_price_rwf || i.cost_price || 0)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-ink tabnum">{rwf(i.sell_price_rwf)}</td>
-                          <td className="py-2.5 px-3 text-right font-heading font-black text-ink tabnum">{rwf(totalVal)} RWF</td>
-                        </tr>
-                      );
-                    })}
+                    {(stock || []).map((item) => (
+                      <tr key={item.id} className="hover:bg-card-hover transition">
+                        <td className="py-2.5 px-3 font-bold text-ink">{item.name}</td>
+                        <td className="py-2.5 px-3 text-muted">{item.category || "General"}</td>
+                        <td className="py-2.5 px-3 text-right font-heading font-bold text-ink tabnum">{item.quantity}</td>
+                        <td className="py-2.5 px-3 text-right text-muted tabnum">{rwf(item.cost_price_rwf || item.cost_price || 0)}</td>
+                        <td className="py-2.5 px-3 text-right text-ink tabnum">{rwf(item.sell_price_rwf || item.unit_price || 0)}</td>
+                        <td className="py-2.5 px-3 text-right font-heading font-black text-primary tabnum">
+                          {rwf((Number(item.quantity) || 0) * (Number(item.sell_price_rwf || item.unit_price) || 0))}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -675,86 +710,55 @@ export default function Reports() {
           </div>
         )}
 
-        {/* ================= TAB 4: TAX & EBM (VAT 18%) REPORT ================= */}
+        {/* ================= TAB 4: TAX & EBM ================= */}
         {activeTab === "tax" && (
           <div className="space-y-5 font-body">
-            <div className="rounded-2xl border border-line bg-card p-6 text-ink shadow-card space-y-4 report-card font-body">
-              <div className="flex items-center justify-between font-heading">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={22} className="text-primary" />
-                  <span className="text-sm font-black uppercase tracking-wider">
-                    RRA EBM v2 Tax Summary (Rwanda 18% VAT)
-                  </span>
-                </div>
-                <span className="bg-primary/10 text-primary text-xs font-black px-3 py-1 rounded-md border border-primary/20">
-                  {shopTin ? `TIN: ${shopTin}` : "RRA Verified"}
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-heading">
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Gross Sales (VAT Inclusive)</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(taxReport.totalRevenue)} RWF</div>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">In {dateRangeLabel}</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 font-heading">
-                <div>
-                  <span className="text-xs text-muted font-bold">Gross Turnover (VAT Inc.):</span>
-                  <div className="text-xl font-black tabnum mt-0.5 text-ink">{rwf(taxReport.totalRevenue)} RWF</div>
-                </div>
-                <div>
-                  <span className="text-xs text-muted font-bold">Net Taxable Amount (Excl. VAT):</span>
-                  <div className="text-xl font-black tabnum mt-0.5 text-ink">{rwf(taxReport.taxableSales)} RWF</div>
-                </div>
-                <div>
-                  <span className="text-xs text-muted font-bold">VAT Payable (18%):</span>
-                  <div className="text-xl font-black text-ink tabnum mt-0.5">{rwf(taxReport.vat18)} RWF</div>
-                </div>
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Taxable Sales (Net of VAT)</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(taxReport.taxableSales)} RWF</div>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">Base taxable amount</span>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-line bg-card p-5 shadow-card space-y-3 report-card font-body">
-              <h3 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
-                EBM Receipts Counter
-              </h3>
-              <div className="flex items-center justify-between text-xs p-3.5 rounded-xl bg-card-hover border border-line font-heading">
-                <span className="font-bold text-ink">Total Fiscal Receipts Generated in {dateRangeLabel}:</span>
-                <span className="font-black text-primary tabnum">{taxReport.ebmReceiptsIssued} receipts</span>
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Estimated VAT (18%)</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-primary tabnum">{rwf(taxReport.vat18)} RWF</div>
+                <span className="text-[11px] font-medium text-primary mt-1 block font-body">Calculated output tax</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* ================= TAB 5: INTELLIGENCE & HEALTH ================= */}
+        {/* ================= TAB 5: P&L ANALYTICS ================= */}
         {activeTab === "intelligence" && (
           <div className="space-y-5 font-body">
-            <div
-              onClick={() => navigate("/health-score")}
-              className="flex items-center justify-between p-6 rounded-2xl border border-line bg-card hover:border-primary/40 shadow-card transition cursor-pointer group"
-            >
-              <div>
-                <div className="flex items-center gap-2 font-heading">
-                  <BarChart2 size={20} className="text-primary" />
-                  <h3 className="text-base font-black text-ink group-hover:text-primary transition">
-                    Business Health Score & Performance Analytics
-                  </h3>
-                </div>
-                <p className="text-xs text-muted font-body mt-1">
-                  View full credit readiness report, working capital drivers, and SACCO loan eligibility metrics.
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-heading">
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Gross Revenue</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(salesReport.totalRevenue)} RWF</div>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">100% Topline</span>
               </div>
-              <ChevronRight size={20} className="text-muted group-hover:text-primary transition" />
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Operating Expenses</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-ink tabnum">{rwf(expensesReport.totalExpenses)} RWF</div>
+                <span className="text-[11px] font-medium text-muted mt-1 block font-body">
+                  {salesReport.totalRevenue > 0 ? `${((expensesReport.totalExpenses / salesReport.totalRevenue) * 100).toFixed(0)}% of revenue` : "0%"}
+                </span>
+              </div>
+              <div className="rounded-2xl border border-line bg-card p-5 shadow-card report-card">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Operating Profit</span>
+                <div className="mt-1 text-xl md:text-2xl font-black text-primary tabnum">
+                  {rwf(salesReport.totalRevenue - expensesReport.totalExpenses)} RWF
+                </div>
+                <span className="text-[11px] font-medium text-primary mt-1 block font-body">Net cash position</span>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Printable Footer Stamp */}
-        <div className="hidden print:block pt-8 border-t border-line text-xs text-muted font-body">
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="font-bold text-ink">Prepared by: {user?.name || "Business Owner"}</p>
-              <p className="text-[10px] text-muted">Official INZIRA Business Records · Kigali, Rwanda</p>
-            </div>
-            <div className="text-right">
-              <div className="w-48 border-b border-line mb-1"></div>
-              <p className="text-[10px] font-bold text-muted uppercase">Authorized Signature & Stamp</p>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>
