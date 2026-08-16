@@ -8,7 +8,6 @@ import {
   Building2,
   DollarSign,
   UserCheck,
-  Sparkles,
   RefreshCw,
   ArrowRight,
   MapPin,
@@ -137,9 +136,8 @@ export default function AdminOverview() {
           <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
             MURAHO, PLATFORM GOVERNANCE
           </span>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight font-heading">
             Platform Master Overview
-            <Sparkles size={18} className="text-purple-600 shrink-0" />
           </h1>
         </div>
 
@@ -152,13 +150,13 @@ export default function AdminOverview() {
             disabled={refreshing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200/80 bg-white shadow-sm hover:bg-gray-100 active:scale-95 transition cursor-pointer text-xs font-bold text-gray-800"
           >
-            <RefreshCw size={14} className={refreshing ? "animate-spin text-purple-600" : ""} />
+            <RefreshCw size={14} className={refreshing ? "animate-spin text-primary" : ""} />
             <span>{refreshing ? "Updating..." : "Refresh"}</span>
           </button>
 
           <button
             onClick={() => navigate("/admin/smes")}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#D4F06B] text-gray-900 text-xs font-black shadow-md shadow-[#D4F06B]/20 hover:bg-[#C5E456] active:scale-95 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary text-white text-xs font-black shadow-orange-sm hover:bg-primary-hover active:scale-95 transition cursor-pointer"
           >
             <Users size={14} />
             <span>SME Directory</span>
@@ -167,15 +165,15 @@ export default function AdminOverview() {
       </div>
 
       {/* ─── Live Signups Alert Banner ─── */}
-      <div className="rounded-3xl bg-[#F4FBE4] border border-[#D4F06B] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+      <div className="rounded-2xl bg-card border border-line p-4 sm:p-5 shadow-card font-body">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="h-10 w-10 rounded-full bg-[#D4F06B] flex items-center justify-center text-gray-900 shrink-0 shadow-sm">
-              <Sparkles size={18} />
+            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
+              <Activity size={18} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs sm:text-sm font-black text-gray-900">
+              <div className="flex items-center gap-2 font-heading">
+                <h3 className="text-xs sm:text-sm font-black text-ink">
                   Live Merchant Signups & Network Growth
                 </h3>
                 <span className="flex h-2 w-2 relative">

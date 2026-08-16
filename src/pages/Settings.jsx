@@ -987,12 +987,12 @@ export default function Settings() {
       {/* Add Worker Modal Sheet */}
       <Sheet open={workerOpen} onClose={() => setWorkerOpen(false)} title="New Worker Account">
         <form onSubmit={handleAddWorker} className="space-y-4 pt-2 pb-6">
-          <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200/80 text-xs text-purple-950 space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-purple-900">
-              <Sparkles size={14} className="text-purple-600" />
+          <div className="p-3.5 rounded-2xl bg-card-hover border border-line text-xs text-ink space-y-1">
+            <div className="flex items-center gap-1.5 font-heading font-black text-ink">
+              <KeyRound size={15} className="text-primary" />
               <span>Independent Worker Login Credentials</span>
             </div>
-            <p className="text-[11px] text-purple-800 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               This worker will receive their own separate login credentials to access your store with their assigned role permissions. All their activities (sales, stock changes, logins) will be automatically tracked in their activity log.
             </p>
           </div>
@@ -1056,16 +1056,16 @@ export default function Settings() {
                 {showWorkerPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="flex items-center justify-between mt-1.5">
+            <div className="flex items-center justify-between mt-1.5 font-heading">
               <span className="text-[11px] text-muted">
                 Worker can change this after their first login.
               </span>
               <button
                 type="button"
                 onClick={handleGeneratePassword}
-                className="text-[11px] font-black text-purple-600 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <Sparkles size={11} /> Generate Password
+                <KeyRound size={12} /> Generate Password
               </button>
             </div>
           </Field>

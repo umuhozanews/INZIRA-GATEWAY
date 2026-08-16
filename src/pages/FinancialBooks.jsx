@@ -409,14 +409,14 @@ export default function FinancialBooks() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
+    <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <div className="print-hidden">
         <ScreenHeader
           title={t("nav_books")}
           right={
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-full bg-[#D4F06B] px-4 py-2 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
             >
               <Printer size={15} />
               <span>Export Books / PDF</span>
@@ -428,21 +428,21 @@ export default function FinancialBooks() {
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         
         {/* Printable Official Header (Visible on print or PDF export) */}
-        <div className="hidden print:block border-b-2 border-gray-900 pb-4 mb-4">
+        <div className="hidden print:block border-b-2 border-ink pb-4 mb-4">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-xl font-black uppercase text-gray-900">{shopName}</h1>
-              <p className="text-xs text-gray-600 font-semibold">{shopLocation} {shopPhone && `· Tel: ${shopPhone}`}</p>
-              {shopTin && <p className="text-xs font-bold text-gray-900">RRA TIN: {shopTin}</p>}
+              <h1 className="text-xl font-heading font-black uppercase text-ink">{shopName}</h1>
+              <p className="text-xs text-muted font-medium">{shopLocation} {shopPhone && `· Tel: ${shopPhone}`}</p>
+              {shopTin && <p className="text-xs font-bold text-ink">RRA TIN: {shopTin}</p>}
             </div>
             <div className="text-right">
-              <span className="text-xs font-black bg-gray-100 px-3 py-1 rounded-full uppercase">
+              <span className="text-xs font-heading font-black bg-card px-3 py-1 rounded-lg uppercase border border-line">
                 Official Books of Account & Ledger
               </span>
-              <p className="text-[11px] text-gray-500 font-semibold mt-1">
+              <p className="text-[11px] text-muted font-medium mt-1">
                 Period: {dateRangeLabel}
               </p>
-              <p className="text-[10px] text-gray-400">
+              <p className="text-[10px] text-muted">
                 Generated: {new Date().toLocaleString()}
               </p>
             </div>
@@ -450,20 +450,20 @@ export default function FinancialBooks() {
         </div>
 
         {/* Date Range Selector Bar (Screen Only) */}
-        <div className="print-hidden rounded-3xl bg-white p-4.5 border border-gray-200/80 shadow-sm space-y-3">
+        <div className="print-hidden rounded-2xl bg-card p-4 border border-line shadow-card space-y-3 font-body">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 font-black">
-                <Calendar size={18} />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Calendar size={16} />
               </div>
               <div>
-                <span className="text-xs font-extrabold text-gray-900 block">Accounting Period:</span>
-                <span className="text-[11px] font-bold text-emerald-800">{dateRangeLabel}</span>
+                <span className="text-xs font-heading font-black text-ink block">Accounting Period:</span>
+                <span className="text-[11px] font-heading font-bold text-primary">{dateRangeLabel}</span>
               </div>
             </div>
 
             {/* Presets Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 font-heading">
               {[
                 { id: "today", label: "Today" },
                 { id: "this_week", label: "This Week" },
@@ -475,10 +475,10 @@ export default function FinancialBooks() {
                 <button
                   key={p.id}
                   onClick={() => setDatePreset(p.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                     datePreset === p.id
-                      ? "bg-[#D4F06B] text-gray-900 shadow-sm font-black"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-primary text-white shadow-orange-sm font-black"
+                      : "bg-card-hover text-muted hover:text-ink"
                   }`}
                 >
                   {p.label}
@@ -489,23 +489,23 @@ export default function FinancialBooks() {
 
           {/* Custom Date Range Inputs */}
           {datePreset === "custom" && (
-            <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
+            <div className="pt-2 border-t border-line flex flex-wrap items-center gap-3 animate-in fade-in duration-200">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-500">From:</span>
+                <span className="text-xs font-medium text-muted">From:</span>
                 <input
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B]"
+                  className="rounded-xl border border-line bg-paper px-3 py-1.5 text-xs font-bold text-ink outline-none focus:border-primary"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-500">To:</span>
+                <span className="text-xs font-medium text-muted">To:</span>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-900 outline-none focus:border-[#D4F06B]"
+                  className="rounded-xl border border-line bg-paper px-3 py-1.5 text-xs font-bold text-ink outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -513,25 +513,25 @@ export default function FinancialBooks() {
         </div>
 
         {/* Book Navigation Pills (Screen Only) */}
-        <div className="print-hidden flex items-center gap-1.5 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm overflow-x-auto">
+        <div className="print-hidden flex items-center gap-1.5 bg-card p-1.5 rounded-xl border border-line shadow-sm overflow-x-auto font-heading">
           {[
             { id: "journal", label: "General Journal", icon: BookOpen },
             { id: "ledger", label: "General Ledger (T-Accounts)", icon: BookMarked },
             { id: "cashbook", label: "Cash & MoMo Book", icon: Wallet },
-            { id: "trial", label: "Trial Balance Sheet", icon: Scale },
+            { id: "trial", label: "Trial Balance", icon: Scale },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-[#D4F06B] text-gray-900 shadow-sm font-black"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
-                <Icon size={15} />
+                <Icon size={15} strokeWidth={2.2} />
                 <span>{tab.label}</span>
               </button>
             );

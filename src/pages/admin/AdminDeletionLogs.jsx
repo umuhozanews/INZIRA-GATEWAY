@@ -4,7 +4,6 @@ import {
   Search,
   ShieldCheck,
   Calendar,
-  Sparkles,
   Package,
   ShoppingCart,
   FileText,
@@ -103,9 +102,8 @@ export default function AdminDeletionLogs() {
               <Lock size={10} /> Append-Only Log
             </span>
           </div>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight font-heading">
             Permanent Deletion Records
-            <Sparkles size={18} className="text-purple-600 shrink-0" />
           </h1>
           <p className="text-xs text-gray-500 font-medium mt-0.5">
             Every deleted product, voided sale, and cancelled invoice is permanently captured with a complete JSON snapshot before deletion.

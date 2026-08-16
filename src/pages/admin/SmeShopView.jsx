@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Sparkles,
 } from "lucide-react";
 import api from "../../lib/api";
 import { rwf, rwfCompact } from "../../lib/format";

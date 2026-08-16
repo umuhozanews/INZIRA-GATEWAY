@@ -267,15 +267,15 @@ export default function Invoices() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
+    <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <ScreenHeader
         title={t("nav_invoices")}
         right={
           <button
             onClick={() => navigate("/sell")}
-            className="flex items-center gap-1.5 rounded-full bg-[#D4F06B] px-4 py-2 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
           >
-            <Plus size={16} />
+            <Plus size={15} strokeWidth={2.5} />
             <span>New Invoice</span>
           </button>
         }
@@ -283,43 +283,43 @@ export default function Invoices() {
 
       <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         {/* KPI Strip */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-[28px] border border-gray-200/80 bg-white p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Invoiced</span>
-            <div className="mt-1 text-base md:text-lg font-black text-gray-900 tabnum">{rwf(totalInvoiced)}</div>
+        <div className="grid grid-cols-3 gap-3 font-heading">
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+            <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Invoiced</span>
+            <div className="mt-1 text-base md:text-lg font-black text-ink tabnum">{rwf(totalInvoiced)} RWF</div>
           </div>
-          <div className="rounded-[28px] border border-emerald-200 bg-emerald-50/60 p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Paid Total</span>
-            <div className="mt-1 text-base md:text-lg font-black text-emerald-700 tabnum">{rwf(totalPaid)}</div>
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+            <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Paid Total</span>
+            <div className="mt-1 text-base md:text-lg font-black text-emerald-400 tabnum">{rwf(totalPaid)} RWF</div>
           </div>
-          <div className="rounded-[28px] border border-amber-200 bg-amber-50/60 p-4 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
-            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Unpaid / Pending</span>
-            <div className="mt-1 text-base md:text-lg font-black text-amber-700 tabnum">{rwf(totalPending)}</div>
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
+            <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Unpaid / Pending</span>
+            <div className="mt-1 text-base md:text-lg font-black text-amber-400 tabnum">{rwf(totalPending)} RWF</div>
           </div>
         </div>
 
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative flex-1 font-body">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search invoice number or customer name…"
-              className="w-full rounded-full border border-gray-200/80 bg-white pl-11 pr-4 py-3 text-xs font-semibold text-gray-900 placeholder:text-gray-400 focus:border-[#D4F06B] focus:outline-none shadow-sm"
+              className="w-full rounded-xl border border-line bg-card pl-11 pr-4 py-2.5 text-xs font-semibold text-ink placeholder:text-muted focus:border-primary/50 focus:outline-none shadow-sm"
             />
           </div>
 
-          <div className="flex items-center gap-1 bg-white p-1.5 rounded-full border border-gray-200/80 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-1 bg-card p-1.5 rounded-xl border border-line text-xs font-heading font-bold shadow-sm">
             {["all", "paid", "pending", "voided"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
-                className={`px-3.5 py-1.5 rounded-full capitalize transition ${
+                className={`px-3 py-1 rounded-lg capitalize transition cursor-pointer ${
                   filter === tab
-                    ? "bg-[#D4F06B] text-gray-900 shadow-sm font-extrabold"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
                 {tab}
@@ -331,7 +331,7 @@ export default function Invoices() {
         {/* Invoice List */}
         <div className="space-y-3">
           {filtered.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-10 text-center text-xs text-gray-400 font-semibold">
+            <div className="rounded-2xl border border-dashed border-line bg-card p-10 text-center text-xs text-muted font-medium">
               No invoices match your search.
             </div>
           ) : (
@@ -339,30 +339,30 @@ export default function Invoices() {
               <div
                 key={inv.id}
                 onClick={() => setSelectedInvoice(inv)}
-                className="flex items-center justify-between p-4.5 rounded-[28px] border border-gray-200/80 bg-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:border-[#D4F06B] hover:shadow-md transition cursor-pointer active:scale-[0.99] group"
+                className="flex items-center justify-between p-4 rounded-2xl border border-line bg-card shadow-card hover:border-primary/40 transition cursor-pointer active:scale-[0.99] group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#D4F06B] text-gray-900 shrink-0 group-hover:scale-105 transition shadow-sm">
-                    <FileText size={20} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 group-hover:scale-105 transition shadow-sm">
+                    <FileText size={18} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-manrope text-sm font-black text-gray-900 group-hover:text-purple-600 transition">
+                      <span className="font-heading text-sm font-black text-ink group-hover:text-primary transition">
                         {inv.invoice_number}
                       </span>
                       <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full capitalize ${
+                        className={`text-[10px] font-heading font-extrabold px-2.5 py-0.5 rounded-md capitalize ${
                           inv.status === "paid"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                             : inv.status === "pending"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                         }`}
                       >
                         {inv.status}
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                    <p className="text-xs font-medium text-muted mt-0.5 font-body">
                       {inv.customer_name || "Walk-in Customer"} · {formatDate(inv.created_at)}
                     </p>
                   </div>
@@ -370,10 +370,10 @@ export default function Invoices() {
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="font-manrope text-sm font-black text-gray-900 tabnum">
-                      {rwf(inv.total_amount)}
+                    <div className="font-heading text-sm font-black text-ink tabnum">
+                      {rwf(inv.total_amount)} RWF
                     </div>
-                    <span className="text-[11px] font-extrabold text-purple-600 flex items-center justify-end gap-1 group-hover:underline">
+                    <span className="text-[11px] font-heading font-black text-primary flex items-center justify-end gap-1 group-hover:underline">
                       View <ArrowUpRight size={13} />
                     </span>
                   </div>
@@ -386,7 +386,7 @@ export default function Invoices() {
                         setVoidTarget(inv);
                         setVoidReason("");
                       }}
-                      className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      className="p-2 rounded-xl text-muted hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
                       title="Void / Cancel Invoice (Logged)"
                     >
                       <Trash2 size={16} />
@@ -406,20 +406,20 @@ export default function Invoices() {
         title={voidTarget ? `Void Invoice ${voidTarget.invoice_number}` : "Void Invoice"}
       >
         {voidTarget && (
-          <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-manrope pb-6">
-            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
-              <div className="flex items-center gap-1.5 font-black text-red-800">
+          <form onSubmit={handleConfirmVoidInvoice} className="space-y-4 pt-2 font-body pb-6">
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-ink space-y-1">
+              <div className="flex items-center gap-1.5 font-heading font-black text-rose-400">
                 <AlertTriangle size={15} />
                 <span>Are you sure? This action will be logged.</span>
               </div>
-              <p className="text-[11px] leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 Deleting / voiding invoice <strong>{voidTarget.invoice_number}</strong> ({rwf(voidTarget.total_amount)} RWF) will cancel this transaction, restore all sold items to your inventory, and permanently store a snapshot in the deletion log.
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                Reason for Voiding Invoice <span className="text-red-500">*</span>
+              <label className="block text-xs font-heading font-bold text-ink mb-1.5">
+                Reason for Voiding Invoice <span className="text-rose-500">*</span>
               </label>
               <textarea
                 required
@@ -427,22 +427,22 @@ export default function Invoices() {
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 placeholder="e.g. Customer returned items, wrong billing amount, order canceled..."
-                className="w-full rounded-2xl border border-gray-200 bg-white p-3 text-xs font-semibold text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 transition shadow-sm"
+                className="w-full rounded-xl border border-line bg-paper p-3 text-xs font-medium text-ink placeholder:text-muted outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 transition shadow-sm"
               />
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-2 font-heading">
               <button
                 type="button"
                 onClick={() => setVoidTarget(null)}
-                className="flex-1 py-3 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-extrabold text-gray-700 transition cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-card border border-line hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={voiding || !voidReason.trim()}
-                className="flex-1 py-3 rounded-full bg-red-600 hover:bg-red-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {voiding ? "Voiding…" : "Confirm Void (Logged)"}
               </button>

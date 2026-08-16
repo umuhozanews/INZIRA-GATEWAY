@@ -5,7 +5,6 @@ import {
   Users,
   Building2,
   Calendar,
-  Sparkles,
   ArrowUpRight,
   MapPin,
   Activity,
@@ -73,9 +72,8 @@ export default function AdminAnalytics() {
           <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
             PLATFORM INTELLIGENCE
           </span>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight font-heading">
             Macro Analytics & Trends
-            <Sparkles size={18} className="text-purple-600 shrink-0" />
           </h1>
         </div>
       </div>

@@ -13,7 +13,6 @@ import {
   Calendar,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   CheckCircle2,
   ShieldCheck,
   User,
@@ -159,8 +158,8 @@ export default function CompleteSetup() {
           <div className="mx-auto mb-3 flex items-center justify-center">
             <Logomark size={56} className="shadow-md border-2 border-white ring-2 ring-[#D4F06B]" />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4F06B]/20 text-[#2B3B08] text-xs font-extrabold mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#5A7C0B]" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-heading font-extrabold mb-2">
+            <Store className="w-3.5 h-3.5" />
             First-Time Store Onboarding
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
@@ -458,14 +457,14 @@ export default function CompleteSetup() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-[#D4F06B] py-3.5 px-4 text-xs md:text-sm font-extrabold text-gray-900 shadow-sm hover:bg-[#C5E456] transition active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 px-4 text-xs md:text-sm font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
                   {busy ? (
-                    <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <span>Launch My Business Store</span>
-                      <Sparkles className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>

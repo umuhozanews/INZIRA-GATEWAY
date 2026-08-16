@@ -99,146 +99,150 @@ export default function Expenses() {
   if (loading) return <Loading label={t("loading")} />;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto flex h-full flex-col font-manrope">
+    <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <ScreenHeader
         title={t("expenses_title")}
         right={
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-1.5 rounded-full bg-[#D4F06B] px-4 py-2 text-xs font-black text-gray-900 shadow-sm hover:bg-[#C5E456] transition"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
           >
-            <Plus size={16} /> <span>{t("add")}</span>
+            <Plus size={15} strokeWidth={2.5} /> <span>{t("add")}</span>
           </button>
         }
       />
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start flex-1 overflow-y-auto pb-10">
-        {/* Left Section: Expense Breakdown & Overview */}
-        <div className="md:col-span-5 lg:col-span-4 space-y-4">
-          <div className="rounded-[28px] border border-gray-200/80 bg-white p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] space-y-4">
-            <div>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                {t("this_month_so_far")}
-              </span>
-              <div className="mt-1 font-manrope text-2xl md:text-3xl font-black tabnum text-gray-900">
-                {rwf(thisMonth)} RWF
-              </div>
-              {changePct != null && (
-                <div className="mt-1.5 flex items-center gap-1">
-                  {down ? (
-                    <TrendingDown size={14} className="text-emerald-600" />
-                  ) : (
-                    <TrendingUp size={14} className="text-red-500" />
-                  )}
-                  <span className={`text-xs font-bold ${down ? "text-emerald-600" : "text-red-500"}`}>
-                    {Math.abs(changePct)}% {down ? "less than" : "more than"} {t("vs_last_month")}
-                  </span>
+      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Left Section: Expense Breakdown & Overview */}
+          <div className="md:col-span-5 lg:col-span-4 space-y-4">
+            <div className="rounded-2xl border border-line bg-card p-6 shadow-card space-y-4">
+              <div>
+                <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">
+                  {t("this_month_so_far")}
+                </span>
+                <div className="mt-1 font-heading text-2xl md:text-3xl font-black tabnum text-ink">
+                  {rwf(thisMonth)} RWF
                 </div>
-              )}
+                {changePct != null && (
+                  <div className="mt-1.5 flex items-center gap-1">
+                    {down ? (
+                      <TrendingDown size={14} className="text-emerald-400" />
+                    ) : (
+                      <TrendingUp size={14} className="text-rose-400" />
+                    )}
+                    <span className={`text-xs font-heading font-bold ${down ? "text-emerald-400" : "text-rose-400"}`}>
+                      {Math.abs(changePct)}% {down ? "less than" : "more than"} {t("vs_last_month")}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-line space-y-3">
+                <span className="text-[11px] font-heading font-extrabold text-muted uppercase tracking-wider">{t("category")}</span>
+                {bars.length === 0 && (
+                  <p className="text-xs text-muted py-2">{t("no_expenses")}</p>
+                )}
+                {bars.map((r, i) => (
+                  <div key={r.category || i} className="space-y-1">
+                    <div className="flex justify-between text-xs font-heading font-bold text-ink">
+                      <span>{getCategoryLabel(r.category, t)}</span>
+                      <span className="tabnum text-muted">{rwf(r.this_month)} RWF</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-card-hover border border-line overflow-hidden">
+                      <div
+                        className="h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(Number(r.this_month) / maxBar) * 100}%`,
+                          background: CAT_COLORS[i % CAT_COLORS.length],
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Section: Recent Expenses Stream */}
+          <div className="md:col-span-7 lg:col-span-8 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xs font-black text-muted uppercase tracking-wider">
+                {t("recent_entries")}
+              </h2>
             </div>
 
-            <div className="pt-3 border-t border-gray-100 space-y-3">
-              <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">{t("category")}</span>
-              {bars.length === 0 && (
-                <p className="text-xs text-gray-400 py-2">{t("no_expenses")}</p>
+            <div className="space-y-2.5">
+              {entries.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-line p-8 text-center text-xs md:text-sm text-muted font-medium bg-card">
+                  {t("no_expenses")}
+                </div>
               )}
-              {bars.map((r, i) => (
-                <div key={r.category || i} className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold text-gray-900">
-                    <span>{getCategoryLabel(r.category, t)}</span>
-                    <span className="tabnum text-gray-500">{rwf(r.this_month)} RWF</span>
+              {entries.map((e) => (
+                <div
+                  key={e.id}
+                  className="flex items-center justify-between rounded-xl border border-line bg-card p-4 shadow-card hover:border-primary/40 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
+                      <Wallet size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs md:text-sm font-heading font-black text-ink">
+                        {getCategoryLabel(e.category, t)}
+                        {e.description ? ` — ${e.description}` : ""}
+                      </div>
+                      <div className="text-[11px] font-medium text-muted">{timeAgo(e.expense_date, lang)}</div>
+                    </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(Number(r.this_month) / maxBar) * 100}%`,
-                        background: CAT_COLORS[i % CAT_COLORS.length],
-                      }}
-                    />
-                  </div>
+                  <span className="text-xs md:text-sm font-heading font-black tabnum text-rose-400">
+                    -{rwf(e.amount)} RWF
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right Section: Recent Expenses Stream */}
-        <div className="md:col-span-7 lg:col-span-8 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-manrope text-xs font-extrabold text-gray-400 uppercase tracking-wider">
-              {t("recent_entries")}
-            </h2>
-          </div>
-
-          <div className="space-y-2.5">
-            {entries.length === 0 && (
-              <div className="rounded-[28px] border border-dashed border-gray-200 p-8 text-center text-xs md:text-sm text-gray-400 font-semibold">
-                {t("no_expenses")}
-              </div>
-            )}
-            {entries.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-center justify-between rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:border-[#D4F06B] transition"
+        {/* Add Expense Sheet Modal */}
+        <Sheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title={t("new_expense")}
+          footer={
+            <Button full variant="primary" disabled={saving} onClick={handleSave} className="py-3 font-heading font-black shadow-orange-sm">
+              {saving ? "…" : t("save")}
+            </Button>
+          }
+        >
+          <div className="space-y-4 pt-2 font-body">
+            <Field label={t("category")}>
+              <select
+                value={form.category}
+                onChange={set("category")}
+                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs font-bold text-ink focus:border-primary focus:outline-none shadow-sm cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 shrink-0">
-                    <Wallet size={18} />
-                  </div>
-                  <div>
-                    <div className="text-xs md:text-sm font-extrabold text-gray-900">
-                      {getCategoryLabel(e.category, t)}
-                      {e.description ? ` — ${e.description}` : ""}
-                    </div>
-                    <div className="text-[11px] font-semibold text-gray-400">{timeAgo(e.expense_date, lang)}</div>
-                  </div>
-                </div>
-                <span className="text-xs md:text-sm font-black tabnum text-red-500">
-                  -{rwf(e.amount)} RWF
-                </span>
-              </div>
-            ))}
+                <option value="">-- {t("select_category")} --</option>
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <option key={cat.key} value={cat.value}>
+                    {t(cat.key)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t("amount")}>
+              <TextInput inputMode="numeric" value={form.amount} onChange={set("amount")} placeholder="0" />
+            </Field>
+            <Field label={t("description")}>
+              <TextInput value={form.description} onChange={set("description")} placeholder="—" />
+            </Field>
+            <Field label={t("date")}>
+              <TextInput type="date" value={form.expense_date} onChange={set("expense_date")} />
+            </Field>
           </div>
-        </div>
+        </Sheet>
       </div>
-
-      {/* Add Expense Sheet Modal */}
-      <Sheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title={t("new_expense")}
-        footer={
-          <Button full variant="green" disabled={saving} onClick={handleSave}>
-            {saving ? "…" : t("save")}
-          </Button>
-        }
-      >
-        <Field label={t("category")}>
-          <select
-            value={form.category}
-            onChange={set("category")}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs md:text-sm font-extrabold text-gray-900 shadow-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 cursor-pointer"
-          >
-            <option value="">-- {t("select_category")} --</option>
-            {EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat.key} value={cat.value}>
-                {t(cat.key)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label={t("amount")}>
-          <TextInput inputMode="numeric" value={form.amount} onChange={set("amount")} placeholder="0" />
-        </Field>
-        <Field label={t("description")}>
-          <TextInput value={form.description} onChange={set("description")} placeholder="—" />
-        </Field>
-        <Field label={t("date")}>
-          <TextInput type="date" value={form.expense_date} onChange={set("expense_date")} />
-        </Field>
-      </Sheet>
     </div>
   );
 }

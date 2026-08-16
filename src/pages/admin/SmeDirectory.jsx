@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../lib/api";
@@ -203,12 +202,11 @@ export default function SmeDirectory() {
           <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
             SME REGISTRY
           </span>
-          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
+          <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight font-heading">
             Merchant & Business Directory
-            <Sparkles size={18} className="text-purple-600 shrink-0" />
           </h1>
         </div>
-        <span className="px-3 py-1 rounded-full text-xs font-black bg-[#F4FBE4] text-purple-950 border border-[#D4F06B]">
+        <span className="px-3 py-1 rounded-full text-xs font-black bg-[#F4FBE4] text-gray-900 border border-[#D4F06B]">
           {filteredSmes.length} Stores
         </span>
       </div>

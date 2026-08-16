@@ -7,10 +7,10 @@ import {
   AlertTriangle,
   Package,
   ArrowUpRight,
-  Sparkles,
   BarChart2,
   ChevronRight,
   CheckCircle,
+  Activity,
 } from "lucide-react";
 import { rwf, rwfCompact } from "../lib/format";
 import HealthGauge from "./HealthGauge";
@@ -23,59 +23,46 @@ export default function NotificationDrawer({ open, onClose, stats }) {
   const { user } = useAuth();
   const { t } = useLang();
   const dataCtx = useData() || {};
+  const stock = Array.isArray(dataCtx.stock) ? dataCtx.stock : [];
+  const sales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
+  const expenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
 
-  const userStock = Array.isArray(dataCtx.stock) ? dataCtx.stock : [];
-  const userSales = Array.isArray(dataCtx.sales) ? dataCtx.sales : [];
-  const userExpenses = Array.isArray(dataCtx.expenses) ? dataCtx.expenses : [];
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  const [activeTab, setActiveTab] = useState("all");
-  const [readIds, setReadIds] = useState(new Set());
+  const s = stats || {};
+  const todayRev = Number(s.today_revenue) || sales.reduce((sum, x) => sum + (Number(x.total_amount) || 0), 0);
+  const lowCount = Number(s.low_stock_count) || stock.filter((x) => Number(x.quantity) <= (Number(x.low_stock_threshold) || 5)).length;
+  const healthScore = s.health_score !== undefined ? s.health_score : null;
 
-  // User-specific metrics calculation
-  const todayRevenue = userSales.reduce((sum, sa) => sum + (Number(sa.total_amount) || 0), 0);
-  const todayExpensesSum = userExpenses.reduce((sum, ex) => sum + (Number(ex.amount_rwf) || 0), 0);
-  const lowStockItems = userStock.filter(
-    (i) => (Number(i.quantity) || 0) <= (Number(i.low_stock_threshold) || 5)
-  );
-
-  const hasData = userSales.length > 0;
-  const healthScore = hasData ? (stats?.healthScore?.score ?? 82) : null;
-
-  // Build dynamic notifications generated strictly from current user's actual data
+  // Build notifications dynamically based purely on the active logged-in user's own data
   const notifications = useMemo(() => {
     const list = [];
+    const hasData = sales.length > 0 || stock.length > 0 || expenses.length > 0;
 
-    // 1. Dynamic Low Stock Alerts for Logged-In User
-    lowStockItems.slice(0, 5).forEach((item, idx) => {
-      const isOut = (Number(item.quantity) || 0) === 0;
+    // 1. Stock alerts
+    if (lowCount > 0) {
       list.push({
-        id: `user-low-stock-${item.id || idx}`,
-        type: "alert",
+        id: "user-stock-low",
+        type: "stock",
         icon: AlertTriangle,
-        iconBg: isOut
-          ? "bg-red-100 text-red-700 border-red-200"
-          : "bg-amber-100 text-amber-700 border-amber-200",
-        title: isOut
-          ? `Out of Stock: ${item.name}`
-          : `Low Stock Alert: ${item.name}`,
-        desc: isOut
-          ? `0 ${item.unit || "pcs"} left in store. Add stock to continue selling.`
-          : `Only ${item.quantity} ${item.unit || "pcs"} left in store (below threshold of ${item.low_stock_threshold || 5}).`,
-        time: "Active alert",
-        actionLabel: "Restock Now",
+        iconBg: "bg-amber-100 text-amber-800 border-amber-200",
+        title: `${lowCount} item${lowCount > 1 ? "s" : ""} low in stock`,
+        desc: "Items in your store are reaching minimum thresholds. Restock soon to prevent missed sales.",
+        time: "Action needed",
+        actionLabel: "View Stock",
         actionTo: "/stock",
       });
-    });
+    }
 
-    // 2. Dynamic Sales Performance Notification for Logged-In User
-    if (userSales.length > 0) {
+    // 2. Sales Summary / Welcome for Logged-in Merchant
+    if (todayRev > 0) {
       list.push({
-        id: "user-sales-today",
-        type: "analytics",
+        id: "user-today-sales",
+        type: "sales",
         icon: TrendingUp,
-        iconBg: "bg-emerald-100 text-emerald-700 border-emerald-200",
-        title: `Today's Revenue: ${rwf(todayRevenue)} RWF`,
-        desc: `Recorded ${userSales.length} sales today. Net cash balance: ${rwf(todayRevenue - todayExpensesSum)} RWF.`,
+        iconBg: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        title: `Today's Revenue: ${rwf(todayRev)} RWF`,
+        desc: `Your store has completed ${sales.length} sale${sales.length === 1 ? "" : "s"} today. Great progress!`,
         time: "Today",
         actionLabel: "View Sales",
         actionTo: "/sell",
@@ -84,8 +71,8 @@ export default function NotificationDrawer({ open, onClose, stats }) {
       list.push({
         id: "user-welcome-start",
         type: "analytics",
-        icon: Sparkles,
-        iconBg: "bg-purple-100 text-purple-700 border-purple-200",
+        icon: Activity,
+        iconBg: "bg-primary/10 text-primary border-primary/20",
         title: `Welcome, ${user?.name || "Merchant"}!`,
         desc: `Your account for "${user?.shop_name || "My Shop"}" is settled. Record your first sale to see live revenue insights.`,
         time: "Just now",
@@ -99,8 +86,8 @@ export default function NotificationDrawer({ open, onClose, stats }) {
       list.push({
         id: "user-health-score",
         type: "analytics",
-        icon: Sparkles,
-        iconBg: "bg-blue-100 text-blue-700 border-blue-200",
+        icon: TrendingUp,
+        iconBg: "bg-primary/10 text-primary border-primary/20",
         title: `Business Health Score: ${healthScore}/100`,
         desc: "Your transaction credit health status is active. Check factors to boost SACCO credit.",
         time: "Today",

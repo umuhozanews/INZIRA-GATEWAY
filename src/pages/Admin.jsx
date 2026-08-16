@@ -14,7 +14,7 @@ import {
   Phone,
   Mail,
   Calendar,
-  Sparkles,
+  Activity,
   Award,
 } from "lucide-react";
 import ScreenHeader from "../components/ScreenHeader";
@@ -249,7 +249,7 @@ export default function Admin() {
 
         <div className="rounded-[28px] border border-gray-200/80 bg-white p-5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shrink-0">
-            <Sparkles size={22} />
+            <Activity size={22} />
           </div>
           <div>
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Platform Health</div>

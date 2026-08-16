@@ -7,7 +7,6 @@ import {
   Globe,
   Mail,
   Server,
-  Sparkles,
   CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -45,16 +44,15 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-manrope">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body">
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between font-heading">
         <div>
           <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">
             INFRASTRUCTURE & CONFIGURATION
           </span>
           <h1 className="text-lg md:text-2xl font-black text-gray-900 flex items-center gap-1.5 leading-tight">
             Settings & Database Backups
-            <Sparkles size={18} className="text-purple-600 shrink-0" />
           </h1>
         </div>
       </div>

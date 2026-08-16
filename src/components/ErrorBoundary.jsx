@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, Home, RefreshCw, Sparkles } from "lucide-react";
+import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -30,11 +30,11 @@ export default class ErrorBoundary extends React.Component {
 
       return (
         <div className="min-h-screen w-full flex items-center justify-center bg-paper p-4">
-          <div className="w-full max-w-md rounded-3xl border border-line bg-card p-6 shadow-2xl text-center space-y-4 db-rise">
-            <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${
-              isChunkError ? "bg-primary-xlt text-primary border border-primary/20" : "bg-danger-lt text-danger border border-danger/20"
+          <div className="w-full max-w-md rounded-2xl border border-line bg-card p-6 shadow-2xl text-center space-y-4 font-body">
+            <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-xl ${
+              isChunkError ? "bg-primary/10 text-primary border border-primary/20" : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
             }`}>
-              {isChunkError ? <Sparkles size={28} /> : <AlertTriangle size={28} />}
+              {isChunkError ? <RefreshCw size={26} className="animate-spin" /> : <AlertTriangle size={26} />}
             </div>
 
             <div className="space-y-1">

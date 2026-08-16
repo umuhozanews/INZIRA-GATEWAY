@@ -24,7 +24,6 @@ import {
   ExternalLink,
   Trash2,
   Boxes,
-  Sparkles,
   ChevronRight
 } from "lucide-react";
 import api, { errorMessage } from "../lib/api";
@@ -537,24 +536,24 @@ export default function Suppliers() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F4FBE4] via-[#F9FAFB] to-[#F1F5E9] font-manrope text-gray-900 pb-24">
+    <div className="min-h-screen bg-paper font-body text-ink pb-24">
       <ScreenHeader
         title="Suppliers & Ordering"
         right={
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-heading">
             <button
               onClick={() => setCreatePoOpen(true)}
-              className="flex items-center gap-1.5 rounded-full bg-purple-600 px-3.5 py-1.5 text-xs font-black text-white shadow-sm hover:bg-purple-700 transition cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer active:scale-95"
             >
-              <PackagePlus size={14} />
+              <PackagePlus size={15} strokeWidth={2.5} />
               <span>+ New Order</span>
             </button>
 
             <button
               onClick={() => setAddSupOpen(true)}
-              className="flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1.5 text-xs font-black text-white shadow-sm hover:bg-gray-800 transition cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-card border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-primary/40 transition cursor-pointer active:scale-95"
             >
-              <Plus size={14} />
+              <Plus size={15} strokeWidth={2.2} />
               <span className="hidden sm:inline">Supplier</span>
             </button>
           </div>
@@ -567,106 +566,110 @@ export default function Suppliers() {
           {/* Card 1: Total Customers */}
           <div
             onClick={() => setActiveTab("customers")}
-            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
-              activeTab === "customers" ? "border-primary ring-2 ring-primary/20" : "border-line"
+            className={`p-4 rounded-2xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+              activeTab === "customers" ? "border-primary ring-2 ring-primary/20 shadow-orange-sm" : "border-line hover:border-primary/40"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">Customers</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-xlt text-primary">
+              <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Customers</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <Users size={16} />
               </div>
             </div>
-            <div className="mt-1 text-xl font-extrabold text-ink tabnum">{allCustomers.length}</div>
-            <span className="text-[10.5px] font-semibold text-muted block mt-0.5">Active Clients</span>
+            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{allCustomers.length}</div>
+            <div className="mt-1 text-[11px] text-muted">Customer profiles & history</div>
           </div>
 
-          {/* Card 2: Owed to Us (Receivables) */}
+          {/* Card 2: Customer Debts (Owed to Us) */}
           <div
             onClick={() => setActiveTab("owed")}
-            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
-              activeTab === "owed" ? "border-amber-500 ring-2 ring-amber-500/20" : "border-line"
+            className={`p-4 rounded-2xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+              activeTab === "owed" ? "border-primary ring-2 ring-primary/20 shadow-orange-sm" : "border-line hover:border-primary/40"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Owed to Us</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
-                <CreditCard size={16} />
+              <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Customer Debts</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <Clock size={16} />
               </div>
             </div>
-            <div className="mt-1 text-xl font-extrabold text-amber-700 tabnum">{rwf(totalOwedToUs)} RWF</div>
-            <span className="text-[10.5px] font-semibold text-amber-800 block mt-0.5">Receivables</span>
+            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{rwf(totalOwedToUs)} RWF</div>
+            <span className="text-[10.5px] font-medium text-muted block mt-0.5">{debtInvoices.length} unpaid invoices</span>
           </div>
 
           {/* Card 3: Payables (Owed to Suppliers) */}
           <div
             onClick={() => setActiveTab("payables")}
-            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
-              activeTab === "payables" ? "border-red-500 ring-2 ring-red-500/20" : "border-line"
+            className={`p-4 rounded-2xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+              activeTab === "payables" ? "border-primary ring-2 ring-primary/20 shadow-orange-sm" : "border-line hover:border-primary/40"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-red-700 uppercase tracking-wider">Payables</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100 text-red-800">
+              <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Supplier Debts</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-card-hover text-muted border border-line">
                 <Truck size={16} />
               </div>
             </div>
-            <div className="mt-1 text-xl font-extrabold text-red-700 tabnum">{rwf(totalPayables)} RWF</div>
-            <span className="text-[10.5px] font-semibold text-red-800 block mt-0.5">Owed to Suppliers</span>
+            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{rwf(totalWeOweSuppliers)} RWF</div>
+            <span className="text-[10.5px] font-medium text-muted block mt-0.5">{suppliers.length} saved suppliers</span>
           </div>
 
           {/* Card 4: Supplier Orders */}
           <div
             onClick={() => setActiveTab("orders")}
-            className={`p-4 rounded-3xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
-              activeTab === "orders" ? "border-purple-600 ring-2 ring-purple-600/20 bg-purple-50/20" : "border-line"
+            className={`p-4 rounded-2xl border bg-card shadow-card transition cursor-pointer active:scale-[0.99] ${
+              activeTab === "orders" ? "border-primary ring-2 ring-primary/20 shadow-orange-sm" : "border-line hover:border-primary/40"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Supplier Orders</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800">
-                <Boxes size={16} />
+              <span className="text-[11px] font-heading font-bold text-muted uppercase tracking-wider">Purchase Orders</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Package size={16} />
               </div>
             </div>
-            <div className="mt-1 text-xl font-extrabold text-purple-900 tabnum">{orders.length}</div>
-            <span className="text-[10.5px] font-semibold text-purple-700 block mt-0.5">WhatsApp Ordering</span>
+            <div className="mt-1 text-xl font-heading font-black text-ink tabnum">{orders.length}</div>
+            <span className="text-[10.5px] font-heading font-bold text-primary block mt-0.5">
+              {orders.filter((o) => o.status !== "stocked").length} active shipments
+            </span>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-2xl border border-line shadow-sm overflow-x-auto">
+        <div className="flex items-center justify-between gap-3 flex-wrap font-heading">
+          <div className="flex items-center gap-1.5 bg-card p-1.5 rounded-xl border border-line shadow-sm overflow-x-auto">
             {[
-              { id: "orders", label: "Supplier Orders (WhatsApp)", count: orders.length, highlight: true },
+              { id: "orders", label: "Supplier Orders", count: orders.length },
               { id: "payables", label: "Suppliers & Payables", count: suppliers.length },
               { id: "customers", label: "Customers", count: allCustomers.length },
-              { id: "owed", label: "Owed to Us (Receivables)", count: receivables.length },
+              { id: "owed", label: "Customer Debts", count: debtInvoices.length },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? tab.highlight ? "bg-purple-600 text-white shadow-sm" : "bg-primary text-white shadow-sm"
-                    : "text-muted hover:text-ink hover:bg-paper"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${activeTab === tab.id ? "bg-white/20" : "bg-gray-100 text-gray-700"}`}>
+                <span className={`px-2 py-0.2 rounded-md text-[10px] font-black tabnum ${
+                  activeTab === tab.id ? "bg-black/20 text-white" : "bg-card-hover text-muted"
+                }`}>
                   {tab.count}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative flex-1 max-w-xs font-body">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search supplier, item, PO…"
-              className="w-full rounded-xl border border-line bg-card pl-9 pr-3 py-2 text-xs font-semibold text-ink placeholder:text-muted focus:border-primary focus:outline-none shadow-sm"
+              className="w-full rounded-xl border border-line bg-card pl-9 pr-3 py-2 text-xs font-semibold text-ink placeholder:text-muted focus:border-primary/50 focus:outline-none shadow-sm"
             />
           </div>
         </div>
@@ -1122,13 +1125,13 @@ export default function Suppliers() {
 
       {/* CREATE PURCHASE ORDER MODAL SHEET */}
       <Sheet open={createPoOpen} onClose={() => setCreatePoOpen(false)} title="New Supplier Purchase Order">
-        <form onSubmit={handleCreatePoSubmit} className="space-y-4 pt-2 font-manrope pb-6">
-          <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-xs text-purple-950 space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-purple-900">
-              <Sparkles size={14} className="text-purple-600" />
+        <form onSubmit={handleCreatePoSubmit} className="space-y-4 pt-2 font-body pb-6">
+          <div className="p-3.5 rounded-2xl bg-card-hover border border-line text-xs text-ink space-y-1">
+            <div className="flex items-center gap-1.5 font-heading font-black text-ink">
+              <PackagePlus size={15} className="text-primary" />
               <span>WhatsApp Supplier Restocking</span>
             </div>
-            <p className="text-[11px] text-purple-800 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               Assemble your purchase order lines. Once created, you can instantly dispatch the pre-formatted order directly to the supplier via WhatsApp with 1 tap.
             </p>
           </div>

@@ -8,7 +8,6 @@ import {
   Building2,
   Users,
   Calendar,
-  Sparkles,
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
@@ -682,10 +681,10 @@ export default function SignUp() {
               <button
                 type="submit"
                 disabled={busy}
-                className="flex-[2] rounded-full bg-[#D4F06B] py-3.5 text-xs font-black text-gray-900 shadow-lg hover:bg-[#c3e450] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="flex-[2] rounded-xl bg-primary py-3.5 text-xs font-heading font-black text-white shadow-orange-sm hover:bg-primary-hover active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <Sparkles size={16} />
                 <span>{busy ? "Setting Up Shop..." : "Create Account & Launch"}</span>
+                <ArrowRight size={16} />
               </button>
             </div>
           </form>

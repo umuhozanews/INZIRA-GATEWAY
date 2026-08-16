@@ -4,7 +4,6 @@ import {
   TrendingUp,
   Package,
   Receipt,
-  Sparkles,
   Calendar,
   Download,
   Printer,
@@ -15,7 +14,8 @@ import {
   PieChart,
   FileText,
   Filter,
-  ArrowUpRight
+  ArrowUpRight,
+  BarChart2
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -380,23 +380,23 @@ export default function Reports() {
         </div>
 
         {/* Navigation Tabs (Screen Only) */}
-        <div className="print-hidden flex items-center gap-1.5 bg-white p-2 rounded-full border border-gray-200/80 shadow-sm overflow-x-auto">
+        <div className="print-hidden flex items-center gap-1.5 bg-card p-1.5 rounded-xl border border-line shadow-sm overflow-x-auto font-heading">
           {[
             { id: "sales", label: "Sales Report", icon: TrendingUp },
             { id: "expenses", label: "Expenses Report", icon: DollarSign },
             { id: "stock", label: "Stock Valuation", icon: Package },
             { id: "tax", label: "Tax & EBM (18%)", icon: Receipt },
-            { id: "intelligence", label: "Intelligence", icon: Sparkles },
+            { id: "intelligence", label: "Analytics", icon: BarChart2 },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-[#D4F06B] text-gray-900 shadow-sm font-black"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-primary text-white shadow-orange-sm font-black"
+                    : "text-muted hover:text-ink hover:bg-card-hover"
                 }`}
               >
                 <Icon size={15} />
@@ -724,20 +724,20 @@ export default function Reports() {
           <div className="space-y-5">
             <div
               onClick={() => navigate("/health-score")}
-              className="flex items-center justify-between p-6 rounded-[28px] border border-gray-200/80 bg-white hover:border-[#D4F06B] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] transition cursor-pointer group"
+              className="flex items-center justify-between p-6 rounded-2xl border border-line bg-card hover:border-primary/40 shadow-card transition cursor-pointer group"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <Sparkles size={20} className="text-purple-600" />
-                  <h3 className="text-base font-black text-gray-900 group-hover:text-purple-600 transition">
-                    Business Health Score & AI Diagnostics
+                  <BarChart2 size={20} className="text-primary" />
+                  <h3 className="text-base font-heading font-black text-ink group-hover:text-primary transition">
+                    Business Health Score & Performance Analytics
                   </h3>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted font-body mt-1">
                   View full credit readiness report, working capital drivers, and SACCO loan eligibility metrics.
                 </p>
               </div>
-              <ChevronRight size={20} className="text-gray-400 group-hover:text-purple-600" />
+              <ChevronRight size={20} className="text-muted group-hover:text-primary transition" />
             </div>
           </div>
         )}

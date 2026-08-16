@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Globe,
   Lock,
-  Sparkles,
   Menu,
   X,
   Grid,
