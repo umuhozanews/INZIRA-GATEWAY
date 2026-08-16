@@ -22,15 +22,25 @@ import { useData } from "../context/DataContext";
 
 function FactorRow({ label, positive }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-line bg-card p-3.5 shadow-card font-body">
+    <div className={`flex items-center justify-between rounded-2xl border p-3.5 shadow-card font-body transition ${
+      positive ? "border-line bg-card" : "border-line bg-card"
+    }`}>
       <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card-hover text-primary border border-line shrink-0">
-          {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+        <div className={`flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition ${
+          positive ? "bg-primary text-white shadow-orange-sm" : "bg-card-hover text-muted border border-line"
+        }`}>
+          {positive ? <TrendingUp size={16} strokeWidth={2.5} /> : <TrendingDown size={16} strokeWidth={2} />}
         </div>
-        <span className="text-xs sm:text-sm font-semibold text-ink leading-tight">{label}</span>
+        <span className={`text-xs sm:text-sm leading-tight ${
+          positive ? "font-bold text-ink" : "font-medium text-muted"
+        }`}>
+          {label}
+        </span>
       </div>
-      <span className="text-xs font-black font-heading text-primary shrink-0 ml-2">
-        {positive ? "▲" : "▼"}
+      <span className={`text-xs font-black font-heading shrink-0 ml-2 ${
+        positive ? "text-primary" : "text-muted"
+      }`}>
+        {positive ? "Strength" : "Watch"}
       </span>
     </div>
   );
@@ -110,8 +120,14 @@ export default function HealthScore() {
             size={140}
             label={band?.name ? `${band.name} · Grade ${band.code}` : undefined}
           />
-          <div className="mt-2.5">
-            <span className="text-xs font-black px-3 py-1 rounded-xl bg-primary/10 text-primary border border-primary/20">
+          <div className="mt-3">
+            <span className={`text-xs font-black px-3.5 py-1 rounded-xl ${
+              band?.code === "A"
+                ? "bg-primary text-white shadow-orange-sm"
+                : band?.code === "B"
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "bg-card-hover text-muted border border-line"
+            }`}>
               Grade {band?.code || "B"} &bull; {band?.name || "Moderate"}
             </span>
           </div>
