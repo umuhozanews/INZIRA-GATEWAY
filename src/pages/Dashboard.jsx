@@ -161,21 +161,6 @@ export default function Dashboard() {
             )}
           </button>
 
-          {/* Notifications */}
-          <button
-            onClick={() => setNotifOpen(true)}
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-card hover:bg-card-hover hover:border-primary/40 active:scale-95 transition-all duration-150 cursor-pointer shadow-sm text-ink"
-            aria-label="Notifications"
-            title="Notifications"
-          >
-            <Bell size={16} />
-            {(s.alerts?.length || 0) > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-white shadow-orange-sm">
-                {s.alerts.length}
-              </span>
-            )}
-          </button>
-
           {/* Logout Button with Confirmation Guard */}
           <button
             onClick={() => setConfirmLogoutOpen(true)}
