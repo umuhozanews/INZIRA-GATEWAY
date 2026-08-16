@@ -116,6 +116,11 @@
           for (let registration of registrations) { registration.unregister(); }
         });
       }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) { caches.delete(name); }
+        });
+      }
     </script>
   </head>
   <body>

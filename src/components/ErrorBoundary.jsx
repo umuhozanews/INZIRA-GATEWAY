@@ -15,9 +15,25 @@ export default class ErrorBoundary extends React.Component {
     console.error("[React ErrorBoundary]", error, errorInfo);
   }
 
-  handleReset = () => {
+  handleReset = async () => {
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {}
     this.setState({ hasError: false, error: null });
-    window.location.href = "/";
+    window.location.href = "/?_v=" + Date.now();
+  };
+
+  handleReload = async () => {
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {}
+    window.location.href = window.location.pathname + "?_v=" + Date.now();
   };
 
   render() {
@@ -56,14 +72,14 @@ export default class ErrorBoundary extends React.Component {
 
             <div className="flex gap-2 pt-2">
               <button
-                onClick={() => window.location.reload()}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-xs font-extrabold text-white shadow-sm hover:bg-primary-lt transition cursor-pointer"
+                onClick={this.handleReload}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-xs font-black text-white shadow-orange-sm hover:bg-primary-hover transition cursor-pointer"
               >
                 <RefreshCw size={15} /> {isChunkError ? "Reload Latest App Version" : "Reload Page"}
               </button>
               <button
                 onClick={this.handleReset}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-line bg-paper hover:bg-line/40 text-xs font-bold text-ink transition cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer"
               >
                 <Home size={15} /> Back Home
               </button>
