@@ -127,33 +127,6 @@ export default function InstitutionLayout() {
               </NavLink>
             ))}
           </nav>
-
-          {/* Quick Cross-Portal Switcher */}
-          <div className="pt-2 border-t border-line font-heading space-y-1.5">
-            <span className="px-3 text-[10px] font-extrabold tracking-wider text-muted uppercase">
-              Portals
-            </span>
-            <button
-              onClick={() => navigate("/")}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-muted hover:text-ink hover:bg-card-hover border border-transparent hover:border-line transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <Store size={15} className="text-primary" />
-                <span>Store POS</span>
-              </div>
-              <ChevronRight size={14} />
-            </button>
-            <button
-              onClick={() => navigate("/admin")}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-muted hover:text-ink hover:bg-card-hover border border-transparent hover:border-line transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck size={15} className="text-primary" />
-                <span>Admin</span>
-              </div>
-              <ChevronRight size={14} />
-            </button>
-          </div>
         </div>
 
         {/* Footer */}
