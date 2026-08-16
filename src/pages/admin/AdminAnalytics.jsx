@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp,
   BarChart3,
@@ -8,13 +8,40 @@ import {
   ArrowUpRight,
   MapPin,
   Activity,
+  Layers,
+  Download,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Edit3,
+  FileSpreadsheet
 } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "../../lib/api";
-import { rwf, rwfCompact } from "../../lib/format";
+import { rwf, rwfCompact, formatDate } from "../../lib/format";
+import {
+  getAllScoreSnapshots,
+  recordSnapshotOutcome,
+  exportMlDatasetCsv,
+  exportMlDatasetJson
+} from "../../lib/mlFeatureStore";
+import Sheet from "../../components/Sheet";
 
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [snapshots, setSnapshots] = useState([]);
+
+  // Outcome Labeling Modal State
+  const [labelingSnapshot, setLabelingSnapshot] = useState(null);
+  const [outcomeStatus, setOutcomeStatus] = useState("growing");
+  const [defaultEvent, setDefaultEvent] = useState(false);
+  const [realizedGrowth, setRealizedGrowth] = useState("12");
+  const [outcomeNotes, setOutcomeNotes] = useState("");
+
+  const refreshSnapshots = () => {
+    setSnapshots(getAllScoreSnapshots());
+  };
 
   useEffect(() => {
     async function load() {
@@ -27,172 +54,251 @@ export default function AdminAnalytics() {
         }
         setAnalytics(res.data);
       } catch (err) {
-        console.warn("Using fallback analytics data:", err);
         setAnalytics({
-          dailyTrends: [
-            { day: "2026-08-08", volume: 1200000, transactions: 34 },
-            { day: "2026-08-09", volume: 1850000, transactions: 52 },
-            { day: "2026-08-10", volume: 2400000, transactions: 68 },
-            { day: "2026-08-11", volume: 3100000, transactions: 84 },
-            { day: "2026-08-12", volume: 2950000, transactions: 76 },
-            { day: "2026-08-13", volume: 4100000, transactions: 110 },
-            { day: "2026-08-14", volume: 4850000, transactions: 125 },
-          ],
-          topSmes: [
-            { id: 1, name: "Alpha Kigali Bakery", shop_name: "Alpha Bakery Gasabo", total_volume: 18500000, total_transactions: 412, health_score: 88, sector: "Food & Bakery", district: "Gasabo" },
-            { id: 2, name: "Boy Gatete", shop_name: "Gatete Supermarket", total_volume: 14200000, total_transactions: 360, health_score: 84, sector: "Retail & Supermarket", district: "Kicukiro" },
-            { id: 3, name: "Beta Electronics Point", shop_name: "Beta Tech Hub", total_volume: 9400000, total_transactions: 195, health_score: 81, sector: "Electronics & Tech", district: "Nyarugenge" },
-            { id: 4, name: "Gamma Pharmacy Musanze", shop_name: "Gamma Health Pharmacy", total_volume: 6400000, total_transactions: 142, health_score: 79, sector: "Health & Pharmacy", district: "Musanze" },
-          ],
-          sectorShares: [
-            { sector: "Retail & Supermarket", merchant_count: 5, total_sales: 24500000 },
-            { sector: "Food & Bakery", merchant_count: 3, total_sales: 18500000 },
-            { sector: "Health & Pharmacy", merchant_count: 2, total_sales: 12100000 },
-            { sector: "Electronics & Tech", merchant_count: 2, total_sales: 9400000 },
-          ],
+          dailyTrends: [],
+          topSmes: [],
+          sectorShares: [],
         });
       } finally {
         setLoading(false);
       }
     }
     load();
+    refreshSnapshots();
   }, []);
 
-  const dailyTrends = analytics?.dailyTrends || [];
-  const topSmes = analytics?.topSmes || [];
-  const sectorShares = analytics?.sectorShares || [];
+  const handleSaveOutcome = (e) => {
+    e.preventDefault();
+    if (!labelingSnapshot) return;
 
-  const maxDailyVolume = Math.max(...dailyTrends.map((d) => d.volume || 1), 1);
+    const res = recordSnapshotOutcome(labelingSnapshot.id, {
+      status: outcomeStatus,
+      defaultEvent,
+      revenueGrowthRealized: Number(realizedGrowth) || 0,
+      notes: outcomeNotes,
+      labeledBy: "Platform Administrator",
+    });
+
+    if (res) {
+      toast.success(`Recorded real ML ground-truth outcome for ${labelingSnapshot.shop_name}!`);
+      setLabelingSnapshot(null);
+      refreshSnapshots();
+    } else {
+      toast.error("Failed to save outcome.");
+    }
+  };
+
+  const handleExportCsv = () => {
+    const success = exportMlDatasetCsv();
+    if (success) {
+      toast.success("Downloaded sme_score_snapshots ML training CSV!");
+    } else {
+      toast.error("No historical score snapshots recorded yet to export.");
+    }
+  };
+
+  const handleExportJson = () => {
+    exportMlDatasetJson();
+    toast.success("Downloaded full JSON feature store!");
+  };
 
   return (
-    <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body text-ink">
+    <div className="p-3.5 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto font-body text-ink">
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between font-heading">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-heading">
         <div>
           <span className="text-[10px] sm:text-xs font-bold text-muted uppercase tracking-widest">
             PLATFORM INTELLIGENCE
           </span>
           <h1 className="text-lg md:text-2xl font-black text-ink flex items-center gap-1.5 leading-tight">
-            Macro Analytics & Trends
+            Macro Analytics & ML Feature Store
           </h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black transition cursor-pointer shadow-orange-sm active:scale-95"
+          >
+            <FileSpreadsheet size={15} />
+            <span>Export ML CSV</span>
+          </button>
+          <button
+            onClick={handleExportJson}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-line bg-card hover:bg-card-hover text-ink text-xs font-bold transition cursor-pointer"
+          >
+            <Download size={15} className="text-primary" />
+            <span>Export JSON</span>
+          </button>
         </div>
       </div>
 
-      {/* ─── 7-Day Sales Volume Velocity Chart ─── */}
-      <div className="bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
-        <div className="flex items-center justify-between font-heading">
-          <div>
-            <h3 className="text-xs font-black text-ink uppercase tracking-wider">
-              7-Day Combined Sales GMV Velocity
-            </h3>
-            <p className="text-[11px] text-muted font-medium font-body">Gross transaction turnover across all active stores</p>
+      {/* ─── ML Data Collection & Feature Store Card ─── */}
+      <div className="rounded-3xl border border-line bg-card p-5 sm:p-6 shadow-card space-y-4 font-heading">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+              <Layers size={20} />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-ink">
+                SME Score Historical Snapshots (<code className="font-mono text-primary text-xs">sme_score_snapshots</code>)
+              </h2>
+              <p className="text-xs text-muted font-body">
+                Multidimensional raw feature vectors collected for Phase 2 Machine Learning training & real outcome labeling.
+              </p>
+            </div>
           </div>
-          <span className="px-3 py-1 rounded-md text-xs font-black bg-primary/10 text-primary border border-primary/20">
-            All Rwandan SMEs
+
+          <span className="text-xs font-black text-primary px-3 py-1 rounded-xl bg-primary/10 border border-primary/20 self-start sm:self-auto">
+            {snapshots.length} Snapshots Logged
           </span>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end pt-6 pb-2 h-44 font-heading">
-          {dailyTrends.map((d, i) => {
-            const pct = Math.round((d.volume / maxDailyVolume) * 100);
-            return (
-              <div key={i} className="flex flex-col items-center gap-2 h-full justify-end group">
-                <span className="text-[9px] font-bold text-muted group-hover:text-primary transition tabnum">
-                  {rwfCompact(d.volume)}
-                </span>
-                <div className="w-full bg-card-hover rounded-xl h-full flex items-end overflow-hidden border border-line">
-                  <div
-                    style={{ height: `${pct}%` }}
-                    className="w-full bg-primary group-hover:bg-primary-hover rounded-xl transition-all duration-300 shadow-orange-sm"
-                  />
-                </div>
-                <span className="text-[9px] font-bold text-muted">
-                  {d?.day ? String(d.day).split("-").slice(1).join("/") : ""}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ─── Top Performing SMEs Leaderboard ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 font-body">
-        <div className="lg:col-span-8 bg-card rounded-2xl border border-line shadow-card overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between font-heading">
-            <h3 className="text-xs font-black text-ink uppercase">Top 10 Performing SME Merchants</h3>
-            <span className="text-xs font-bold text-muted">By Sales Volume</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-line bg-card-hover text-[10px] font-heading font-black text-muted uppercase">
-                  <th className="py-3 px-4 sm:px-6">Rank & Shop</th>
-                  <th className="py-3 px-4">Sector</th>
-                  <th className="py-3 px-4">Transactions</th>
-                  <th className="py-3 px-4">Health Score</th>
-                  <th className="py-3 px-4 sm:px-6 text-right">GMV Turnover</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {topSmes.map((sme, idx) => (
-                  <tr key={sme.id} className="hover:bg-card-hover transition">
-                    <td className="py-3.5 px-4 sm:px-6">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-6 w-6 rounded-lg bg-primary/10 text-primary border border-primary/20 font-heading font-black text-[11px] items-center justify-center">
-                          #{idx + 1}
-                        </span>
-                        <div>
-                          <h4 className="font-heading font-black text-ink">{sme.shop_name || sme.name}</h4>
-                          <p className="text-[10px] text-muted">{sme.district || "Kigali"}</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-muted font-medium">{sme.sector}</td>
-                    <td className="py-3.5 px-4 font-heading font-bold text-ink tabnum">{sme.total_transactions || 0}</td>
-
-                    <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-heading font-black bg-card-hover text-ink border border-line tabnum">
-                        {sme.health_score || 80}/100
+        {/* Snapshot Table / Card List */}
+        <div className="divide-y divide-line overflow-hidden">
+          {snapshots.length === 0 ? (
+            <div className="py-8 text-center text-muted font-body text-xs">
+              No score snapshots recorded yet. When SME merchants compute their Business Health Scores or conduct daily till sales, historical feature snapshots are logged here automatically.
+            </div>
+          ) : (
+            snapshots.map((s) => {
+              const isLabeled = s.outcome && s.outcome.status !== "pending";
+              return (
+                <div
+                  key={s.id}
+                  className="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-card-hover px-2 rounded-xl transition"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading font-black text-xs text-ink">{s.shop_name}</span>
+                      <span className="text-[10px] font-mono text-muted">{s.id}</span>
+                      <span className="text-[10px] font-black text-primary px-1.5 py-0.2 rounded bg-primary/10">
+                        Score: {s.overall_score}/100 ({s.score_band})
                       </span>
-                    </td>
+                    </div>
 
-                    <td className="py-3.5 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">
-                      {rwf(sme.total_volume || 0)} RWF
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted font-body mt-1">
+                      <span>Recorded: {formatDate(s.timestamp)}</span>
+                      <span>&bull;</span>
+                      <span>30D Till Days: {s.features?.sales_days_last_30d ?? 0}/30</span>
+                      <span>&bull;</span>
+                      <span>Burn Rate: {((s.features?.expense_to_revenue_ratio || 0) * 100).toFixed(0)}%</span>
+                      <span>&bull;</span>
+                      <span>Stock Value: {rwfCompact(s.features?.inventory_valuation || 0)} RWF</span>
+                    </div>
+                  </div>
 
-        {/* Sector Market Share */}
-        <div className="lg:col-span-4 bg-card rounded-2xl p-5 sm:p-6 border border-line shadow-card space-y-4">
-          <h3 className="text-xs font-heading font-black text-ink uppercase tracking-wider">
-            Sector Market Share
-          </h3>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right text-xs">
+                      <span className="text-[10px] font-bold text-muted block uppercase">ML Target Label</span>
+                      <span className={`font-black text-xs capitalize ${
+                        isLabeled ? (s.outcome.default_event ? "text-muted" : "text-primary") : "text-muted"
+                      }`}>
+                        {s.outcome?.status || "Pending Outcome"}
+                      </span>
+                    </div>
 
-          <div className="space-y-3">
-            {sectorShares.map((sec, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-heading">
-                  <span className="font-bold text-ink">{sec.sector}</span>
-                  <span className="font-black text-ink tabnum">{rwfCompact(sec.total_sales || 0)}</span>
+                    <button
+                      onClick={() => {
+                        setLabelingSnapshot(s);
+                        setOutcomeStatus(s.outcome?.status || "growing");
+                        setDefaultEvent(Boolean(s.outcome?.default_event));
+                        setRealizedGrowth(String(s.outcome?.revenue_growth_realized || 10));
+                        setOutcomeNotes(s.outcome?.notes || "");
+                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-line bg-card hover:bg-card-hover text-xs font-bold text-ink transition cursor-pointer"
+                    >
+                      <Edit3 size={13} className="text-primary" />
+                      <span>{isLabeled ? "Update Outcome" : "Label Outcome"}</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-card-hover border border-line rounded-full overflow-hidden">
-                  <div
-                    style={{ width: `${Math.min(100, Math.max(15, (sec.merchant_count / 5) * 100))}%` }}
-                    className="h-full bg-primary rounded-full"
-                  />
-                </div>
-                <span className="text-[10px] text-muted">{sec.merchant_count} stores registered</span>
-              </div>
-            ))}
-          </div>
+              );
+            })
+          )}
         </div>
       </div>
+
+      {/* ─── Outcome Labeling Modal Sheet ─── */}
+      <Sheet
+        open={Boolean(labelingSnapshot)}
+        onClose={() => setLabelingSnapshot(null)}
+        title={labelingSnapshot ? `Record ML Ground-Truth Label: ${labelingSnapshot.shop_name}` : "ML Labeling"}
+      >
+        {labelingSnapshot && (
+          <form onSubmit={handleSaveOutcome} className="space-y-4 pt-2 font-body pb-6 text-ink">
+            <div className="p-3.5 rounded-xl bg-card-hover border border-line font-heading space-y-1">
+              <span className="text-[10.5px] font-bold text-muted uppercase block">SME Snapshot Feature Summary</span>
+              <h4 className="text-xs font-black text-ink">{labelingSnapshot.shop_name} &bull; Score: {labelingSnapshot.overall_score}/100</h4>
+              <p className="text-[11px] text-muted font-mono pt-1">ID: {labelingSnapshot.id}</p>
+            </div>
+
+            <div className="space-y-1 font-heading">
+              <label className="text-xs font-bold text-muted uppercase">Real Realized Outcome (Target Y)</label>
+              <select
+                value={outcomeStatus}
+                onChange={(e) => setOutcomeStatus(e.target.value)}
+                className="w-full bg-paper border border-line text-ink text-xs font-bold rounded-xl px-3 py-2.5 focus:border-primary focus:outline-none cursor-pointer"
+              >
+                <option value="growing">Revenue Grew (&gt;+10% in next quarter)</option>
+                <option value="stable">Business Maintained Stable Revenue</option>
+                <option value="declining">Revenue Declined (&gt;15% contraction)</option>
+                <option value="supplier_default">Defaulted on Supplier Payment / Invoices</option>
+                <option value="loan_default">Defaulted on Micro-Credit Loan Instalment</option>
+                <option value="churned">Business Inactive / Churned</option>
+              </select>
+            </div>
+
+            <div className="space-y-1 font-heading">
+              <label className="text-xs font-bold text-muted uppercase">Realized Revenue Growth (% in Next Quarter)</label>
+              <input
+                type="number"
+                step="1"
+                value={realizedGrowth}
+                onChange={(e) => setRealizedGrowth(e.target.value)}
+                className="w-full bg-paper border border-line rounded-xl px-3.5 py-2 text-xs font-bold text-ink focus:outline-none focus:border-primary font-heading"
+                placeholder="+15"
+              />
+            </div>
+
+            <div className="pt-2 font-heading">
+              <label className="flex items-center gap-3 p-3 rounded-xl bg-card-hover border border-line cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={defaultEvent}
+                  onChange={(e) => setDefaultEvent(e.target.checked)}
+                  className="rounded text-primary focus:ring-primary h-4 w-4 bg-paper border-line"
+                />
+                <div>
+                  <span className="font-heading font-black text-xs text-ink block">Default Event Occurred</span>
+                  <span className="text-[11px] text-muted">Did this SME default on any loan or trade credit obligation?</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="space-y-1 font-heading">
+              <label className="text-xs font-bold text-muted uppercase">Outcome Notes</label>
+              <textarea
+                rows={2}
+                value={outcomeNotes}
+                onChange={(e) => setOutcomeNotes(e.target.value)}
+                placeholder="e.g. Paid all supplier orders on time and expanded stock inventory by 20%."
+                className="w-full bg-paper border border-line rounded-xl p-3 text-xs font-body text-ink focus:outline-none focus:border-primary placeholder:text-muted"
+              />
+            </div>
+
+            <div className="pt-2 font-heading">
+              <button
+                type="submit"
+                className="btn-kinetic w-full py-3 text-xs font-black cursor-pointer shadow-orange-sm"
+              >
+                Save Real Ground-Truth Outcome Label
+              </button>
+            </div>
+          </form>
+        )}
+      </Sheet>
     </div>
   );
 }
