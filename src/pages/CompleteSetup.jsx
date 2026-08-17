@@ -131,9 +131,42 @@ export default function CompleteSetup() {
         profile_complete: true,
       };
 
-      const res = await api.put("/settings/profile", payload);
+      // 1. Update store settings on backend
+      try {
+        await api.put("/settings", {
+          shop_name: shopName.trim(),
+          shop_address: location.trim(),
+          shop_phone: fullPhone,
+          currency: currency || "RWF",
+          tin_number: needEbm === "Yes" ? tinNumber.trim() : null,
+          has_ebm: needEbm === "Yes",
+          sector_default: businessType,
+          district_default: location.trim(),
+          shop_email: businessEmail.trim() || user?.email,
+        });
+      } catch (settingsErr) {
+        console.warn("Backend settings update notice:", settingsErr.message);
+      }
+
+      // 2. Complete setup on backend
+      try {
+        await api.post("/auth/complete-setup", {
+          shop_name: shopName.trim(),
+          business_name: shopName.trim(),
+          phone: fullPhone,
+          location: location.trim(),
+          district: location.trim(),
+          sector: businessType,
+          currency,
+          teamSize,
+          needEbm,
+          tinNumber: needEbm === "Yes" ? tinNumber.trim() : null,
+        });
+      } catch (setupErr) {
+        console.warn("Backend complete setup notice:", setupErr.message);
+      }
       
-      // Update Auth context locally
+      // 3. Update Auth context locally
       updateUser({
         ...user,
         ...payload,

@@ -311,23 +311,14 @@ export function AuthProvider({ children }) {
         });
         return persist(data);
       } catch (err) {
-        try {
-          const { data } = await api.post("/auth/signup", {
-            name: newUser.name,
-            shop_name: newUser.shop_name,
-            email: newUser.email,
-            phone: newUser.phone,
-            businessType: newUser.sector,
-            password,
-          });
-          return persist(data);
-        } catch (retryErr) {
-          console.warn("[Auth] Backend registration offline, persisting local merchant profile.", retryErr);
-          return persist({
-            user: newUser,
-            accessToken: "db_token_" + Date.now(),
-          });
+        if (err.response?.status === 409 || err.response?.data?.error) {
+          throw new Error(err.response?.data?.error || "This email is already registered.");
         }
+        console.warn("[Auth] Backend registration offline, persisting local merchant profile.", err);
+        return persist({
+          user: newUser,
+          accessToken: "db_token_" + Date.now(),
+        });
       }
     },
     [persist]
