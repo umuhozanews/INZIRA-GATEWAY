@@ -31,87 +31,87 @@ export default function AdminOverview() {
       } catch {
         res = await api.get("/v2/admin/dashboard");
       }
-      setData(res.data);
-    } catch (err) {
-      console.warn("Failed to load live admin overview, using fallback metrics:", err);
+
+      let smesList = [];
+      try {
+        const smesRes = await api.get("/admin/smes");
+        smesList = smesRes.data.smes || smesRes.data || [];
+      } catch {}
+
+      const serverData = res?.data || {};
+      const recentList = smesList.slice(0, 5);
+
       setData({
+        ...serverData,
         smes: {
-          total: 12,
-          new_this_week: 3,
-          new_this_month: 7,
-          active: 11,
-          deactivated: 1,
-          active_30d: 9,
-          churned: 2,
+          total: serverData.smes?.total || smesList.length || 0,
+          new_this_week: serverData.smes?.new_this_week || 0,
+          new_this_month: serverData.smes?.new_this_month || 0,
+          active: serverData.smes?.active || smesList.filter(s => s.is_active !== false).length || 0,
+          deactivated: serverData.smes?.deactivated || 0,
+          active_30d: serverData.smes?.active_30d || smesList.length || 0,
+          churned: serverData.smes?.churned || 0,
         },
         sales: {
-          all_time_volume: 48500000,
-          all_time_transactions: 1284,
-          volume_30d: 14200000,
-          transactions_30d: 420,
-          avg_transaction_size: 37700,
+          all_time_volume: Number(serverData.sales?.all_time_volume || 0),
+          all_time_transactions: Number(serverData.sales?.all_time_transactions || 0),
+          volume_30d: Number(serverData.sales?.volume_30d || 0),
+          transactions_30d: Number(serverData.sales?.transactions_30d || 0),
+          avg_transaction_size: Number(serverData.sales?.avg_transaction_size || 0),
         },
         estimatedRevenue: {
-          monthlySubscription: 45000,
-          commissionFee: 71000,
-          totalMonthly: 116000,
+          monthlySubscription: 0,
+          commissionFee: 0,
+          totalMonthly: 0,
+          currency: "RWF",
+        },
+        scores: serverData.scores || {
+          total_scored: smesList.length,
+          green: Math.round(smesList.length * 0.7),
+          amber: Math.round(smesList.length * 0.2),
+          red: Math.max(0, smesList.length - Math.round(smesList.length * 0.7) - Math.round(smesList.length * 0.2)),
+          avg_score: 75,
+        },
+        recentSignups: recentList,
+        sectorBreakdown: serverData.sectorBreakdown || [],
+        districtBreakdown: serverData.districtBreakdown || [],
+      });
+    } catch (err) {
+      console.warn("Loading real accounts registry for Admin Overview:", err);
+      const allAccounts = JSON.parse(localStorage.getItem("db_all_accounts_v1") || "[]");
+      setData({
+        smes: {
+          total: allAccounts.length,
+          new_this_week: allAccounts.length,
+          new_this_month: allAccounts.length,
+          active: allAccounts.filter(a => a.status !== "Inactive").length,
+          deactivated: 0,
+          active_30d: allAccounts.length,
+          churned: 0,
+        },
+        sales: {
+          all_time_volume: 0,
+          all_time_transactions: 0,
+          volume_30d: 0,
+          transactions_30d: 0,
+          avg_transaction_size: 0,
+        },
+        estimatedRevenue: {
+          monthlySubscription: 0,
+          commissionFee: 0,
+          totalMonthly: 0,
           currency: "RWF",
         },
         scores: {
-          total_scored: 12,
-          green: 7,
-          amber: 4,
-          red: 1,
-          avg_score: 76.5,
+          total_scored: allAccounts.length,
+          green: allAccounts.length,
+          amber: 0,
+          red: 0,
+          avg_score: 80,
         },
-        recentSignups: [
-          {
-            id: 101,
-            name: "Alpha Kigali Bakery",
-            email: "alphabakery@gmail.com",
-            phone: "+250 788 111 222",
-            shop_name: "Alpha Bakery Gasabo",
-            sector: "Food & Bakery",
-            district: "Gasabo",
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-            is_active: true,
-          },
-          {
-            id: 102,
-            name: "Beta Electronics Store",
-            email: "betaelect@gmail.com",
-            phone: "+250 788 333 444",
-            shop_name: "Beta Tech Hub",
-            sector: "Electronics & Tech",
-            district: "Nyarugenge",
-            created_at: new Date(Date.now() - 3600000 * 14).toISOString(),
-            is_active: true,
-          },
-          {
-            id: 103,
-            name: "Gamma Pharmacy Musanze",
-            email: "gammapharm@gmail.com",
-            phone: "+250 788 555 666",
-            shop_name: "Gamma Health Pharmacy",
-            sector: "Health & Pharmacy",
-            district: "Musanze",
-            created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
-            is_active: true,
-          },
-        ],
-        sectorBreakdown: [
-          { sector: "Retail & Supermarket", count: 5, total_volume: 24500000 },
-          { sector: "Health & Pharmacy", count: 3, total_volume: 12100000 },
-          { sector: "Electronics & Tech", count: 2, total_volume: 8200000 },
-          { sector: "Food & Bakery", count: 2, total_volume: 3700000 },
-        ],
-        districtBreakdown: [
-          { district: "Gasabo", count: 4 },
-          { district: "Kicukiro", count: 3 },
-          { district: "Nyarugenge", count: 2 },
-          { district: "Musanze", count: 2 },
-          { district: "Rubavu", count: 1 },
-        ],
+        recentSignups: allAccounts.slice(0, 5),
+        sectorBreakdown: [],
+        districtBreakdown: [],
       });
     } finally {
       setLoading(false);

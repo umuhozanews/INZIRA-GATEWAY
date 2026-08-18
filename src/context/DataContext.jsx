@@ -244,8 +244,27 @@ export function DataProvider({ children }) {
 
       if (rawSaleList) {
         setSales(prev => {
-          const serverIds = new Set(rawSaleList.map(s => String(s.id)));
-          const serverInvNums = new Set(rawSaleList.map(s => s.invoice_number).filter(Boolean));
+          const prevMap = new Map(prev.map(p => [String(p.id), p]));
+          const prevInvMap = new Map(prev.filter(p => p.invoice_number).map(p => [p.invoice_number, p]));
+
+          const normalizedServerSales = rawSaleList.map(s => {
+            const existing = prevMap.get(String(s.id)) || (s.invoice_number ? prevInvMap.get(s.invoice_number) : null);
+            const validDate = (s.created_at && typeof s.created_at === "string" && !isNaN(new Date(s.created_at).getTime()))
+              ? s.created_at
+              : (existing?.created_at || new Date().toISOString());
+
+            return {
+              ...existing,
+              ...s,
+              total_amount: Number(s.total_amount || s.total) || Number(existing?.total_amount) || 0,
+              amount_paid: Number(s.amount_paid !== undefined ? s.amount_paid : (existing?.amount_paid || s.total_amount || s.total)) || 0,
+              amount_owed: Number(s.amount_owed !== undefined ? s.amount_owed : (existing?.amount_owed || 0)),
+              created_at: validDate,
+            };
+          });
+
+          const serverIds = new Set(normalizedServerSales.map(s => String(s.id)));
+          const serverInvNums = new Set(normalizedServerSales.map(s => s.invoice_number).filter(Boolean));
 
           // Retain all existing local sales that are not yet in server list
           const localOnly = prev.filter(localSale => {
@@ -255,7 +274,7 @@ export function DataProvider({ children }) {
             return !isIdMatch && !isInvMatch;
           });
 
-          const combined = [...rawSaleList, ...localOnly];
+          const combined = [...normalizedServerSales, ...localOnly];
           const seen = new Set();
           return combined.filter(s => {
             if (!s) return false;
@@ -279,13 +298,25 @@ export function DataProvider({ children }) {
         : null;
 
       if (rawExpList) {
-        const serverExpenses = rawExpList.map(e => ({
-          ...e,
-          amount_rwf: Number(e.amount_rwf || e.amount) || 0,
-          amount: Number(e.amount || e.amount_rwf) || 0,
-        }));
-
         setExpenses(prev => {
+          const prevExpMap = new Map(prev.map(p => [String(p.id), p]));
+
+          const serverExpenses = rawExpList.map(e => {
+            const existing = prevExpMap.get(String(e.id));
+            const validDate = (e.created_at && typeof e.created_at === "string" && !isNaN(new Date(e.created_at).getTime()))
+              ? e.created_at
+              : (existing?.created_at || new Date().toISOString());
+
+            return {
+              ...existing,
+              ...e,
+              amount_rwf: Number(e.amount_rwf || e.amount) || Number(existing?.amount_rwf) || 0,
+              amount: Number(e.amount || e.amount_rwf) || Number(existing?.amount) || 0,
+              created_at: validDate,
+              expense_date: String(e.expense_date || validDate).slice(0, 10),
+            };
+          });
+
           const serverIds = new Set(serverExpenses.map(e => String(e.id)));
           const localOnly = prev.filter(localExp => {
             if (!localExp) return false;

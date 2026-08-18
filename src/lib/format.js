@@ -25,8 +25,9 @@ export function initials(name) {
 }
 
 export function timeAgo(dateInput, lang = "en") {
-  if (!dateInput) return "";
+  if (!dateInput || typeof dateInput === "object" && !(dateInput instanceof Date)) return "";
   const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return "";
   const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return lang === "rw" ? "nonaha" : "just now";
@@ -39,8 +40,14 @@ export function timeAgo(dateInput, lang = "en") {
 }
 
 export function clockTime(dateInput) {
-  if (!dateInput) return "";
-  return new Date(dateInput).toLocaleTimeString("en-GB", {
+  if (!dateInput || (typeof dateInput === "object" && !(dateInput instanceof Date))) {
+    return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  }
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) {
+    return new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -51,7 +58,9 @@ export function todayISO() {
 }
 
 export function formatDate(dateInput) {
-  if (!dateInput) return "";
+  if (!dateInput || (typeof dateInput === "object" && !(dateInput instanceof Date))) {
+    return new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  }
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return String(dateInput);
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });

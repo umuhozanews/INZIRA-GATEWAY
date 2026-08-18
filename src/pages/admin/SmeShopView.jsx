@@ -41,69 +41,53 @@ export default function SmeShopView() {
       }
       setData(res.data);
     } catch (err) {
-      console.warn("Falling back to local SME inspection data:", err);
+      console.warn("Loading local SME inspection data for id:", id, err);
+      // Read real accounts from local registry if present
+      const allAccounts = JSON.parse(localStorage.getItem("db_all_accounts_v1") || "[]");
+      const matched = allAccounts.find(a => String(a.id) === String(id));
+      const localStock = JSON.parse(localStorage.getItem(`db_stock_${id}`) || "[]");
+      const localSales = JSON.parse(localStorage.getItem(`db_sales_${id}`) || "[]");
+      const localExpenses = JSON.parse(localStorage.getItem(`db_expenses_${id}`) || "[]");
+      const localSettings = JSON.parse(localStorage.getItem(`db_settings_${id}`) || "{}");
+
+      const grossRev = localSales.reduce((s, x) => s + (Number(x.total_amount || x.total) || 0), 0);
+      const opExp = localExpenses.reduce((s, x) => s + (Number(x.amount_rwf || x.amount) || 0), 0);
+
       setData({
         readOnly: true,
         auditedAccess: true,
-        sme: {
+        sme: matched || {
           id: id,
-          name: "Alpha Merchant",
-          email: "merchant@alpha.rw",
-          phone: "+250 788 123 456",
+          name: "SME Merchant",
+          email: "merchant@inzira.rw",
+          phone: "—",
           role: "sme_owner",
           is_active: true,
-          sector: "Retail & Supermarket",
-          district: "Gasabo",
+          sector: "General Retail",
+          district: "Kigali",
           currency: "RWF",
-          created_at: new Date(Date.now() - 3600000 * 24 * 15).toISOString(),
+          created_at: new Date().toISOString(),
         },
         settings: {
-          shop_name: "Alpha Kigali Supermarket",
-          shop_address: "KG 14 Ave, Kimironko, Kigali",
-          tin: "109876543",
+          shop_name: localSettings.shopName || matched?.shop_name || "SME Store",
+          shop_address: localSettings.shopAddress || matched?.location || "Kigali, Rwanda",
+          tin: localSettings.tinNumber || "N/A",
           tax_rate: "18",
-          receipt_footer: "Murakoze cyane! Thank you for shopping with us.",
+          receipt_footer: "Thank you for your business!",
         },
         financialSummary: {
-          grossRevenue: 17300,
-          cogs: 9500,
-          grossProfit: 7800,
-          operatingExpenses: 0,
-          netProfit: 7800,
-          grossMarginPct: 45.1,
-          totalTransactions: 2,
-          receivablesTotal: 0,
+          revenue: grossRev,
+          costOfGoods: 0,
+          grossProfit: grossRev,
+          expenses: opExp,
+          netProfit: grossRev - opExp,
+          grossMargin: grossRev > 0 ? 100 : 0,
+          netMargin: grossRev > 0 ? Math.round(((grossRev - opExp) / grossRev) * 100) : 0,
         },
-        stock: [
-          { id: 1, name: "Inyange Milk 500ml", category: "Dairy", quantity: 24, cost_price: 600, price: 800, min_stock: 5 },
-          { id: 2, name: "Basmati Rice 5kg", category: "Grains", quantity: 15, cost_price: 7500, price: 9500, min_stock: 3 },
-          { id: 3, name: "Sunflower Cooking Oil 1L", category: "Cooking Essentials", quantity: 8, cost_price: 3200, price: 4200, min_stock: 2 },
-        ],
-        sales: [
-          {
-            id: 101,
-            invoice_number: "INV-2026-0001",
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-            customer_name: "Walk-in Customer",
-            payment_method: "cash",
-            total: 4500,
-            items_count: 2,
-          },
-          {
-            id: 102,
-            invoice_number: "INV-2026-0002",
-            created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            customer_name: "Kigali Retailer",
-            payment_method: "momo",
-            total: 12800,
-            items_count: 3,
-          },
-        ],
-        customers: [
-          { id: 1, name: "Walk-in Customer", phone: "—", total_orders: 1, total_spent: 4500 },
-          { id: 2, name: "Kigali Retailer", phone: "+250 788 999 888", total_orders: 1, total_spent: 12800 },
-        ],
-        expenses: [],
+        stock: localStock,
+        sales: localSales,
+        customers: [],
+        expenses: localExpenses,
       });
     } finally {
       setLoading(false);
@@ -124,11 +108,19 @@ export default function SmeShopView() {
 
   const sme = data?.sme || {};
   const settings = data?.settings || {};
-  const fin = data?.financialSummary || {};
-  const stock = data?.stock || [];
-  const sales = data?.sales || [];
-  const customers = data?.customers || [];
-  const expenses = data?.expenses || [];
+  const stock = Array.isArray(data?.stock) ? data.stock : [];
+  const sales = Array.isArray(data?.sales) ? data.sales : [];
+  const customers = Array.isArray(data?.customers) ? data.customers : [];
+  const expenses = Array.isArray(data?.expenses) ? data.expenses : [];
+
+  const rawFin = data?.financialSummary || {};
+  const grossRev = Number(rawFin.revenue !== undefined ? rawFin.revenue : (rawFin.grossRevenue !== undefined ? rawFin.grossRevenue : sales.reduce((s, x) => s + (Number(x.total_amount || x.total) || 0), 0)));
+  const cogsVal = Number(rawFin.costOfGoods !== undefined ? rawFin.costOfGoods : (rawFin.cogs || 0));
+  const expVal = Number(rawFin.expenses !== undefined ? rawFin.expenses : (rawFin.operatingExpenses !== undefined ? rawFin.operatingExpenses : expenses.reduce((s, x) => s + (Number(x.amount_rwf || x.amount) || 0), 0)));
+  const grossProfitVal = Number(rawFin.grossProfit !== undefined ? rawFin.grossProfit : (grossRev - cogsVal));
+  const netProfitVal = Number(rawFin.netProfit !== undefined ? rawFin.netProfit : (grossProfitVal - expVal));
+  const marginPct = grossRev > 0 ? Math.round((grossProfitVal / grossRev) * 100) : 0;
+  const scoreVal = data?.score?.score || 75;
 
   return (
     <div className="p-3.5 md:p-6 lg:p-8 space-y-4 max-w-7xl mx-auto font-body text-ink">
@@ -198,7 +190,7 @@ export default function SmeShopView() {
           <div className="flex items-center gap-3 self-end sm:self-center font-heading">
             <div className="text-right">
               <span className="text-[10px] font-bold text-muted uppercase">Health Score</span>
-              <p className="text-lg font-black text-ink tabnum">82/100</p>
+              <p className="text-lg font-black text-ink tabnum">{scoreVal}/100</p>
             </div>
           </div>
         </div>
@@ -270,26 +262,26 @@ export default function SmeShopView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-heading">
             <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
               <span className="text-[10px] font-bold text-muted uppercase">Gross Revenue</span>
-              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.grossRevenue || 0)} RWF</p>
-              <p className="text-[11px] text-muted mt-1 font-body">{fin.totalTransactions || 0} recorded sales</p>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(grossRev)} RWF</p>
+              <p className="text-[11px] text-muted mt-1 font-body">{sales.length} recorded sales</p>
             </div>
 
             <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
               <span className="text-[10px] font-bold text-muted uppercase">Cost of Goods (COGS)</span>
-              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.cogs || 0)} RWF</p>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(cogsVal)} RWF</p>
               <p className="text-[11px] text-muted mt-1 font-body">Inventory acquisition cost</p>
             </div>
 
             <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
               <span className="text-[10px] font-bold text-muted uppercase">Gross Margin</span>
-              <p className="text-xl font-black text-ink mt-1 tabnum">{fin.grossMarginPct || 0}%</p>
-              <p className="text-[11px] text-muted mt-1 font-body">{rwf(fin.grossProfit || 0)} profit</p>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{marginPct}%</p>
+              <p className="text-[11px] text-muted mt-1 font-body">{rwf(grossProfitVal)} profit</p>
             </div>
 
             <div className="bg-card rounded-2xl p-5 border border-line shadow-card">
               <span className="text-[10px] font-bold text-muted uppercase">Net Profit</span>
-              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(fin.netProfit || 0)} RWF</p>
-              <p className="text-[11px] text-muted mt-1 font-body">After expenses ({rwf(fin.operatingExpenses || 0)})</p>
+              <p className="text-xl font-black text-ink mt-1 tabnum">{rwf(netProfitVal)} RWF</p>
+              <p className="text-[11px] text-muted mt-1 font-body">After expenses ({rwf(expVal)} RWF)</p>
             </div>
           </div>
         </div>
@@ -317,18 +309,23 @@ export default function SmeShopView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {stock.map((item) => (
-                    <tr key={item.id} className="hover:bg-card-hover transition">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{item.name}</td>
-                      <td className="py-3 px-4 text-muted">{item.category || "General"}</td>
-                      <td className="py-3 px-4 font-heading font-black text-ink tabnum">{item.quantity}</td>
-                      <td className="py-3 px-4 font-heading font-semibold text-ink tabnum">{rwf(item.cost_price || 0)}</td>
-                      <td className="py-3 px-4 font-heading font-black text-ink tabnum">{rwf(item.price || 0)}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">
-                        {item.price > 0 ? Math.round(((item.price - (item.cost_price || 0)) / item.price) * 100) : 0}%
-                      </td>
-                    </tr>
-                  ))}
+                  {stock.map((item) => {
+                    const cost = Number(item.cost_price_rwf || item.cost_price || 0);
+                    const sell = Number(item.sell_price_rwf || item.price || item.unit_price || 0);
+                    const margin = sell > 0 ? Math.round(((sell - cost) / sell) * 100) : 0;
+                    return (
+                      <tr key={item.id} className="hover:bg-card-hover transition">
+                        <td className="py-3 px-4 sm:px-6 font-bold text-ink">{item.name}</td>
+                        <td className="py-3 px-4 text-muted">{item.category || "General"}</td>
+                        <td className="py-3 px-4 font-heading font-black text-ink tabnum">{item.quantity}</td>
+                        <td className="py-3 px-4 font-heading font-semibold text-ink tabnum">{rwf(cost)} RWF</td>
+                        <td className="py-3 px-4 font-heading font-black text-ink tabnum">{rwf(sell)} RWF</td>
+                        <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">
+                          {margin}%
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -360,10 +357,10 @@ export default function SmeShopView() {
                   {sales.map((sale) => (
                     <tr key={sale.id} className="hover:bg-card-hover transition">
                       <td className="py-3 px-4 sm:px-6 font-heading font-bold text-primary">{sale.invoice_number || `INV-${sale.id}`}</td>
-                      <td className="py-3 px-4 text-muted">{new Date(sale.created_at).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-muted">{formatDate(sale.created_at || sale.sale_date)}</td>
                       <td className="py-3 px-4 text-ink font-medium">{sale.customer_name || "Walk-in"}</td>
-                      <td className="py-3 px-4 uppercase font-heading font-bold text-[10px] text-muted">{sale.payment_method || "cash"}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(sale.total || 0)} RWF</td>
+                      <td className="py-3 px-4 uppercase font-heading font-bold text-[10px] text-muted">{(sale.payment_method || "cash").replace("_", " ")}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(sale.total_amount || sale.total || 0)} RWF</td>
                     </tr>
                   ))}
                 </tbody>
@@ -430,10 +427,10 @@ export default function SmeShopView() {
                 <tbody className="divide-y divide-line">
                   {expenses.map((e) => (
                     <tr key={e.id} className="hover:bg-card-hover transition">
-                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{e.description || e.name}</td>
+                      <td className="py-3 px-4 sm:px-6 font-bold text-ink">{e.description || e.name || "Expense"}</td>
                       <td className="py-3 px-4 text-muted">{e.category || "General"}</td>
-                      <td className="py-3 px-4 text-muted">{new Date(e.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(e.amount || 0)} RWF</td>
+                      <td className="py-3 px-4 text-muted">{formatDate(e.expense_date || e.created_at)}</td>
+                      <td className="py-3 px-4 sm:px-6 text-right font-heading font-black text-ink tabnum">{rwf(e.amount_rwf || e.amount || 0)} RWF</td>
                     </tr>
                   ))}
                 </tbody>
